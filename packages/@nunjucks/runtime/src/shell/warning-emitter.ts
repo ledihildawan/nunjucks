@@ -16,6 +16,10 @@ interface EmitUndefinedWarningOptions {
   varName: string | null;
 }
 
+/**
+ * Emits a debug-mode undefined warning: pushes it onto the render's warnings
+ * collector when one is attached, falling back to `console.warn` when not.
+ */
 export const emitUndefinedWarning = (
   runtimeContext: unknown,
   options: EmitUndefinedWarningOptions

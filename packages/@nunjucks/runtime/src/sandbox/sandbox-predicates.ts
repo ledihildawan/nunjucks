@@ -2,12 +2,20 @@ import { getBlockedKeyCategory } from '@nunjucks/shared';
 import type { ResolvedSandboxOptions } from './sandbox-options.ts';
 
 // WHY: this set is consulted alongside `hasOwn(target, key)` in the Proxy `get` trap. Only the three keys that are inherited from `Object.prototype` via a property-accessor (rather than a plain inherited method) need to be flagged when the key is NOT an own property — those three (`__proto__`, `constructor`, `prototype`) are reachable even on `{}` because they are accessor properties on the prototype. The other intrinsics (`toString`, `hasOwnProperty`, etc.) are inherited methods, not accessors, so they don't need an extra gate; the `hasOwn` check alone properly short-circuits them.
+/**
+ * The `Object.prototype` accessor intrinsics reachable even on `{}`;
+ * consulted alongside the own-property check in the Proxy `get` trap.
+ */
 const DANGEROUS_OBJECT_INTRINSICS: ReadonlySet<string> = new Set([
   '__proto__',
   'constructor',
   'prototype',
 ]);
 
+/**
+ * Narrows to blocked symbols: descriptionless and user symbols are blocked;
+ * well-known `Symbol.*` intrinsics are allowed.
+ */
 const isBlockedSymbol = (key: symbol): boolean => {
   const desc = key.description;
   if (!desc) {
@@ -22,6 +30,11 @@ const isBlockedSymbol = (key: symbol): boolean => {
 // WHY: an absent allowlist (null/undefined) means "allowlist not configured" — blocklist-mode
 // callers pass none, so everything is allowed. An EMPTY array is different: allowlist mode with
 // nothing allowlisted must DENY ALL (fail-closed), never degrade into allow-everything.
+/**
+ * Checks a key against the allowlist, honoring the absent-versus-empty split:
+ * no allowlist configured means allow (blocklist mode), while an empty one
+ * denies all — fail-closed.
+ */
 const isAllowedKey = (key: string, allowlist: readonly string[] | null | undefined): boolean => {
   if (!(allowlist && Array.isArray(allowlist))) {
     return true;
@@ -35,6 +48,7 @@ interface BlockedAtScopeInput {
   topLevel: boolean;
 }
 
+/** Decides whether a blocked-category key is refused at this scope (top level or intrinsic). */
 const isBlockedAtScope = ({ key, sandboxOptions, topLevel }: BlockedAtScopeInput): boolean => {
   if (typeof key === 'symbol') {
     return false;
@@ -46,6 +60,7 @@ const isBlockedAtScope = ({ key, sandboxOptions, topLevel }: BlockedAtScopeInput
   return topLevel || category === 'object_intrinsic';
 };
 
+/** Recognizes engine-internal keys (`__nunjucks` / `__nunjucks_*`) exempt from set blocking. */
 const isInternalKey = (key: string | symbol): boolean => {
   if (typeof key !== 'string') {
     return false;

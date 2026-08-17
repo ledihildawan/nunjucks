@@ -10,6 +10,11 @@ import {
 import type { Frame } from './frame.ts';
 import { createRenderRuntime, type RenderRuntime } from './render-runtime.ts';
 
+/**
+ * Execution knobs for a render: escaping, sandboxing, timeout, and the
+ * diagnostics channel (`templateName`, `renderContext`, `warningsCollector`)
+ * that error enrichment and dev-mode warnings read from.
+ */
 interface ExecuteConfig {
   autoescape?: boolean;
   dev?: boolean;
@@ -26,6 +31,7 @@ interface ExecuteConfig {
   warningsCollector?: unknown[];
 }
 
+/** Inputs to `execute`/`executeStream`: compiled code, context, frame, env, and config. */
 interface ExecuteOptions {
   code: string;
   context: Record<string, unknown>;
@@ -112,6 +118,11 @@ const executeWithRuntime = async (options: ExecuteWithRuntimeOptions): Promise<s
     : collectString(stream);
 };
 
+/**
+ * Renders compiled template code to a string — building the runtime (sandboxed
+ * or plain), defaulting the `Env` from config, and draining the render stream
+ * under the configured cooperative wall-clock deadline when one is set.
+ */
 const execute = async (options: ExecuteOptions): Promise<string> => {
   const { code, context, frame, env, config = {} } = options;
   const resolvedEnv = env ?? defaultEnv(config);
@@ -127,6 +138,11 @@ const execute = async (options: ExecuteOptions): Promise<string> => {
   });
 };
 
+/**
+ * Renders compiled template code as its underlying async generator, applying
+ * the same env/runtime/sandbox resolution as `execute` but leaving chunk
+ * consumption — and therefore timeout policy — to the caller.
+ */
 const executeStream = (options: ExecuteOptions): AsyncGenerator<string, unknown> => {
   const { code, context, frame, env, config = {} } = options;
   const resolvedEnv = env ?? defaultEnv(config);

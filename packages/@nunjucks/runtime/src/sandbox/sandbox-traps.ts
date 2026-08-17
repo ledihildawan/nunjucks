@@ -17,6 +17,7 @@ import {
   isInternalKey,
 } from './sandbox-predicates.ts';
 
+/** Inputs to `wrapFunctionWithBlocking`: the function, its key, scope, and receiver. */
 interface WrapFunctionBlockingInput {
   fn: DynamicCallable;
   sandboxEnabled: boolean;
@@ -25,6 +26,11 @@ interface WrapFunctionBlockingInput {
   thisArg: unknown;
 }
 
+/**
+ * Wraps a function so calling it with a string first argument under a
+ * code-execution key (falling back to `fn.name` when `key` is null) throws
+ * `SANDBOX_CODE_EXECUTION`; everything else forwards to the original.
+ */
 const wrapFunctionWithBlocking = ({
   fn,
   sandboxEnabled,
@@ -56,6 +62,7 @@ interface ValidateHandlerInput {
   topLevel: boolean;
 }
 
+/** Builds the Proxy `get` trap enforcing blocked keys, depth guards, and the allowlist. */
 const createValidateGet = ({ sandboxEnabled, sandboxOptions, topLevel }: ValidateHandlerInput) => {
   // WHY: the returned handler is the Proxy `get` trap; all throws below are structurally forced because a trap can only fail by throwing.
   const { blockedContextKeys } = sandboxOptions;
@@ -126,6 +133,7 @@ interface ValidateSetOptions {
   topLevel: boolean;
 }
 
+/** Builds the Proxy `set` trap; internal keys, blocked keys, and top-level writes each throw their own error. */
 const createValidateSet = ({ sandboxOptions, topLevel }: ValidateSetOptions) => {
   // WHY: the returned handler is the Proxy `set` trap; all throws below are structurally forced because a trap can only fail by throwing.
   const { allowlist, blocklistMode } = sandboxOptions;
@@ -187,6 +195,7 @@ interface ValidateHasOptions {
   topLevel: boolean;
 }
 
+/** Builds the Proxy `has` trap: blocked keys and non-allowed keys report absent, own properties only. */
 const createValidateHas = ({ sandboxOptions, topLevel }: ValidateHasOptions) => {
   const { allowlist, blocklistMode } = sandboxOptions;
 
@@ -208,6 +217,7 @@ const createValidateHas = ({ sandboxOptions, topLevel }: ValidateHasOptions) => 
   };
 };
 
+/** Assembles the validating `get`/`set`/`has` trap set for one sandboxed Proxy. */
 const createSandboxTraps = ({
   sandboxEnabled,
   sandboxOptions,
@@ -220,6 +230,7 @@ const createSandboxTraps = ({
   return { get: validateGet, set: validateSet, has: validateHas };
 };
 
+/** Inputs to `createSandboxedObject`, accepting pre-resolved options for recursion. */
 interface SandboxedValueInput {
   value: unknown;
   sandboxEnabled: boolean;
@@ -227,6 +238,10 @@ interface SandboxedValueInput {
   sandboxOptions?: ResolvedSandboxOptions;
 }
 
+/**
+ * Proxies an object (or wraps a function) so every nested access is trapped;
+ * accepts pre-resolved options so recursion does not re-resolve the config.
+ */
 // WHY: accepts either unresolved SandboxOptions (resolved internally) or pre-resolved ResolvedSandboxOptions (passed through) so internal recursive callers avoid re-resolving the same config on every nested object access.
 const createSandboxedObject = ({
   value,

@@ -6,8 +6,14 @@ import {
   escapeUnquotedAttribute,
 } from '@nunjucks/lib';
 
+/** The output context a value is being interpolated into, governing its escaper. */
 type HtmlContext = 'html' | 'attribute' | 'unquoted-attribute' | 'script' | 'style' | 'comment';
 
+/**
+ * Escapes a string for one `HtmlContext`, dispatching to the lib escapers and
+ * neutering both comment abrupt-close sequences (`-->` and the legacy `--!>`)
+ * that plain HTML escaping leaves exploitable.
+ */
 const escapeForContext = (str: string, context: HtmlContext): string => {
   switch (context) {
     case 'html':
@@ -137,6 +143,12 @@ interface HtmlContextTracker {
   getContextAt: (offset: number) => HtmlContext;
 }
 
+/**
+ * Creates a tracker that classifies the `HtmlContext` at any source offset by
+ * scanning only the prefix before it — script/style/comment nesting plus the
+ * pending open tag's attribute position — so escaping matches the spot the
+ * interpolation lands in.
+ */
 const createHtmlContextTracker = (source: string): HtmlContextTracker => {
   const lines = source.split('\n');
   const lineOffsets: number[] = lines.slice(0, -1).reduce<number[]>(

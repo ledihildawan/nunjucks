@@ -78,4 +78,5 @@ const createRenderRuntime = (options?: RenderRuntimeOptions) => ({
 
 export { createRenderRuntime };
 
+/** The compiler-emitted runtime contract object returned by `createRenderRuntime`. */
 export type RenderRuntime = ReturnType<typeof createRenderRuntime>;

@@ -17,12 +17,18 @@ import {
   wrapFunctionWithBlocking,
 } from './sandbox-traps.ts';
 
+/** Inputs to `createSandboxedContext`: the context value, the toggle, and sandbox options. */
 interface SandboxedContextInput {
   context: unknown;
   sandboxEnabled: boolean;
   options?: SandboxOptions;
 }
 
+/**
+ * Wraps the render context object in a top-level sandboxed Proxy — passing the
+ * value through untouched when sandboxing is off or the context is not an
+ * object — so template variable reads are policed from the first access.
+ */
 const createSandboxedContext = ({
   context,
   sandboxEnabled,
@@ -112,6 +118,7 @@ const handlePropertyNotFound = (value: string | symbol, parentName: string | nul
   return createPropertyNotFoundCallable(value, parentName);
 };
 
+/** Inputs to `wrapMemberAccess`: target, key, toggle, options, and the parent display name. */
 interface WrapMemberAccessInput {
   target: unknown;
   value: string | symbol;
@@ -120,6 +127,13 @@ interface WrapMemberAccessInput {
   parentName?: string | null;
 }
 
+/**
+ * Performs one sandboxed member read for generated code: validates the key
+ * (blocked keys throw, allowlist applies), returns typed miss sentinels for
+ * null targets and missing own properties, wraps functions with blocking, and
+ * recursively proxies object values. Sandboxing-off falls back to plain
+ * lookup semantics with the same RCE guard.
+ */
 const wrapMemberAccess = ({
   target,
   value,

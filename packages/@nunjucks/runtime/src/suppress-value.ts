@@ -83,11 +83,18 @@ const suppressEscapedValue = (
   return escaped;
 };
 
+/** Options governing suppression: autoescape flag, target `HtmlContext`, and source position. */
 export interface SuppressValueOptions extends LocationOptions {
   autoescape?: boolean;
   context?: HtmlContext;
 }
 
+/**
+ * Normalizes a value for output: awaits thenables transparently, maps nullish
+ * inputs to `''`, applies context-appropriate escaping under autoescape
+ * (including the script-context JSON and attribute-escaping rules for
+ * `SafeString`s), and passes `SafeString`s through for body output.
+ */
 export function suppressValue(
   this: unknown,
   value: unknown,

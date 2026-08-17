@@ -27,6 +27,11 @@ const matchesPattern = (target: string, pattern: unknown): boolean => {
   return new RegExp(source).test(target);
 };
 
+/**
+ * Frozen registry of every built-in test predicate keyed by name. Entries are
+ * pure synchronous checks that treat miss sentinels as absent values; names
+ * that miss this registry fall through to the env's `getTest` hook.
+ */
 const BUILTIN_TESTS: Readonly<Record<string, TestFn>> = {
   // WHY: miss sentinels are objects, so raw comparisons would misreport them —
   // `obj.missing is defined` must be false and `is undefined/null/none` true.
@@ -120,6 +125,11 @@ const BUILTIN_TESTS: Readonly<Record<string, TestFn>> = {
   escaped: (target) => !isSafeString(target),
 };
 
+/**
+ * Runs a test predicate by name — built-ins first, then the environment's
+ * `getTest` hook — returning `false` for unknown names rather than throwing,
+ * so generated code stays branch-free.
+ */
 const runTest = (env: unknown, name: string, target: unknown, ...args: unknown[]): boolean => {
   const builtin = BUILTIN_TESTS[name];
   if (builtin) {
@@ -138,6 +148,6 @@ const runTest = (env: unknown, name: string, target: unknown, ...args: unknown[]
 
 // WHY: module-level export for the co-located drift-pin test only — the registry is
 // not part of the package's public surface (tests import the module directly).
-const collectBuiltinTestNames = (): readonly string[] => Object.keys(BUILTIN_TESTS).sort();
+const collectBuiltinTestNames = (): readonly string[] => Object.keys(BUILTIN_TESTS).toSorted();
 
 export { runTest, collectBuiltinTestNames };

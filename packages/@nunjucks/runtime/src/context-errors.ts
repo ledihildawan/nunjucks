@@ -9,6 +9,7 @@ interface BlockNotFoundInput {
   colno: number | null;
 }
 
+/** Throws the catalog's `UNDEFINED_BLOCK` error, preferring explicit line data over the stored block location. */
 const throwBlockNotFoundError = ({ name, location, lineno, colno }: BlockNotFoundInput): never => {
   throw createLog('error', {
     def: ERROR_DEFINITIONS.UNDEFINED_BLOCK,
@@ -27,6 +28,7 @@ interface BlockNotFunctionInput {
   name: string;
 }
 
+/** Throws the catalog's `NOT_A_FUNCTION` error for a non-callable block registration. */
 const throwBlockNotFunctionError = ({ name }: BlockNotFunctionInput): never => {
   throw createLog('error', {
     def: ERROR_DEFINITIONS.NOT_A_FUNCTION,
@@ -42,6 +44,7 @@ interface NoSuperBlockInput {
   colno: number | null;
 }
 
+/** Throws the catalog's `NO_SUPER_BLOCK` error for a missing or exhausted super chain. */
 const throwNoSuperBlockError = ({ name, lineno, colno }: NoSuperBlockInput): never => {
   throw createLog('error', {
     def: ERROR_DEFINITIONS.NO_SUPER_BLOCK,

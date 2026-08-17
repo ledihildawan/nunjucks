@@ -9,6 +9,7 @@ import { getBlockedKeyCategory } from '@nunjucks/shared';
 import type { ResolvedSandboxOptions } from './sandbox-options.ts';
 import { isAllowedKey } from './sandbox-predicates.ts';
 
+/** Any dynamically-invocable value the sandbox may need to wrap or call. */
 type DynamicCallable = (...args: unknown[]) => unknown;
 
 interface SandboxErrorInput {
@@ -33,6 +34,7 @@ const sandboxError = ({
   });
 };
 
+/** Throws the catalog's `BLOCKED_CONTEXT_KEYS` error for a top-level blocked-key read. */
 const blockedKeysError = (
   key: string,
   blockedKeys: readonly string[]
@@ -47,6 +49,7 @@ const blockedKeysError = (
   return created;
 };
 
+/** Asserts a key is permitted, throwing `SANDBOX_ALLOWLIST` when it is not. */
 const assertAllowed = (key: string, sandboxOptions: ResolvedSandboxOptions): void => {
   // WHY: invoked from Proxy get/set traps where throw is the sole failure channel — Result is not expressible in a trap return.
   if (!(sandboxOptions.blocklistMode || isAllowedKey(key, sandboxOptions.allowlist))) {

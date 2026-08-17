@@ -13,6 +13,7 @@ const FATAL_STREAM_CODES: ReadonlySet<string> = new Set([
   ERROR_CODES.TIMEOUT,
 ]);
 
+/** Decides whether an enriched error's code is stream-fatal and must re-throw. */
 const isFatalStreamError = (error: unknown): boolean => {
   const code = readErrorCode(error);
   return code !== null && FATAL_STREAM_CODES.has(code);

@@ -1,3 +1,8 @@
+/**
+ * Marks a string as pre-escaped so autoescape passes it through untouched;
+ * structural verification (`isSafeString`) — not brand membership — decides
+ * which values qualify.
+ */
 // biome-ignore lint/complexity/noBannedTypes: String is the object type here, and `string` is not a legal interface parent.
 export interface SafeString extends String {
   val: string;
@@ -5,6 +10,11 @@ export interface SafeString extends String {
   toString: () => string;
 }
 
+/**
+ * Wraps a string in a `SafeString` whose `val`/`length`/`valueOf`/`toString`
+ * are non-enumerable data properties on a `String.prototype`-based object;
+ * non-strings pass through unchanged.
+ */
 export const createSafeString = <T>(value: T): T extends string ? SafeString : T => {
   if (typeof value !== 'string') {
     return value as T extends string ? SafeString : T;
@@ -38,6 +48,12 @@ const isOwnNonEnumerableDataProperty = (
   );
 };
 
+/**
+ * Narrows to `SafeString` by verifying the exact non-enumerable property
+ * descriptors `createSafeString` installs — descriptor checks are
+ * realm-independent and unforgeable by data-only payloads, so context objects
+ * with a `val` field cannot claim pre-escaped status.
+ */
 export const isSafeString = (value: unknown): value is SafeString => {
   if (typeof value !== 'object' || value === null) {
     return false;
@@ -53,6 +69,10 @@ export const isSafeString = (value: unknown): value is SafeString => {
   );
 };
 
+/**
+ * Propagates safeness by outcome: returns a `SafeString` of the target's
+ * string form when the source value was safe, else the plain string.
+ */
 export const copySafeness = <T extends { toString: () => string }>(
   dest: unknown,
   target: T
@@ -63,6 +83,11 @@ export const copySafeness = <T extends { toString: () => string }>(
   return target.toString();
 };
 
+/**
+ * Marks values safe for direct output: strings become `SafeString`s, functions
+ * return their string results pre-wrapped, and every other value passes
+ * through untouched.
+ */
 export const markSafe = <T>(value: T): T extends string ? SafeString : T => {
   const type = typeof value;
 

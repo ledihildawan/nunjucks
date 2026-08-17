@@ -1,12 +1,19 @@
 import { hasOwn } from '@nunjucks/lib';
 
+/** Slot content function signature shared by fallback and provided slot maps. */
 type SlotFn = (...args: unknown[]) => unknown;
 
+/**
+ * The slot dispatcher passed to components: callable by slot name (unknown or
+ * missing slots render as `''`) with a `has` probe that reports only provided,
+ * defined slots.
+ */
 interface SlotContext {
   (name: string, ...args: unknown[]): unknown;
   has: (name: string) => boolean;
 }
 
+/** Resolves slot content by name, preferring provided slots over fallbacks. */
 const createSlotContext = (
   fallbacks: Record<string, SlotFn>,
   provided?: Record<string, SlotFn>

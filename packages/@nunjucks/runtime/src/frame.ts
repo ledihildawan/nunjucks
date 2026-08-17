@@ -49,6 +49,12 @@ interface FrameState {
   isolateWrites: boolean | undefined;
 }
 
+/**
+ * Creates a frame whose writes are immutable — every `set` returns a new frame
+ * linked through `parent` — with chain-falling lookups and prototype-escape
+ * keys (`constructor`, `__proto__`, `prototype`) resolvable as own properties
+ * only, so `{{ constructor }}` cannot escape through the variables chain.
+ */
 export const createFrame = (options: CreateFrameOptions = {}): Frame => {
   const state: FrameState = {
     variables: options.variables ?? Object.create(null),

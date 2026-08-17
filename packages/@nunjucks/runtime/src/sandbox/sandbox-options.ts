@@ -1,5 +1,9 @@
 import type { Environment } from '@nunjucks/shared';
 
+/**
+ * Host-supplied sandbox configuration; every field is optional and resolved
+ * fail-closed by `resolveSandboxOptions`.
+ */
 interface SandboxOptions {
   allowlist?: readonly string[];
   blocklistMode?: boolean;
@@ -8,6 +12,7 @@ interface SandboxOptions {
   topLevel?: boolean;
 }
 
+/** `SandboxOptions` with every field made required (minus per-call `topLevel`). */
 type ResolvedSandboxOptions = Required<Omit<SandboxOptions, 'topLevel'>>;
 
 // WHY: a missing allowlist resolves to [] — an ACTIVE deny-all check in allowlist mode

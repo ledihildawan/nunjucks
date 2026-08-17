@@ -12,6 +12,7 @@ const isFilterEnv = (env: unknown): env is FilterEnv =>
   'getFilter' in env &&
   typeof env.getFilter === 'function';
 
+/** Everything `runFilter` needs to invoke a filter: env, name, position, receiver, and args. */
 interface RunFilterOptions {
   env: unknown;
   name: string;
@@ -27,6 +28,11 @@ const isOkResult = (value: unknown): value is { ok: true; value: unknown } =>
 const isErrResult = (value: unknown): value is { ok: false; error: unknown } =>
   isResultLike(value) && value.ok === false;
 
+/**
+ * Invokes a user-supplied filter and settles whatever it returns — values,
+ * thenables, or `Result` envelopes — into a single `Result`, confining any
+ * thrown value to the error channel.
+ */
 const runFilter = async (options: RunFilterOptions): Promise<Result<unknown, unknown>> => {
   const { env, name, lineno, colno, context } = options;
   if (!isFilterEnv(env)) {

@@ -1,3 +1,4 @@
+/** Looks a name up in the frame, falling back to the context on `undefined`. */
 export const contextOrFrameLookup = (
   context: { lookup: (name: string) => unknown },
   frame: { lookup: (name: string) => unknown },

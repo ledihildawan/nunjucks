@@ -7,6 +7,7 @@ const HOOK_EVENTS = Object.freeze({
   TEMPLATE_COMPILE_ERROR: 'template:compile:error',
 } as const);
 
+/** The compile-phase hook event names the engine emits. */
 type HookEvent = (typeof HOOK_EVENTS)[keyof typeof HOOK_EVENTS];
 
 export type { HookEvent };

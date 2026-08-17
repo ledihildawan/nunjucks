@@ -10,23 +10,36 @@ import {
 } from '@nunjucks/lib';
 import { isPrototypeEscapeKey } from '@nunjucks/shared';
 
+/** Marker key identifying a null-access sentinel from reading a member of `null`/`undefined`. */
 export const NULL_MARKER = '__nunjucks_null__';
+/** Sentinel field carrying the display name of the object the failed access started from. */
 export const PARENT_NAME = '__nunjucks_parent__';
+/** Sentinel field carrying the human-readable access path of the failed lookup. */
 export const ACCESS_PATH = '__nunjucks_access_path__';
+/** Marker key identifying a property-not-found callable sentinel. */
 export const PROP_NOT_FOUND = '__nunjucks_prop_not_found__';
 
+/**
+ * Sentinel object returned when a member is read off `null` or `undefined`;
+ * carries the parent name and access path for undefined-mode messages.
+ */
 export interface NullAccessResult {
   __nunjucks_null__: true;
   __nunjucks_parent__: string | null;
   __nunjucks_access_path__: string;
 }
 
+/**
+ * Shape of the null-prototype not-found callable; the marker fields feed the
+ * guard predicates and undefined-mode messages.
+ */
 export interface PropertyNotFoundResult {
   __nunjucks_prop_not_found__: true;
   __nunjucks_parent__: string | null;
   __nunjucks_access_path__: string;
 }
 
+/** The not-found sentinel in callable form: invoking it yields `undefined`. */
 export type PropertyNotFoundCallable = (() => undefined) & PropertyNotFoundResult;
 
 // WHY: shared factory — memberLookup and the sandbox member-access wrapper build the identical
@@ -47,6 +60,13 @@ export const createPropertyNotFoundCallable = (
   return marker;
 };
 
+/**
+ * Reads `target[value]` for generated code, returning typed miss sentinels —
+ * null-access objects or not-found callables — instead of throwing, wrapping
+ * method reads in closures bound to their receiver, and treating
+ * prototype-escape keys (`constructor`, `__proto__`, `prototype`) as own
+ * properties only so `x.constructor.constructor` cannot reach `Function`.
+ */
 export const memberLookup = (
   target: unknown,
   value: string,
@@ -91,6 +111,7 @@ export const memberLookup = (
   return record[value];
 };
 
+/** Narrows to the null-access sentinel (`__nunjucks_null__`). */
 export const isNullAccessResult = (value: unknown): value is NullAccessResult => {
   return (
     isNonNullish(value) &&
@@ -99,6 +120,7 @@ export const isNullAccessResult = (value: unknown): value is NullAccessResult =>
   );
 };
 
+/** Narrows to the not-found sentinel (`__nunjucks_prop_not_found__`). */
 export const isPropertyNotFoundResult = (value: unknown): value is PropertyNotFoundResult => {
   return (
     isNonNullish(value) && (value as PropertyNotFoundResult).__nunjucks_prop_not_found__ === true
@@ -111,6 +133,7 @@ export const isPropertyNotFoundResult = (value: unknown): value is PropertyNotFo
 export const isAbsentLookupResult = (value: unknown): boolean =>
   isNullAccessResult(value) || isPropertyNotFoundResult(value);
 
+/** Extracts the originating object's display name from a null-access sentinel. */
 export const getNullParentName = (value: unknown): string | null => {
   if (!isNullAccessResult(value)) {
     return null;
@@ -118,6 +141,10 @@ export const getNullParentName = (value: unknown): string | null => {
   return value.__nunjucks_parent__ ?? null;
 };
 
+/**
+ * Reads a member for optional-chaining sites, collapsing both miss sentinels
+ * to a plain `undefined` so `obj?.missing` short-circuits cleanly.
+ */
 export const optionalMemberLookup = (
   target: unknown,
   value: string,
@@ -137,6 +164,10 @@ interface SliceOptions {
   step: number | null;
 }
 
+/**
+ * Slices arrays or strings with Python-style `start`/`stop`/`step` bounds,
+ * normalizing negative indices and throwing on `step: 0`.
+ */
 export const slice = (options: SliceOptions): readonly unknown[] | string => {
   const { source, start, stop, step } = options;
   if (step === 0) {

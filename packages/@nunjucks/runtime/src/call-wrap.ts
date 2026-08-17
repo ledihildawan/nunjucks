@@ -7,6 +7,10 @@ import { getNullParentName, isNullAccessResult } from './member-access.ts';
 // throw RESERVED_KEYWORD_CONTEXT with the caller-supplied subject.
 const RESERVED_KEYWORD_CONTEXT_NAMES = new Set(['super']);
 
+/**
+ * Call-site metadata for `callWrap`: the display name used in errors, the
+ * invocation's receiver and argument list, and its source position.
+ */
 export interface CallWrapOptions {
   displayName: string | null;
   context: unknown;
@@ -15,6 +19,12 @@ export interface CallWrapOptions {
   colno?: number;
 }
 
+/**
+ * Invokes `target.name(...args)` on generated code's behalf, throwing for
+ * reserved context names (`super`), null receivers (raw values or null-access
+ * sentinels), and non-function targets; `Reflect.apply` keeps null-prototype
+ * callables invocable, and `this` is an unknown pass-through for enrichment.
+ */
 function callWrap(this: unknown, target: unknown, name: string, options: CallWrapOptions): unknown {
   const { displayName, context, args, lineno, colno } = options;
   const messageName = displayName ?? name;
@@ -54,6 +64,7 @@ function callWrap(this: unknown, target: unknown, name: string, options: CallWra
   });
 }
 
+/** Options for the `in` operator: the key, the container, and the source position. */
 export interface InOperatorOptions {
   key: unknown;
   value: unknown;
@@ -61,6 +72,11 @@ export interface InOperatorOptions {
   colno?: number | null;
 }
 
+/**
+ * Implements template `in` checks: membership for arrays and strings and
+ * own-property presence for plain objects — mirroring `memberLookup`'s
+ * not-found semantics instead of the JS `in` operator's prototype-chain walk.
+ */
 function inOperator(
   this: unknown,
   { key, value, lineno = null, colno = null }: InOperatorOptions

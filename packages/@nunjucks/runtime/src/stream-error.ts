@@ -2,6 +2,10 @@ import { isKeyedObject } from '@nunjucks/lib';
 import { handleError } from './handle-error.ts';
 import { isFatalStreamError } from './stream-fatal-codes.ts';
 
+/**
+ * Recoverable per-expression error envelope for streaming renders; the stream
+ * consumer detects it and formats an inline marker instead of aborting.
+ */
 interface StreamErrorSentinel {
   readonly __nunjucks_stream_error__: true;
   readonly error: unknown;
@@ -9,6 +13,7 @@ interface StreamErrorSentinel {
   readonly colno: number;
 }
 
+/** Narrows to the stream-error sentinel (`__nunjucks_stream_error__`). */
 const isStreamErrorSentinel = (value: unknown): value is StreamErrorSentinel =>
   isKeyedObject(value) &&
   (value as { __nunjucks_stream_error__?: unknown }).__nunjucks_stream_error__ === true;

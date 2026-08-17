@@ -28,11 +28,13 @@ const throwUnknownKwargError = ({ name, accepted }: UnknownKwargErrorInput): nev
   });
 };
 
+/** A component's execution inputs: its props record and its `SlotContext`. */
 interface ComponentContext {
   props: Record<string, unknown>;
   slots: SlotContext;
 }
 
+/** Creates the `{ props, slots }` pair that generated render code passes to components. */
 const createComponentContext = (
   props: Record<string, unknown>,
   slots: SlotContext
@@ -45,6 +47,11 @@ interface CreateComponentOptions<A extends unknown[], R> {
   optionsArg?: boolean;
 }
 
+/**
+ * Wraps a component function so template calls can bind arguments positionally,
+ * by keyword envelope, or both — folding extra positionals into the trailing
+ * kwargs object and failing fast on unknown keyword names in options mode.
+ */
 export function createComponent<A extends unknown[], R>({
   argNames,
   kwargNames,
@@ -130,6 +137,7 @@ const resolveComponentArgs = ({
   return componentArgs;
 };
 
+/** Stamps a record as a keyword-argument envelope by setting `keywords: true`. */
 export const createKeywordArgs = (
   record: Record<string, unknown>
 ): Record<string, unknown> & { keywords: true } => ({
@@ -137,6 +145,12 @@ export const createKeywordArgs = (
   keywords: true,
 });
 
+/**
+ * Merges every keyword envelope found among `args` into one plain object;
+ * `Object.fromEntries` gives the merge define-own semantics, so a
+ * template-authored `__proto__` key becomes an own property instead of
+ * retargeting the merge target's prototype.
+ */
 export const getKeywordArgs = (args: unknown[]): Record<string, unknown> => {
   const kwargObjs = args.filter(isKeywordArgsObject);
   if (kwargObjs.length === 0) {
@@ -148,6 +162,7 @@ export const getKeywordArgs = (args: unknown[]): Record<string, unknown> => {
   return Object.fromEntries(kwargObjs.flatMap((kwargObj) => Object.entries(kwargObj)));
 };
 
+/** Counts the non-keyword-envelope arguments in a call's argument list. */
 export const numArgs = (args: unknown[]): number => {
   // WHY: count NON-keyword args anywhere in the list — the previous last-position-only
   // check miscounted when a caller appended a second keyword envelope (e.g. {% render %}

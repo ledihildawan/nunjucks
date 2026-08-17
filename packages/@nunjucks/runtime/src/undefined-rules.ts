@@ -5,6 +5,7 @@ import { throwRuntimeError } from './error-context.ts';
 import type { NullAccessResult, PropertyNotFoundResult } from './member-access.ts';
 import { emitUndefinedWarning } from './shell/warning-emitter.ts';
 
+/** Inputs shared by every undefined resolution: subject, position, mode, and error context. */
 export interface ResolveUndefinedOptions {
   runtimeContext: unknown;
   subjectValue: unknown;
@@ -60,6 +61,7 @@ const resolveUndefined = (
   return 'undefined';
 };
 
+/** Resolves a not-found property sentinel, reporting the access path and its parent object. */
 export const resolveUndefinedProperty = (
   value: PropertyNotFoundResult,
   options: ResolveUndefinedOptions
@@ -79,6 +81,7 @@ export const resolveUndefinedProperty = (
   });
 };
 
+/** Resolves a null-access sentinel, reporting the path that was dereferenced off null. */
 export const resolveNullAccess = (
   value: NullAccessResult,
   options: ResolveUndefinedOptions
@@ -95,6 +98,7 @@ export const resolveNullAccess = (
   });
 };
 
+/** Resolves a raw nullish value, choosing the variable or value error definition by name presence. */
 export const resolveUndefinedValue = (options: ResolveUndefinedOptions): 'undefined' => {
   const { varName } = options;
   const errorDef: ErrorDefinitionEntry = varName

@@ -9,6 +9,7 @@ import {
   resolveUndefinedValue,
 } from './undefined-rules.ts';
 
+/** Options for `ensureDefined`: source position, variable name, and undefined mode. */
 export interface EnsureDefinedOptions {
   lineno?: number | null;
   colno?: number | null;
@@ -19,6 +20,12 @@ export interface EnsureDefinedOptions {
   undefinedMode?: UndefinedMode;
 }
 
+/**
+ * Resolves a value against the undefined mode: routes miss sentinels
+ * (not-found callables, null-access objects) and raw nullish values through
+ * the mode's rule — `'undefined'` string, warning, or throw — and passes
+ * defined values through untouched.
+ */
 export function ensureDefined(
   this: unknown,
   value: unknown,

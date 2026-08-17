@@ -2,6 +2,7 @@ import type { ErrorDefinitionEntry } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
 import type { Phase } from '@nunjucks/shared';
 
+/** The diagnostics slice the runtime reads off a render context for error enrichment. */
 interface LogContextShape {
   templateName: string | null;
   phase: Phase;
@@ -19,6 +20,10 @@ const hasLogContext = (
   (runtimeContext as { logContext?: unknown }).logContext != null &&
   typeof (runtimeContext as { logContext?: unknown }).logContext === 'object';
 
+/**
+ * Extracts the `logContext` diagnostics from a runtime context, defaulting to
+ * `templateName: null`, phase `render`, and no render context when absent.
+ */
 export const getLogContext = (runtimeContext: unknown): LogContextShape => {
   if (hasLogContext(runtimeContext)) {
     return runtimeContext.logContext;
@@ -35,6 +40,11 @@ interface ThrowRuntimeErrorOptions {
   templateName?: string | null;
 }
 
+/**
+ * Throws a cataloged runtime error enriched with position, template name, and
+ * the receiver's log context — the throw helper runtime functions share while
+ * keeping `this: unknown` pass-through.
+ */
 export const throwRuntimeError = (
   def: ErrorDefinitionEntry,
   { runtimeContext, lineno, colno, params, subject, templateName }: ThrowRuntimeErrorOptions
