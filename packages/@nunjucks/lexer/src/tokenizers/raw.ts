@@ -143,6 +143,11 @@ const processRawContent = ({
   return { content, depth, current: scanState };
 };
 
+/**
+ * Tokenizes `{% raw %}`/`{% verbatim %}` blocks whose content is kept verbatim,
+ * tracking nested open/close control tags by depth; the value reproduces the original
+ * source text, and an unterminated block consumes the remainder without throwing.
+ */
 export const tokenizeRaw: Tokenizer = (state) => {
   if (!matches(state, state.tags.blockStart)) {
     return null;

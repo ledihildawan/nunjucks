@@ -11,6 +11,10 @@ interface CreateDelimiterTokenizerOptions {
   stripFlag: Record<string, boolean>;
 }
 
+/**
+ * Builds a tokenizer for a tag pair that prefers the strip variant (tagging the token
+ * with `stripFlag`) and falls back to the plain delimiter without strip flags.
+ */
 export const createDelimiterTokenizer =
   ({ tokenType, stripKey, plainKey, stripFlag }: CreateDelimiterTokenizerOptions): Tokenizer =>
   (state) => {

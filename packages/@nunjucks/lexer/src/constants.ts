@@ -3,10 +3,13 @@ import { COMPLEX_OPERATORS } from './delimiters.ts';
 
 const COMPLEX_OPERATOR_SET = new Set<string>(COMPLEX_OPERATORS);
 
+/** Tests whether `str` is one of the frozen multi-character operators. */
 const isComplexOperator = (str: string): boolean => COMPLEX_OPERATOR_SET.has(str);
 
+/** Tests whether `str` is the literal text `true` or `false`. */
 const isBooleanString = (str: string): boolean => str === 'true' || str === 'false';
 
+/** Tests whether `str` is the null keyword `none` or `null`. */
 const isNullString = (str: string): boolean => str === 'none' || str === 'null';
 
 export type { ComplexOperator, Delimiters } from './delimiters.ts';

@@ -3,6 +3,7 @@ import type { LexerState } from '../types.ts';
 import { advance, getChar } from '../state.ts';
 import { createDelimiterTokenizer } from './delimiter.ts';
 
+/** Tokenizes `{%` and its strip form `{%-`, flagging `stripLeft` for the strip variant. */
 export const tokenizeBlockStart = createDelimiterTokenizer({
   tokenType: TOKEN_BLOCK_START,
   stripKey: 'stripBlockStart',
@@ -33,6 +34,10 @@ const skipTrimBlocksNewline = (state: LexerState): LexerState => {
   return state;
 };
 
+/**
+ * Tokenizes `%}` and its strip form `-%}`; when `trimBlocks` is enabled the state is
+ * advanced past exactly one trailing newline (bare `\r` without `\n` is left as-is).
+ */
 export const tokenizeBlockEnd = (state: Parameters<typeof delimiterBlockEnd>[0]) => {
   const step = delimiterBlockEnd(state);
   if (step === null || !state.trimBlocks) {

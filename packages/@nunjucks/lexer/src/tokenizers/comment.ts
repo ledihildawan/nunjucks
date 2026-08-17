@@ -4,6 +4,10 @@ import { TOKEN_COMMENT } from '../token-types.ts';
 import { createToken } from '../tokens.ts';
 import type { Tokenizer } from '../types.ts';
 
+/**
+ * Tokenizes a `{# ... #}` comment, reproducing the full delimiter text in the token
+ * value; reaching EOF before the close throws an unterminated-literal error.
+ */
 export const tokenizeComment: Tokenizer = (state) => {
   if (!matches(state, state.tags.commentStart)) {
     return null;

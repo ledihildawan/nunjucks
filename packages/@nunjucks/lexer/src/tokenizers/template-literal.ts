@@ -114,6 +114,10 @@ const consumeTemplateLoop = (
   throw createUnterminatedLiteralError('template', origin);
 };
 
+/**
+ * Tokenizes a backtick template literal into `template` and `expression` quasis;
+ * escape pairs stay quasi text, and stray backticks or EOF throw.
+ */
 export const tokenizeTemplateLiteral: Tokenizer = (state) => {
   if (getChar(state) !== '`') {
     return null;

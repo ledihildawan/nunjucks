@@ -1,3 +1,7 @@
+/**
+ * Token type string literals, one `TOKEN_<NAME>` constant per token kind; the derived
+ * `TokenType` union and `TokenValueByType` keys are pinned to these values.
+ */
 export const TOKEN_STRING = 'string';
 export const TOKEN_WHITESPACE = 'whitespace';
 export const TOKEN_DATA = 'data';
@@ -58,8 +62,10 @@ const TOKEN_TYPES = {
   TEMPLATE_LITERAL: TOKEN_TEMPLATE_LITERAL,
 } as const;
 
+/** Union of every token type literal, keyed by the canonical `TOKEN_*` constants. */
 export type TokenType = (typeof TOKEN_TYPES)[keyof typeof TOKEN_TYPES];
 
+/** One segment of a template literal: literal text or an interpolation expression. */
 export interface TemplateQuasi {
   type: 'template' | 'expression';
   value: string;
@@ -72,6 +78,10 @@ interface TokenBase {
   stripRight?: boolean;
 }
 
+/**
+ * Maps each token type to the shape of its `value` field — strings for most kinds,
+ * numbers for `int`/`float`, an object for `regex` and `template-literal`.
+ */
 export type TokenValueByType = {
   [TOKEN_STRING]: string;
   [TOKEN_WHITESPACE]: string;
@@ -103,6 +113,10 @@ export type TokenValueByType = {
   [TOKEN_TEMPLATE_LITERAL]: { quasis: TemplateQuasi[]; expressions: [] };
 };
 
+/**
+ * Discriminated token union: every member pairs a `type` literal with the matching
+ * `TokenValueByType` value, plus shared position and optional strip flags.
+ */
 export type Token = TokenBase &
   {
     [K in TokenType]: { type: K; value: TokenValueByType[K] };

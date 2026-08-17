@@ -5,6 +5,10 @@ import { TOKEN_STRING } from '../token-types.ts';
 import { createToken } from '../tokens.ts';
 import type { Tokenizer } from '../types.ts';
 
+/**
+ * Tokenizes a single- or double-quoted string; the value excludes the surrounding
+ * quotes, and reaching EOF before the closing quote throws an unterminated-literal error.
+ */
 export const tokenizeString: Tokenizer = (state) => {
   const char = getChar(state);
   if (char !== '"' && char !== "'") {

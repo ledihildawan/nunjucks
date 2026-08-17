@@ -6,4 +6,5 @@ import { BUILTIN_TEST_NAMES } from '@nunjucks/shared';
 // metadata this file previously carried had zero consumers and was purged.
 const TEST_KEYWORDS: ReadonlySet<string> = new Set(BUILTIN_TEST_NAMES);
 
+/** Tests whether `name` is a builtin test keyword usable in `x is <name>` syntax. */
 export const isTestKeyword = (name: string): boolean => TEST_KEYWORDS.has(name);

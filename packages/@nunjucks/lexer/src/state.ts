@@ -1,6 +1,10 @@
 import { createDelimiters } from './delimiters.ts';
 import type { LexerOptions, LexerState } from './types.ts';
 
+/**
+ * Creates the initial `LexerState` at index 0, resolving custom tag delimiters and
+ * normalizing `trimBlocks`/`lstripBlocks` to booleans.
+ */
 export const createState = (source: string, options: LexerOptions = {}): LexerState => ({
   source,
   index: 0,
@@ -12,6 +16,7 @@ export const createState = (source: string, options: LexerOptions = {}): LexerSt
   lstripBlocks: Boolean(options.lstripBlocks),
 });
 
+/** Reads the character at the cursor; returns an empty string at EOF. */
 export const getChar = (state: LexerState): string => {
   if (state.index < state.source.length) {
     const char = state.source[state.index];
@@ -20,6 +25,7 @@ export const getChar = (state: LexerState): string => {
   return '';
 };
 
+/** Reads the character one position ahead of the cursor; empty string at or past EOF. */
 export const getPeek = (state: LexerState): string => {
   if (state.index + 1 < state.source.length) {
     const char = state.source[state.index + 1];
@@ -28,8 +34,14 @@ export const getPeek = (state: LexerState): string => {
   return '';
 };
 
+/** Returns `true` when the cursor has reached or passed the end of the source. */
 export const isFinished = (state: LexerState): boolean => state.index >= state.source.length;
 
+/**
+ * Advances the cursor by `charCount` positions, returning a fresh state with line and
+ * column tracking updated across newlines; the index clamps at EOF and a zero-move
+ * advance returns the identical state object.
+ */
 export const advance = (state: LexerState, charCount = 1): LexerState => {
   const { source, index, lineno, colno } = state;
   const newIndex = Math.min(index + charCount, source.length);
@@ -57,6 +69,7 @@ export const advance = (state: LexerState, charCount = 1): LexerState => {
   return { ...state, index: newIndex, lineno: newLineno, colno: newColno };
 };
 
+/** Tests whether `text` appears verbatim at the cursor; `false` if it would pass EOF. */
 export const matches = (state: LexerState, text: string): boolean => {
   const { index, source } = state;
   const textLen = text.length;

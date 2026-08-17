@@ -70,6 +70,11 @@ interface TokenizerResult {
   tags: ReturnType<typeof createDelimiters>;
 }
 
+/**
+ * Creates the pull-based tokenizer over `src`: `nextToken` yields tokens lazily and
+ * returns `null` at EOF; lexical errors surface as thrown branded `TemplateError`s,
+ * leaving Result conversion to the parser boundary.
+ */
 export const createTokenizer = (src: string, options: LexerOptions = {}): TokenizerResult => {
   const generator = lexGenerator(createState(src, options));
   const tags = createDelimiters(options.tags);

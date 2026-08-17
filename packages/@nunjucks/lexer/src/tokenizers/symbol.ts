@@ -5,6 +5,10 @@ import { TOKEN_BOOLEAN, TOKEN_NONE, TOKEN_SYMBOL } from '../token-types.ts';
 import { createToken } from '../tokens.ts';
 import type { Tokenizer } from '../types.ts';
 
+/**
+ * Tokenizes identifiers and keyword literals, promoting `true`/`false` to
+ * `TOKEN_BOOLEAN` and `none`/`null` to `TOKEN_NONE`; everything else stays a symbol.
+ */
 export const tokenizeSymbol: Tokenizer = (state) => {
   const sym = extractUntil({
     source: state.source,

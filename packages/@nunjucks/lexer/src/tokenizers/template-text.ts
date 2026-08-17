@@ -18,6 +18,11 @@ const applyLstripBlocks = (text: string, state: LexerState, current: LexerState)
   return LINE_LEADING_WS_RE.test(lastLine) ? text.slice(0, lastLineStart) : text;
 };
 
+/**
+ * Tokenizes template data up to the next tag start (`{%`, `{{`, or `{#`); applies
+ * `lstripBlocks` to the final line and delegates to the block-start tokenizer when the
+ * whole chunk was stripped, so no empty data token is emitted.
+ */
 export const tokenizeTemplateText: Tokenizer = (state) => {
   if (state.inCode) {
     return null;

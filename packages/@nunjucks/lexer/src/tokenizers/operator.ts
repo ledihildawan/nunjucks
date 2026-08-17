@@ -34,6 +34,10 @@ const OPERATOR_TOKEN_TYPES: Record<string, TokenType> = {
   '...': TOKEN_SPREAD,
 };
 
+/**
+ * Tokenizes operators and punctuation by longest match up to three characters, mapping
+ * brackets, `,`, `:`, `|>`, and `...` to their dedicated token types.
+ */
 export const tokenizeOperator: Tokenizer = (state) => {
   const char = getChar(state);
   if (!DELIM_CHARS.includes(char)) {

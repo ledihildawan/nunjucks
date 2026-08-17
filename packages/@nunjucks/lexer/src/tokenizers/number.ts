@@ -42,6 +42,10 @@ const convertToNumber = (num: string, hasDecimal: boolean): number | null => {
   return Number.isNaN(value) ? null : value;
 };
 
+/**
+ * Tokenizes integer and decimal literals, choosing `TOKEN_FLOAT` when a fractional
+ * part was consumed; a `.` followed by another `.` (range syntax) is left untouched.
+ */
 export const tokenizeNumber: Tokenizer = (state) => {
   const { lineno, colno } = state;
   const { num: intPart, current } = parseDigits(state);
