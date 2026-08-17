@@ -10,6 +10,7 @@ Monorepo of the nunjucks templating engine, split into focused `@nunjucks/*` wor
 
 - **Clean Code, SOLID, YAGNI, KISS** — apply always; reject abstraction that isn't needed now.
 - **Functional Programming** — prefer pure functions, composition (`pipe`, `flatMap`, `reduce` from `remeda`), immutability. No classes for domain logic.
+- **Railway error handling (single canonical envelope)** — expected failures are values: return `Result<T, E>` from `@nunjucks/lib` (`ok`/`err`/`isOk`/`isErr`). Go-style `[Error | null, Data | null]` tuples are NOT used in this monorepo — never mix envelope shapes. Domain Core never throws for expected failures; the only sanctioned throws are catalogued `TemplateError` propagation inside the engine (ARCHITECTURE.md §2 "Result conventions").
 - **No overengineering, no premature optimization.**
 
 ## 2. Project Structure & Co-location

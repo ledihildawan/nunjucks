@@ -25,20 +25,7 @@
     "samples/vanilla-ts"
   ],
   "dependencies": {
-    "@nunjucks/lib": "workspace:*",
-    "@nunjucks/core": "workspace:*",
-    "@nunjucks/lexer": "workspace:*",
-    "@nunjucks/nodes": "workspace:*",
-    "@nunjucks/shared": "workspace:*",
-    "@nunjucks/transformers": "workspace:*",
-    "@nunjucks/compiler": "workspace:*",
-    "@nunjucks/runtime": "workspace:*",
-    "@nunjucks/filters": "workspace:*",
-    "@nunjucks/loaders": "workspace:*",
-    "@nunjucks/integrations": "workspace:*",
-    "@nunjucks/validators": "workspace:*",
-    "picocolors": "^1.1.1",
-    "remeda": "^2.39.0"
+    "@nunjucks/core": "workspace:*"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.5",

@@ -47,9 +47,19 @@ const benchCases: BenchCase[] = [
   },
 ];
 
+const WARMUP_ITERATIONS = 50;
+
+// WHY: a failed render is not a fast render — without this check a regression that
+// short-circuits to an error Result would report inflated ops/s and invert the
+// regression radar's signal.
+const isFailedResult = (value: unknown): boolean =>
+  typeof value === 'object' && value !== null && (value as { ok?: unknown }).ok === false;
+
 const runCase = async (benchCase: BenchCase): Promise<void> => {
-  for (let i = 0; i < Math.min(50, benchCase.iterations); i += 1) {
-    await benchCase.render();
+  for (let i = 0; i < Math.min(WARMUP_ITERATIONS, benchCase.iterations); i += 1) {
+    if (isFailedResult(await benchCase.render())) {
+      throw new Error(`bench case "${benchCase.name}" failed during warmup`);
+    }
   }
   const startedAt = performance.now();
   for (let i = 0; i < benchCase.iterations; i += 1) {

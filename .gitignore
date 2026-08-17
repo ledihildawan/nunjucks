@@ -13,8 +13,14 @@ build
 # local tooling state (opencode plans/session)
 .opencode/
 
+# local environment overrides (never commit secrets)
+.env*
+
 # ephemeral cognitive scratchpad (audit/verification artifacts)
 /herment/
+
+# ephemeral agent scratchpad (prototype/verification zone)
+/.sandbox/
 
 # local scratch space
 /tmp/

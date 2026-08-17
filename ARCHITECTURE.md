@@ -30,7 +30,7 @@ Implementation must follow this usage hierarchy to balance Functional Purity wit
 
 ### Boundaries & Validation Layer (API, DB, External Payloads)
 
-- Use **Explicit Error Types** (e.g., `Result<T, E>`, `Either`, or `[error, data]` tuples) for expected failure modes instead of throwing unhandled exceptions.
+- Use the **`Result<T, E>` discriminated union from `@nunjucks/lib`** (`ok` / `err` / `isOk` / `isErr`) as the single canonical explicit error type for expected failure modes — never throw unhandled exceptions across API boundaries. Go-style `[error, data]` tuples and `Either`-style variants are **not used** in this monorepo (mixing envelope shapes breaks API symmetry; see "Result conventions" below).
 - Use **Validation Accumulators** (e.g., Schema Validators) at boundary inputs to parse external data and accumulate validation errors at once.
 - Use **Option / Maybe** patterns or Null-safe wrappers to handle empty values safely.
 - Isolate **I/O operations** (Database, Network, File System) within dedicated adapter boundaries.
@@ -42,6 +42,7 @@ Implementation must follow this usage hierarchy to balance Functional Purity wit
   - `runtime/src/code-loader.ts` — `new Function(...)` compiled-template loading; the single auditable dynamic-execution boundary (see sandbox guards in `runtime/src/sandbox/**`).
   - Wall-clock reads for async time-based control flows (Rule: performance exemption 3): `runtime/src/executor.ts` (blocking deadline), `core/src/render/render-stream-adapters.ts` (per-chunk idle + stream deadline), `core/src/template/template-compiler.ts` (compile-duration metrics), `core/src/diagnostics/diagnostics.ts` (timestamp).
   - `core/src/factory.ts` — reads `process.env.NODE_ENV` once at engine creation to derive the environment label (the only `process.env` site outside diagnostics; kept because the factory is the composition shell).
+  - `core/src/render/caller-file.ts` — temporarily swaps the V8 global `Error.prepareStackTrace` (restored in `finally`) to capture structured caller CallSites for dev error locations; the engine's single stack-capture shell.
   - `core/src/render/pipe-stream.ts` — `console.log` ANSI error fallback when no `onError` hook is registered (dev-gated; the streaming imperative shell's last-resort log).
 
 ## 3. Performance Exemptions & Low-Level Primitives
@@ -107,7 +108,9 @@ Positional parameters > 2 are strictly allowed without options objects **ONLY** 
 
 ### Manifest-Declared Subpath Exports (exception to the single-barrel rule)
 
-Several packages (`lib`, `runtime`, `compiler`, `core`, …) declare additional subpath entries in their `package.json` `exports` map (e.g. `@nunjucks/lib/collect-stream`, `@nunjucks/runtime/escaping`). These are **deliberate, manifest-declared contracts** — sanctioned deviations from the single-`index.ts`-barrel rule for two reasons: (1) hot-path modules avoid pulling the whole barrel's transitive imports, and (2) leaf utilities stay importable by packages that depend on only that slice. The rule that remains absolute: **every subpath must be declared in `exports`** — deep-linking into undeclared `src/` internals from outside the package is forbidden, and re-exports that exist only for test convenience must not accumulate on public barrels.
+Two subpath entries are currently declared: `@nunjucks/core/diagnostics` and `@nunjucks/integrations/express` (the only export of that package). These are **deliberate, manifest-declared contracts** — sanctioned deviations from the single-`index.ts`-barrel rule: they keep leaf utilities importable without dragging heavier barrel transitive imports (e.g. diagnostics fs tooling stays out of the render path). When a barrel's transitive weight is the problem but the slice is data (not code), prefer hoisting the constant to `@nunjucks/shared` instead of adding a subpath — that is how `BUILTIN_FILTER_NAMES` (static list in shared, drift-pinned by `filters/src/filter-names.test.ts`) keeps the DOMPurify-carrying filters barrel out of the pure parser chain. The rule that remains absolute: **every subpath must be declared in `exports`** — deep-linking into undeclared `src/` internals from outside the package is forbidden, and re-exports that exist only for test convenience must not accumulate on public barrels.
+
+**Lint note (`noImportCycles: off`):** biome's cycle detector fires on benign barrel-aggregation chains (parser barrel → module → barrel), so the rule is disabled in `biome/linter.json`. Real cross-package cycles are prevented by the workspace DAG above; the remaining intra-package sibling cycles (parser grammar) are function-value references resolved at call time, never during module evaluation.
 
 ### Error Cluster Architecture (formatter ↔ renderer)
 
@@ -228,7 +231,7 @@ The public `NunjucksConfig` is **nested by concern**:
 
 `factory.ts` `buildBaseOptions` flattens the nested `NunjucksConfig` into a flat options bag (compacted — `undefined` keys removed so they don't clobber built-in defaults when spread). The internal `render.ts` `setupRenderConfig` then merges that bag over the `GlobalConfig` defaults, producing the internal `RenderConfig` (flat, plus diagnostics like `callerFrames`/`env`/`loader`). The factory's `customFilters`/`customGlobals` mapping is load-bearing: it feeds the user's filter/global NAMES to `validateConfig` (security name-check) WITHOUT including the built-in defaults — see the WHY on `validators/src/config.ts`.
 
-The factory owns the loader lifecycle (closure-scoped cache per `views` path, isolated across factory instances). Internal `render()` callers (core tests) get an uncached loader created from `views`.
+The factory owns the loader lifecycle (closure-scoped cache per `views` path, isolated across factory instances). Internal `render()` callers (core tests) get an uncached loader created from `views`. Note that loader instances are the ONLY cache: compiled templates are never cached — every render re-resolves, re-parses, and recompiles (deliberate YAGNI; watch events on loaders are a dormant hook for a future template cache, which would have to be a promise-map to avoid double-compile races).
 
 **Custom loaders** (`config.loaders: readonly TemplateLoader[]`, contract in `loaders/src/loader-chain.ts`): a non-empty chain replaces filesystem resolution — `views` is ignored. `createLoaderChain` folds the array into a single first-match-wins loader (`null` = defer to the next loader, `err` = hard stop), which flows through the same `RenderConfig.loader` slot; the render pipeline and `getTemplate` include-resolution are loader-agnostic (`TemplateLoader`, not `FileSystemLoader`).
 
@@ -245,3 +248,5 @@ The factory owns the loader lifecycle (closure-scoped cache per `views` path, is
 - **Context scanning** is the secondary defense: it detects dangerous values *in the data context* before render begins, warn-or-block based on `contextStrict` + `dev` mode.
 
 Both layers must be enabled for full protection. The sandbox is ineffective if a template accesses `process.env.SECRET` passed in the context — context scanning catches this at preparation time.
+
+**Layering rule:** an explicit `scanContextValues` value always wins (it is a documented public knob). When the user enables `sandbox` or `contextStrict` *without* stating a scanning opinion, the pre-scan is implicitly downgraded to `false` — those layers enforce the same surface more strictly, so the redundant pass is skipped (see `render.ts` `setupRenderConfig`).

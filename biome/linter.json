@@ -63,6 +63,7 @@
 			"style": {
 				"noImplicitBoolean": "error",
 				"noNegationElse": "off",
+				"noNonNullAssertion": "error",
 				"noParameterAssign": "warn",
 				"noRestrictedGlobals": "error",
 				"noShoutyConstants": "warn",

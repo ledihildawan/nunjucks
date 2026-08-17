@@ -5,20 +5,7 @@
     "": {
       "name": "nunjucks",
       "dependencies": {
-        "@nunjucks/compiler": "workspace:*",
         "@nunjucks/core": "workspace:*",
-        "@nunjucks/filters": "workspace:*",
-        "@nunjucks/integrations": "workspace:*",
-        "@nunjucks/lexer": "workspace:*",
-        "@nunjucks/lib": "workspace:*",
-        "@nunjucks/loaders": "workspace:*",
-        "@nunjucks/nodes": "workspace:*",
-        "@nunjucks/runtime": "workspace:*",
-        "@nunjucks/shared": "workspace:*",
-        "@nunjucks/transformers": "workspace:*",
-        "@nunjucks/validators": "workspace:*",
-        "picocolors": "^1.1.1",
-        "remeda": "^2.39.0",
       },
       "devDependencies": {
         "@biomejs/biome": "^2.5.5",
@@ -59,7 +46,6 @@
       },
       "devDependencies": {
         "@nunjucks/nodes": "workspace:*",
-        "@types/express": "^5.0.6",
       },
     },
     "packages/@nunjucks/error-catalog": {
@@ -120,6 +106,7 @@
       "dependencies": {
         "@nunjucks/error-formatter": "workspace:*",
         "@nunjucks/lib": "workspace:*",
+        "@nunjucks/shared": "workspace:*",
       },
     },
     "packages/@nunjucks/lib": {
@@ -158,6 +145,7 @@
         "@nunjucks/nodes": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "@nunjucks/validators": "workspace:*",
+        "remeda": "^2.39.0",
       },
     },
     "packages/@nunjucks/runtime": {
@@ -192,7 +180,7 @@
       "name": "@nunjucks/validators",
       "version": "1.0.0",
       "dependencies": {
-        "@nunjucks/filters": "workspace:*",
+        "@nunjucks/error-catalog": "workspace:*",
         "@nunjucks/lib": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
         "@nunjucks/shared": "workspace:*",
@@ -210,9 +198,6 @@
         "@nunjucks/runtime": "workspace:*",
         "express": "^5.0.0",
         "zod": "^3.23.0",
-      },
-      "devDependencies": {
-        "@types/express": "^5.0.6",
       },
     },
     "samples/vanilla-ts": {

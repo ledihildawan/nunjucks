@@ -38,8 +38,10 @@ Security defaults (always on, sandbox not required):
 |------|----------------------------|
 | `default` | renders the literal string `undefined` |
 | `strict` | throws `UNDEFINED_VARIABLE` / `UNDEFINED_PROPERTY` / `NULL_VALUE` |
+
+> **Pipes and strict mode:** the strict boundary guards the *output* expression, not filter *inputs* — `{{ missing |> fallback("x") }}` still works (that is `fallback`'s contract), and `{{ a.b |> upper }}` renders the filter's normalized result. To get a strict error for an undefined access, emit it un-piped (`{{ a.b }}`).
 | `debug` | renders `undefined` and collects a warning (surfaced in dev mode) |
-| `chainable` | silent; member access on undefined never throws |
+| `chainable` | renders the literal string `undefined`; member access on undefined never throws (the engine's internal default handled mode) |
 
 ## Expressions
 
@@ -94,9 +96,11 @@ Unterminated strings, comments, and template literals raise `UNTERMINATED_LITERA
 
 Registered set (aliases in parentheses). All return `Result` internally; failures surface as catalogued filter errors.
 
-**String** — `capitalize`, `escape` (`e`) HTML-escape → SafeString, `fallback` (`default`, `d`) `(value, fallback, useFalsy=false)`, `indent(width=4, first=false)`, `join(delim='', attr)`, `lower`, `upper`, `trim`, `title`, `replace(old, new, max=-1)` (string or RegExp needle), `truncate(len=255, killwords=false, end='...')`, `tojson` (XSS-safe JSON → SafeString).
+> **Note on parameter names below:** signatures use the positional/upstream-nunjucks style for readability. The registered keyword-argument names differ in a few filters (e.g. `indent` registers `indentfirst`, `truncate` registers `length`, `replace` registers `newValue`/`maxCount`, `fallback` registers `val`/`def`/`bool`) — prefer positional arguments to avoid misbinding kwargs.
 
-**Array** — `first`, `last`, `length` / `lengthFilter` (both names callable — the internal function name is registered alongside its upstream-compat alias), `reverse`, `slice(n, fill)` (n near-equal columns), `sort`, `sum(attr?, start=0)`.
+**String** — `capitalize`, `escape` (`e`) HTML-escape → SafeString, `fallback` (`default`, `d`) `(value, fallback, useFalsy=false)`, `indent(width=4, first=false)`, `lower`, `upper`, `trim`, `title`, `replace(old, new, max=-1)` (string or RegExp needle), `truncate(len=255, killwords=false, end='...')`, `tojson` (XSS-safe JSON → SafeString).
+
+**Array** — `first`, `last`, `length` / `lengthFilter` (both names callable — the internal function name is registered alongside its upstream-compat alias), `reverse`, `join(delim='', attr)` (array input; errors on non-arrays), `slice(n, fill)` (n near-equal columns), `sort`, `sum(attr?, start=0)`.
 
 **Object** — `groupby(attr)` → `Record<key, items[]>`.
 
