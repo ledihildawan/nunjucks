@@ -27,6 +27,11 @@ import {
 import { createErrorFromDef, createWarningFromDef } from './create-log-error.ts';
 import { isKeyedObject } from '@nunjucks/lib';
 
+/**
+ * Carries the inputs to `createLog`: `def` is a catalog `ErrorDefinitionEntry`
+ * or raw `RawLogData`, joined with optional `params`, `subject`, and `context`
+ * location metadata.
+ */
 interface CreateLogFields {
   def: ErrorDefinitionEntry | RawLogData;
   params?: Record<string, string>;
@@ -81,6 +86,7 @@ function createLog(type: string, fields: CreateLogFields): TemplateError | Templ
   });
 }
 
+/** Checks whether a value is a `TemplateError` branded via the `TEMPLATE_ERROR` marker. */
 const isTemplateError = (value: unknown): value is TemplateError =>
   isKeyedObject(value) && value[TEMPLATE_ERROR] === true;
 
@@ -146,6 +152,12 @@ const stripInternals =
     return clean;
   };
 
+/**
+ * Coerces any error into a branded `TemplateError` and applies location and
+ * internals handling: `path` fills an absent `templateName`, `includeChain`
+ * attaches only when provided, and internals are kept unless `withInternals`
+ * is falsy, in which case the error is rebuilt with only the public fields.
+ */
 const prettifyError = (options: PrettifyErrorOptions): TemplateError => {
   const { path, withInternals, err, includeChain } = options;
   if (withInternals) {

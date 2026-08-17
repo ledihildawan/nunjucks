@@ -2,6 +2,10 @@ import { normalizeLineBase, type LineBase } from '@nunjucks/error-catalog';
 import type { Phase } from '@nunjucks/shared';
 import { readObject, readString, readNumber, isKeyedObject } from '@nunjucks/lib';
 
+/**
+ * Supplies fallback values for `normalizeErrorMetadata` when the thrown value
+ * carries no usable field; every key is optional, with `null` meaning none.
+ */
 interface ErrorMetadataFallback {
   lineno?: number | null;
   colno?: number | null;
@@ -16,6 +20,11 @@ interface ErrorMetadataFallback {
   subject?: string | null;
 }
 
+/**
+ * Stable envelope produced by `normalizeErrorMetadata`: every field is resolved
+ * rather than `undefined` — location and context degrade to `null` and
+ * `sourceStartLine` defaults to `1` when no source was supplied.
+ */
 interface NormalizedErrorMetadata {
   error: Error;
   message: string;
@@ -125,6 +134,12 @@ const normalizeFallbacks = ({ source, fallback, templateName }: NormalizeFallbac
   subject: readString(readOwnValueSafe(source, 'subject')) ?? fallback.subject ?? null,
 });
 
+/**
+ * Normalizes any thrown value (Error, hostile object, primitive) into a stable
+ * metadata envelope; throwing getters degrade to fallbacks instead of crashing.
+ * Each field is read descriptor-safely from the thrown value first, then falls
+ * back to `fallback`, then to `null` (or `1` for `sourceStartLine`).
+ */
 const normalizeErrorMetadata = (
   thrown: unknown,
   fallback: ErrorMetadataFallback = {}

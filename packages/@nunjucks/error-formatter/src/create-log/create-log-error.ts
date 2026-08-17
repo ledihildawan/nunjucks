@@ -233,6 +233,12 @@ interface CreateErrorFromDefOptions {
   subject: string | null;
 }
 
+/**
+ * Builds a branded `TemplateError` from a catalog definition: resolves the
+ * message with `params`, spreads the normalized context, promotes
+ * `extra.sourceContent`/`extra.sourceStartLine` when string/number, copies
+ * causes/fix/severity fields, and attaches a `toJSON` snapshot.
+ */
 const createErrorFromDef = ({
   errorDef,
   paramsValue,
@@ -280,6 +286,12 @@ interface CreateWarningFromDefOptions {
   subject: string | null;
 }
 
+/**
+ * Builds the data-only `TemplateWarning` counterpart of `createErrorFromDef`:
+ * resolves the message with `params`, spreads the normalized warning context
+ * (which supplies `varName` and defaulted `undefinedMode`), and copies causes
+ * and fix hints when the definition provides them.
+ */
 const createWarningFromDef = ({
   errorDef,
   paramsValue,

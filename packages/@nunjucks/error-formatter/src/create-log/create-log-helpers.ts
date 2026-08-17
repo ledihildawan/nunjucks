@@ -14,12 +14,21 @@ import type {
   ErrorInfo,
 } from './create-log-types.ts';
 
+/**
+ * Wraps a message and optional `cause` in an `Error` branded with the
+ * `[TEMPLATE_ERROR]` marker so later guards recognize it as a `TemplateError`.
+ */
 const createErrorEnvelope = (message: string, cause?: Error): TemplateError => {
   const err = new Error(message, cause ? { cause } : undefined) as TemplateError;
   err[TEMPLATE_ERROR] = true;
   return err;
 };
 
+/**
+ * Resolves a definition's message: function templates receive `params`
+ * directly, string templates get `{param}` placeholders interpolated with
+ * `''` for missing keys, and bare strings pass through untouched.
+ */
 const resolveMessage = (
   message: ErrorDefinitionEntry['message'],
   params?: Record<string, string>
@@ -33,6 +42,7 @@ const resolveMessage = (
   return message;
 };
 
+/** Null-normalizes an `ErrorContext` so downstream consumers never see `undefined` fields. */
 const normalizeErrorContext = (
   context: ErrorContext | null | undefined
 ): NormalizedErrorContext => ({
@@ -45,6 +55,10 @@ const normalizeErrorContext = (
   environment: context?.environment ?? null,
 });
 
+/**
+ * Null-normalizes a `WarningContext`; additionally defaults `undefinedMode`
+ * to `DEFAULT_UNDEFINED_MODE` when absent or `null`.
+ */
 const normalizeWarningContext = (
   context: WarningContext | null | undefined
 ): NormalizedWarningContext => ({
@@ -59,6 +73,11 @@ const normalizeWarningContext = (
   undefinedMode: context?.undefinedMode ?? DEFAULT_UNDEFINED_MODE,
 });
 
+/**
+ * Distinguishes catalog `ErrorDefinitionEntry` values from `RawLogData`:
+ * a candidate needs a function-or-string `message` and must NOT carry a
+ * `lineno` key (the marker raw log data uses for location instead).
+ */
 const isErrorDefinitionEntry = (candidate: unknown): candidate is ErrorDefinitionEntry => {
   if (typeof candidate !== 'object' || candidate === null || !('message' in candidate)) {
     return false;
@@ -74,6 +93,11 @@ interface CreateBaseMetadataOptions {
   type: LogType;
 }
 
+/**
+ * Builds the shared metadata object from a message, `RawLogData` location,
+ * and `info` fields; for `'warning'` it also resolves `varName` and defaults
+ * `undefinedMode`, matching the `TemplateWarning` payload shape.
+ */
 const createBaseMetadata = ({ message, rawLogData, info, type }: CreateBaseMetadataOptions) => {
   const baseMetadata = {
     message,
@@ -96,6 +120,11 @@ const createBaseMetadata = ({ message, rawLogData, info, type }: CreateBaseMetad
   return baseMetadata;
 };
 
+/**
+ * Extracts context keys outside the known location/phase set into an `extra`
+ * bag (e.g. `sourceContent`, `sourceStartLine`); returns `undefined` when the
+ * context itself is absent.
+ */
 const extractExtraFromContext = (
   context: ErrorContext | null | undefined
 ): Record<string, unknown> | undefined => {
