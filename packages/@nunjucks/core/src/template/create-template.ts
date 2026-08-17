@@ -1,5 +1,6 @@
 import type { IncludeChain } from '@nunjucks/error-formatter';
 import { normalizeErrorMetadata, prettifyError } from '@nunjucks/error-formatter';
+import type { CompiledTemplateExports } from '@nunjucks/shared';
 import type { Env } from '@nunjucks/runtime';
 import { createTemplateCompiler } from './template-compiler';
 import { createTemplateErrorHandler } from './template-error-handler';
@@ -8,6 +9,25 @@ import { createTemplateRenderer } from './template-renderer';
 import { initTemplateState, loadSource } from './template-source';
 import type { TemplateObject, TemplateSource, TemplateState } from './types';
 import { Template } from './types';
+import type { BlockLocation } from '@nunjucks/runtime';
+import { BLOCK_META_KEY, extractBlocks } from '@nunjucks/shared';
+
+// WHY: adopts pre-computed compiled exports into the template state machine — the
+// same 'compiled' shape commit() produces, minus the eval (the exports object was
+// already loaded by the include-path cache). Blocks/meta extraction mirrors
+// template-compiler exactly so downstream consumers are shape-identical.
+const adoptCompiledExports = (
+  state: TemplateState,
+  compiledExports: CompiledTemplateExports
+): TemplateState => ({
+  ...state,
+  status: 'compiled',
+  tmplStr: null,
+  tmplProps: compiledExports,
+  blocks: extractBlocks(compiledExports) as Record<string, (...args: unknown[]) => unknown>,
+  blockMeta: (compiledExports[BLOCK_META_KEY] as Record<string, BlockLocation>) ?? {},
+  rootRenderFunc: compiledExports.root,
+});
 
 interface CreateTemplateOptions {
   src: string | TemplateSource;
@@ -15,6 +35,11 @@ interface CreateTemplateOptions {
   path?: string | null;
   eagerCompile?: boolean;
   includeChain?: IncludeChain | null;
+  // WHY: pre-computed compiled exports (include-path cache reuse) — skips parse+
+  // codegen+eval entirely; the state machine starts directly at 'compiled'. The
+  // exports are pure generated code with no host identity, safe to share across
+  // Templates bound to different envs.
+  compiledExports?: CompiledTemplateExports;
 }
 
 export const createTemplate = ({
@@ -23,11 +48,15 @@ export const createTemplate = ({
   path,
   eagerCompile,
   includeChain,
+  compiledExports,
 }: CreateTemplateOptions): TemplateObject => {
   let currentState: TemplateState = loadSource(
     initTemplateState({ src, env, path, includeChain }),
     src
   );
+  if (compiledExports) {
+    currentState = adoptCompiledExports(currentState, compiledExports);
+  }
 
   const getState = (): TemplateState => currentState;
   const commit = (next: TemplateState): void => {

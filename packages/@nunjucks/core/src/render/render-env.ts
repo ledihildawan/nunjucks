@@ -2,8 +2,11 @@ import { getError } from '@nunjucks/error-catalog';
 import { createLog } from '@nunjucks/error-formatter';
 import { isErr } from '@nunjucks/lib';
 import type { TemplateLoader } from '@nunjucks/loaders';
-import type { Env, GetTemplateOptions } from '@nunjucks/runtime';
+import { loadCompiledCode, type Env, type GetTemplateOptions } from '@nunjucks/runtime';
+import { isCompiledTemplateExports, type CompiledTemplateExports } from '@nunjucks/shared';
 import { createTemplate } from '../template/index.ts';
+import { buildCompileCacheKey } from '../template/template-cache.ts';
+import type { CompiledCodeCache } from '../template/template-cache.ts';
 import type { RenderConfig } from './render-types.ts';
 
 const createEnvLookups = (
@@ -47,10 +50,39 @@ const createEnvLookups = (
   },
 });
 
+// WHY: loaded-exports memo for the include path — loadCompiledCode evals the compiled
+// string (the expensive part); once evaluated for a key, the exports object is reused
+// for every later include of the same source identity. Bounded by the code cache LRU:
+// a key evicted from the code cache also stops being served here (the get() miss
+// short-circuits), letting the memo entry be GC'd with it.
+const createIncludeExportsMemo = () => {
+  const memo = new Map<string, CompiledTemplateExports>();
+  return {
+    get: (cache: CompiledCodeCache, key: string): CompiledTemplateExports | null => {
+      const code = cache.get(key);
+      if (code === undefined) {
+        return null;
+      }
+      const cached = memo.get(key);
+      if (cached !== undefined) {
+        return cached;
+      }
+      const loaded = loadCompiledCode(code);
+      if (!isCompiledTemplateExports(loaded)) {
+        return null;
+      }
+      memo.set(key, loaded);
+      return loaded;
+    },
+  };
+};
+
 const buildRenderEnv = (loader: TemplateLoader | null, config: RenderConfig): Env | null => {
   if (!loader || config.env) {
     return null;
   }
+
+  const includeExportsMemo = createIncludeExportsMemo();
 
   return {
     opts: {
@@ -80,6 +112,37 @@ const buildRenderEnv = (loader: TemplateLoader | null, config: RenderConfig): En
         throw sourceResult.error;
       }
       const source = sourceResult.value;
+      // WHY: include-path compiled-code reuse — the compiled rootRenderFunc is pure
+      // generated code with NO env identity baked in (env arrives as an argument at
+      // every call), so the SAME loaded exports can be re-wrapped into a fresh
+      // Template bound to THIS render's env. Re-wrapping keeps per-render env
+      // isolation (filters/tests/extension lookups stay render-local) while skipping
+      // parse+codegen+eval for repeated includes. The memo is keyed by the same
+      // source-identity key as the code cache, so freshness is inherited; the first
+      // include primes the code-cache entry through the normal compile path.
+      const cache = config.compiledCodeCache;
+      const compiledExports =
+        cache && source.path
+          ? includeExportsMemo.get(
+              cache,
+              buildCompileCacheKey({
+                templatePath: source.path,
+                templateName: name,
+                source: source.src,
+                config,
+              })
+            )
+          : null;
+      if (compiledExports) {
+        return createTemplate({
+          src: source.src,
+          env: this,
+          path: source.path,
+          eagerCompile: false,
+          includeChain,
+          compiledExports,
+        });
+      }
       return createTemplate({
         src: source.src,
         env: this,
