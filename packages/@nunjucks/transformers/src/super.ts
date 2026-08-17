@@ -15,6 +15,12 @@ const findDirectSuperCalls = (node: Node): Node[] => {
   return [...self, ...descendants];
 };
 
+/**
+ * Hoists each block's direct `super()` calls into a prepended `superNode` bound to a
+ * fresh gensym'd symbol, rewriting the call sites to reference it. Nested blocks bind
+ * their own `super`, so they are skipped here and visited separately; the pass runs
+ * between parse and compile and returns a rewritten tree of the same shape.
+ */
 export const liftSuper = (ast: Node): Node => {
   // WHY: one gensym per pass — instantiating inside the visitor reset the counter for every
   // block, so each lifted symbol was identically 'hole_0'. Block scoping made that safe, but
