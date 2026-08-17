@@ -8,6 +8,9 @@ const viewsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'views'
 // import the same config so the documented globals/filters cannot drift apart.
 const engineConfig: NunjucksConfig = {
   views: viewsDir,
+  // WHY: explicit autoescape — the getting-started sample states its security
+  // posture instead of silently relying on the engine default.
+  autoescape: true,
   globals: {
     appName: 'Nunjucks App',
     greet: ({ name, greeting }: { name: string; greeting: string }) => `${greeting}, ${name}!`,
