@@ -64,4 +64,12 @@ describe('createRenderRuntime', () => {
     const rt = createRenderRuntime({ templateName: 'x' }) as Record<string, unknown>;
     expect((rt.logContext as { renderContext: unknown }).renderContext).toBeNull();
   });
+
+  test('threads the caller-owned warnings collector by reference (same array identity)', () => {
+    const collector: unknown[] = [];
+    const rt = createRenderRuntime({ warnings: collector }) as Record<string, unknown>;
+    // WHY: toBe, not toEqual — the core pipeline drains THIS array after render;
+    // a copy would strand every warning on it.
+    expect(rt.__warnings__).toBe(collector);
+  });
 });

@@ -190,3 +190,43 @@ describe('executeStream', () => {
     expect(await collectString(stream)).toBe('<b>raw</b>');
   });
 });
+
+describe('diagnostics threading', () => {
+  const debugMissCode = () =>
+    compileBody(
+      'yield runtime.ensureDefined(undefined, { varName: "missing", undefinedMode: "debug", lineno: 1, colno: 1 });'
+    );
+
+  test('execute threads warningsCollector and templateName into compiled-code warnings', async () => {
+    const warnings: unknown[] = [];
+    const result = await execute({
+      code: debugMissCode(),
+      context: {},
+      frame: emptyFrame(),
+      env: null,
+      config: { templateName: 'diag.njk', warningsCollector: warnings },
+    });
+    expect(result).toBe('undefined');
+    expect(warnings).toHaveLength(1);
+    const warning = warnings[0] as Record<string, unknown>;
+    // WHY: flat TemplateWarning — templateName rides the top level, not a nested bag.
+    expect(warning.templateName).toBe('diag.njk');
+    expect(warning.varName).toBe('missing');
+    expect(warning.undefinedMode).toBe('debug');
+    expect(warning.code).toBe('UNDEFINED_VARIABLE');
+    expect(warning.lineBase).toBe('zero');
+  });
+
+  test('sandboxed execution preserves the diagnostics channel through the runtime spread', async () => {
+    const warnings: unknown[] = [];
+    await execute({
+      code: debugMissCode(),
+      context: {},
+      frame: emptyFrame(),
+      env: null,
+      config: { sandbox: true, templateName: 'sandboxed.njk', warningsCollector: warnings },
+    });
+    expect(warnings).toHaveLength(1);
+    expect((warnings[0] as Record<string, unknown>).templateName).toBe('sandboxed.njk');
+  });
+});
