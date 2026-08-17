@@ -15,7 +15,7 @@ export const parseExtends = (parserContext: ParserContext): Result<Node, Templat
   }
   const tag = tagR.value;
   if (!skipSymbol(parserContext, tagName)) {
-    return fail(parserContext, `parseExtends: expected ${tagName}`);
+    return fail(parserContext, { message: `parseExtends: expected ${tagName}` });
   }
 
   const templateR = parseExpression(parserContext);

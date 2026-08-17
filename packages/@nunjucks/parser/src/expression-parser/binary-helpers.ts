@@ -9,11 +9,15 @@ import { peekToken, skipValue } from '../cursor.ts';
 
 type BinNodeFn = (loc: Loc, fields: BinaryFields) => Node;
 
+interface BinaryOpOptions {
+  create: BinNodeFn;
+  consume: (parserContext: ParserContext) => boolean;
+  next: (parserContext: ParserContext) => Result<Node, TemplateError>;
+}
+
 const binaryOp = (
   parserContext: ParserContext,
-  create: BinNodeFn,
-  consume: (parserContext: ParserContext) => boolean,
-  next: (parserContext: ParserContext) => Result<Node, TemplateError>
+  { create, consume, next }: BinaryOpOptions
 ): Result<Node, TemplateError> => {
   const firstR = next(parserContext);
   if (isErr(firstR)) {

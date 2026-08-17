@@ -28,10 +28,8 @@ const parseScopeAssignment = (
   const eqTok = eqTokR.value;
 
   if (!eqTok || eqTok.type !== TOKEN_OPERATOR || eqTok.value !== '=') {
-    return fail(parserContext, 'parseScope: expected = after variable name', {
-      lineno: tag.lineno,
-      colno: tag.colno,
-    });
+    return fail(parserContext, { message: 'parseScope: expected = after variable name', lineno: tag.lineno,
+      colno: tag.colno, });
   }
 
   const consumedR = nextToken(parserContext);
@@ -41,12 +39,6 @@ const parseScopeAssignment = (
   const valueR = parseExpression(parserContext);
   if (isErr(valueR)) {
     return valueR;
-  }
-  if (!valueR.value) {
-    return fail(parserContext, 'parseScope: expected expression after =', {
-      lineno: tag.lineno,
-      colno: tag.colno,
-    });
   }
 
   return ok(pair(loc(nameSymbol), { key: String(nameSymbol.value), val: valueR.value }));
@@ -72,10 +64,8 @@ const parseScopeAssignments = (
       return nextNameTokR;
     }
     if (nextNameTokR.value?.type !== TOKEN_SYMBOL) {
-      return fail(parserContext, 'parseScope: expected variable name after comma', {
-        lineno: tag.lineno,
-        colno: tag.colno,
-      });
+      return fail(parserContext, { message: 'parseScope: expected variable name after comma', lineno: tag.lineno,
+        colno: tag.colno, });
     }
 
     const nextR = parseScopeAssignment(parserContext, tag);
@@ -96,10 +86,8 @@ export const parseScope = (parserContext: ParserContext): Result<Node, TemplateE
   }
   const tag = tagR.value;
   if (!skipSymbol(parserContext, 'scope')) {
-    return fail(parserContext, 'parseScope: expected scope', {
-      lineno: tag.lineno,
-      colno: tag.colno,
-    });
+    return fail(parserContext, { message: 'parseScope: expected scope', lineno: tag.lineno,
+      colno: tag.colno, });
   }
 
   const firstTokR = peekToken(parserContext);
@@ -125,10 +113,8 @@ export const parseScope = (parserContext: ParserContext): Result<Node, TemplateE
       return advanceResult;
     }
   } else {
-    return fail(parserContext, 'parseScope: expected variable name or block end', {
-      lineno: tag.lineno,
-      colno: tag.colno,
-    });
+    return fail(parserContext, { message: 'parseScope: expected variable name or block end', lineno: tag.lineno,
+      colno: tag.colno, });
   }
 
   const bodyR = parseUntilBlocks(parserContext, 'endscope');
@@ -137,10 +123,8 @@ export const parseScope = (parserContext: ParserContext): Result<Node, TemplateE
   }
 
   if (!skipSymbol(parserContext, 'endscope')) {
-    return fail(parserContext, 'parseScope: expected endscope', {
-      lineno: tag.lineno,
-      colno: tag.colno,
-    });
+    return fail(parserContext, { message: 'parseScope: expected endscope', lineno: tag.lineno,
+      colno: tag.colno, });
   }
 
   const finalR = advanceAfterBlockEnd(parserContext, 'endscope');

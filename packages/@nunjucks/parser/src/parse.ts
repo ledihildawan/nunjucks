@@ -58,7 +58,8 @@ export const parse = (
     const validation = validateExpression(ast, securityConfig);
     if (isErr(validation)) {
       const [firstError] = validation.error;
-      return fail(parser, firstError.message, {
+      return fail(parser, {
+        message: firstError.message,
         lineno: firstError.lineno,
         colno: firstError.colno,
       });

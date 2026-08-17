@@ -15,7 +15,7 @@ export const parseCapture = (parserContext: ParserContext): Result<Node, Templat
   }
   const tag = tagR.value;
   if (!skipSymbol(parserContext, 'capture')) {
-    return fail(parserContext, 'Expected capture', { lineno: tag.lineno, colno: tag.colno });
+    return fail(parserContext, { message: 'Expected capture', lineno: tag.lineno, colno: tag.colno });
   }
 
   const nameTok = nextTokenOrNull(parserContext);

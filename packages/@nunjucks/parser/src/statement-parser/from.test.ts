@@ -60,4 +60,15 @@ describe('parseFrom', () => {
   test('rejects underscore-prefixed import names', () => {
     expect(() => parseFirst('{% from "lib.html" import _foo %}')).toThrow();
   });
+
+  test('rejects "with" not followed by "context"', () => {
+    expect(() => parseFirst('{% from "lib.html" import foo with ctx %}')).toThrow(
+      /context/i
+    );
+  });
+
+  test('a mid-list "with context" marker survives later names', () => {
+    const node = parseFirst('{% from "lib.html" import a with context, b %}');
+    expect((node as { withContext: boolean }).withContext).toBe(true);
+  });
 });

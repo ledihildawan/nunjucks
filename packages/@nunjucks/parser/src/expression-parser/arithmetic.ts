@@ -9,24 +9,32 @@ import { binaryOp, op } from './binary-helpers.ts';
 import { parseUnary } from './primary.ts';
 
 const parseAdd = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, add, op('+'), parseSub);
+  binaryOp(parserContext, { create: add, consume: op('+'), next: parseSub });
 const parseSub = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, sub, op('-'), parseMul);
+  binaryOp(parserContext, { create: sub, consume: op('-'), next: parseMul });
 const parseMul = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, mul, op('*'), parseDiv);
+  binaryOp(parserContext, { create: mul, consume: op('*'), next: parseDiv });
 const parseDiv = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, div, op('/'), parseFloorDiv);
+  binaryOp(parserContext, { create: div, consume: op('/'), next: parseFloorDiv });
 const parseFloorDiv = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, floorDiv, op('//'), parseMod);
+  binaryOp(parserContext, { create: floorDiv, consume: op('//'), next: parseMod });
 const parseMod = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, mod, op('%'), parsePow);
+  binaryOp(parserContext, { create: mod, consume: op('%'), next: parsePow });
 const parsePow = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, pow, op('**'), parseUnary);
+  binaryOp(parserContext, { create: pow, consume: op('**'), next: parseUnary });
 
 const parseConcat = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, concat, (cursor) => skipValue(cursor, TOKEN_OPERATOR, '~'), parseRange);
+  binaryOp(parserContext, {
+    create: concat,
+    consume: (cursor) => skipValue(cursor, TOKEN_OPERATOR, '~'),
+    next: parseRange,
+  });
 
 const parseRange = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, range, (cursor) => skipValue(cursor, TOKEN_OPERATOR, '..'), parseAdd);
+  binaryOp(parserContext, {
+    create: range,
+    consume: (cursor) => skipValue(cursor, TOKEN_OPERATOR, '..'),
+    next: parseAdd,
+  });
 
 export { parseConcat };

@@ -74,10 +74,8 @@ export const nextToken = (
 ): Result<Token, TemplateError> => {
   const tok = nextTokenOrNull(parserContext, options);
   if (tok === null) {
-    return fail(parserContext, 'unexpected end of input', {
-      lineno: EOF_LOCATION.lineno,
-      colno: EOF_LOCATION.colno,
-    });
+    return fail(parserContext, { message: 'unexpected end of input', lineno: EOF_LOCATION.lineno,
+      colno: EOF_LOCATION.colno, });
   }
   return ok(tok);
 };
@@ -87,10 +85,8 @@ export const peekToken = (parserContext: ParserContext): Result<Token, TemplateE
     parserContext.peeked = nextTokenOrNull(parserContext);
   }
   if (parserContext.peeked === null) {
-    return fail(parserContext, 'unexpected end of input', {
-      lineno: EOF_LOCATION.lineno,
-      colno: EOF_LOCATION.colno,
-    });
+    return fail(parserContext, { message: 'unexpected end of input', lineno: EOF_LOCATION.lineno,
+      colno: EOF_LOCATION.colno, });
   }
   return ok(parserContext.peeked);
 };
@@ -132,10 +128,8 @@ export const expect = (
   }
   const tok = tokResult.value;
   if (tok.type !== type) {
-    return fail(parserContext, `expected ${type}, got ${tok.type}`, {
-      lineno: tok.lineno,
-      colno: tok.colno,
-    });
+    return fail(parserContext, { message: `expected ${type}, got ${tok.type}`, lineno: tok.lineno,
+      colno: tok.colno, });
   }
   return ok(tok);
 };
@@ -178,11 +172,11 @@ export const advanceAfterBlockEnd = (
     const nameTok = nameTokResult.value;
 
     if (!isSymbolToken(nameTok)) {
-      return fail(
-        parserContext,
-        'advanceAfterBlockEnd: expected symbol token or explicit name to be passed',
-        { lineno: nameTok.lineno, colno: nameTok.colno }
-      );
+      return fail(parserContext, {
+        message: 'advanceAfterBlockEnd: expected symbol token or explicit name to be passed',
+        lineno: nameTok.lineno,
+        colno: nameTok.colno,
+      });
     }
     blockName = nameTok.value;
   }
@@ -199,7 +193,7 @@ export const advanceAfterBlockEnd = (
     }
     return ok(tok);
   }
-  return fail(parserContext, `expected block end in ${blockName} statement`);
+  return fail(parserContext, { message: `expected block end in ${blockName} statement` });
 };
 
 export const advanceAfterVariableEnd = (
@@ -217,7 +211,7 @@ export const advanceAfterVariableEnd = (
     return ok(undefined);
   }
   pushToken(parserContext, tok);
-  return fail(parserContext, 'expected variable end');
+  return fail(parserContext, { message: 'expected variable end' });
 };
 
 export { fail } from './error.ts';

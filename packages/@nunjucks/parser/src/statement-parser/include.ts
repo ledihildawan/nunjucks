@@ -15,7 +15,7 @@ export const parseInclude = (parserContext: ParserContext): Result<Node, Templat
   }
   const tag = tagR.value;
   if (!skipSymbol(parserContext, tagName)) {
-    return fail(parserContext, `parseInclude: expected ${tagName}`);
+    return fail(parserContext, { message: `parseInclude: expected ${tagName}` });
   }
 
   const templateR = parseExpression(parserContext);

@@ -79,42 +79,45 @@ const inferFix = (msg: string): string => {
 
 export const EXPECTED_COLON_AFTER_DICT_KEY = 'EXPECTED_COLON_AFTER_DICT_KEY';
 
-interface ErrorOptions {
+export interface ParserErrorOptions {
+  message: string;
   lineno?: number;
   colno?: number;
   sentinel?: string;
 }
 
-export const error = (parserContext: ParserContext, msg: string, options?: ErrorOptions) => {
-  const needsResolve = options?.lineno === undefined || options?.colno === undefined;
+export const error = (
+  parserContext: ParserContext,
+  { message, lineno, colno, sentinel }: ParserErrorOptions
+): TemplateError => {
+  const needsResolve = lineno === undefined || colno === undefined;
   const peekedResult = needsResolve ? peekToken(parserContext) : undefined;
   const peeked = peekedResult && isOk(peekedResult) ? peekedResult.value : undefined;
-  const resolvedLineno = needsResolve ? (peeked?.lineno ?? 0) : options?.lineno;
-  const resolvedColno = needsResolve ? (peeked?.colno ?? 0) : options?.colno;
+  const resolvedLineno = needsResolve ? (peeked?.lineno ?? 0) : lineno;
+  const resolvedColno = needsResolve ? (peeked?.colno ?? 0) : colno;
   const errObj = createLog('error', {
     def: {
       name: 'PARSER_ERROR',
-      message: () => msg,
+      message: () => message,
       pattern: MATCH_ANY_RE,
-      causes: inferCauses(msg),
-      fixCode: inferFix(msg),
+      causes: inferCauses(message),
+      fixCode: inferFix(message),
       fixComment: 'See the causes above for guidance',
     },
     params: {},
     subject: null,
     context: { lineno: resolvedLineno, colno: resolvedColno, phase: 'parse', lineBase: 'zero' },
   });
-  if (options?.sentinel) {
-    Object.assign(errObj, { sentinel: options.sentinel });
+  if (sentinel) {
+    Object.assign(errObj, { sentinel });
   }
   return errObj;
 };
 
 export const fail = (
   parserContext: ParserContext,
-  msg: string,
-  options?: ErrorOptions
-): Result<never, TemplateError> => err(error(parserContext, msg, options));
+  options: ParserErrorOptions
+): Result<never, TemplateError> => err(error(parserContext, options));
 
 interface ErrorAtOptions {
   lineno: number;

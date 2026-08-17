@@ -44,6 +44,12 @@ describe('parseSlottedBody', () => {
     expect(body.implicitSlots).toHaveLength(1);
     expect(body.implicitSlots[0]?.name).toBe('default');
   });
+
+  test('anonymous {% slot %} defaults its name (does not eat the block end)', () => {
+    const { body } = parseBody('{% slot %}x{% endslot %}');
+    expect(body.implicitSlots).toHaveLength(1);
+    expect(body.implicitSlots[0]?.name).toBe('default');
+  });
 });
 
 describe('buildDefaultBody', () => {

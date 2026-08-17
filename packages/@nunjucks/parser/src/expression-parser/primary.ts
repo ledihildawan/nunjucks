@@ -24,6 +24,11 @@ import { tryParsePattern } from '../node-parser/pattern.ts';
 import { parseTemplateLiteral } from '../node-parser/template-literal.ts';
 import { parsePipeForward, parsePostfix } from './postfix/index.ts';
 
+// WHY: cap template-supplied regex literal length — long patterns can trigger
+// catastrophic backtracking (ReDoS) once compiled; mirrors the runtime's
+// MAX_MATCHES_PATTERN_LENGTH guard in builtin-predicates.ts.
+const MAX_REGEX_LITERAL_LENGTH = 256;
+
 const parseBooleanValue = (tok: Token): boolean | undefined => {
   if (tok.value === 'true') {
     return true;
@@ -47,10 +52,8 @@ const handleLiteralToken = (
     case TOKEN_BOOLEAN: {
       const value = parseBooleanValue(tok);
       if (value === undefined) {
-        return fail(parserContext, `invalid boolean: ${tok.value}`, {
-          lineno: tok.lineno,
-          colno: tok.colno,
-        });
+        return fail(parserContext, { message: `invalid boolean: ${tok.value}`, lineno: tok.lineno,
+          colno: tok.colno, });
       }
       return ok(literal(loc(tok), value));
     }
@@ -58,6 +61,13 @@ const handleLiteralToken = (
       return ok(literal(loc(tok), null));
     case TOKEN_REGEX: {
       const { body, flags } = tok.value;
+      if (body.length > MAX_REGEX_LITERAL_LENGTH) {
+        return fail(parserContext, {
+          message: `regex literal exceeds ${MAX_REGEX_LITERAL_LENGTH} characters (ReDoS guard)`,
+          lineno: tok.lineno,
+          colno: tok.colno,
+        });
+      }
       return ok(literal(loc(tok), new RegExp(body, flags)));
     }
   }
@@ -131,10 +141,8 @@ const parsePrimaryRaw = (parserContext: ParserContext): Result<Node, TemplateErr
   }
   const aggregateNode = aggregateR.value;
   if (!aggregateNode) {
-    return fail(parserContext, `expected expression, got ${tok.type}`, {
-      lineno: tok.lineno,
-      colno: tok.colno,
-    });
+    return fail(parserContext, { message: `expected expression, got ${tok.type}`, lineno: tok.lineno,
+      colno: tok.colno, });
   }
   return ok(aggregateNode);
 };

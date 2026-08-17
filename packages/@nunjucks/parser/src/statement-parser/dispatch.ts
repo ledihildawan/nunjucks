@@ -45,7 +45,7 @@ export const parseStatement = (
   const tok = tokR.value;
 
   if (tok.type !== TOKEN_SYMBOL) {
-    return fail(parserContext, 'tag name expected', { lineno: tok.lineno, colno: tok.colno });
+    return fail(parserContext, { message: 'tag name expected', lineno: tok.lineno, colno: tok.colno });
   }
 
   if (breakOn?.includes(String(tok.value))) {
@@ -97,15 +97,11 @@ export const parseStatement = (
     if (parsedNode === null) {
       // WHY: a null return must not read as "stop parsing" — that silently truncates the
       // template. Extensions signal completion by returning a node.
-      return fail(parserContext, `extension tag '${String(tagName)}' parse returned no node`, {
-        lineno: tok.lineno,
-        colno: tok.colno,
-      });
+      return fail(parserContext, { message: `extension tag '${String(tagName)}' parse returned no node`, lineno: tok.lineno,
+        colno: tok.colno, });
     }
     return ok(parsedNode);
   }
-  return fail(parserContext, `unknown block tag: ${tok.value}`, {
-    lineno: tok.lineno,
-    colno: tok.colno,
-  });
+  return fail(parserContext, { message: `unknown block tag: ${tok.value}`, lineno: tok.lineno,
+    colno: tok.colno, });
 };

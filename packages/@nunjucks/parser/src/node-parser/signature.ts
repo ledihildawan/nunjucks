@@ -45,10 +45,8 @@ const parseSignatureArg = ({
   }
   const tok = tokR.value;
   if (checkComma && !skip(parserContext, TOKEN_COMMA)) {
-    return fail(parserContext, 'parseSignature: expected comma after expression', {
-      lineno: tok.lineno,
-      colno: tok.colno,
-    });
+    return fail(parserContext, { message: 'parseSignature: expected comma after expression', lineno: tok.lineno,
+      colno: tok.colno, });
   }
 
   const argumentR = parseExpression(parserContext);
@@ -171,10 +169,8 @@ export const parseSignature = ({
     if (tolerant) {
       return ok(null);
     }
-    return fail(parserContext, 'expected arguments', {
-      lineno: initialTok.lineno,
-      colno: initialTok.colno,
-    });
+    return fail(parserContext, { message: 'expected arguments', lineno: initialTok.lineno,
+      colno: initialTok.colno, });
   }
 
   let tok: Token;

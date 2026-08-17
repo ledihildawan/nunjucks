@@ -133,4 +133,15 @@ describe('parseOr: error handling', () => {
     const result = parseOr(makeContext('not'));
     expect(isErr(result)).toBe(true);
   });
+
+  test('a ternary without its colon fails loudly instead of dropping the then-branch', () => {
+    const ctx = makeContext('a ? b');
+    const result = parseOr(ctx);
+    if (isErr(result)) {
+      throw new Error('parseOr itself should not fail before the ternary layer');
+    }
+    // WHY: parseTernary owns the `?`-colon pairing — assert through the composed entry.
+    const ternaryResult = parseTernary(ctx, result.value);
+    expect(isErr(ternaryResult)).toBe(true);
+  });
 });

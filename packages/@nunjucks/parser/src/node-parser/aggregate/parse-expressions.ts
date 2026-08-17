@@ -94,11 +94,9 @@ const parseDictItem = (
     return ok(appendChild(node, pair(loc(key), { key, val: patternR.value })));
   }
 
-  return fail(parserContext, 'parseAggregate: expected colon after dict key', {
-    lineno: next?.lineno ?? origin.lineno,
+  return fail(parserContext, { message: 'parseAggregate: expected colon after dict key', lineno: next?.lineno ?? origin.lineno,
     colno: next?.colno ?? origin.colno,
-    sentinel: EXPECTED_COLON_AFTER_DICT_KEY,
-  });
+    sentinel: EXPECTED_COLON_AFTER_DICT_KEY, });
 };
 
 export const parseAggregateExpression = (

@@ -15,7 +15,7 @@ export const parseRenderBlock = (parserContext: ParserContext): Result<Node, Tem
   }
   const tag = tagR.value;
   if (!skipSymbol(parserContext, 'render')) {
-    return fail(parserContext, 'Expected render', { lineno: tag.lineno, colno: tag.colno });
+    return fail(parserContext, { message: 'Expected render', lineno: tag.lineno, colno: tag.colno });
   }
 
   const parsedR = parseExpression(parserContext);

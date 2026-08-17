@@ -79,7 +79,12 @@ export const parsePipeForward = (
     }
 
     return parseLoop(
-      pipe(loc(nameR.value), {
+      // WHY: the Pipe node's loc is the LHS expression's START, not the filter-name
+      // token — the html-context tracker classifies the prefix before this position;
+      // a filter-name loc makes the prefix contain the `>` of `|>`, defeating
+      // open-tag detection and misclassifying unquoted attributes as html context
+      // (live attribute-injection vector under autoescape).
+      pipe(loc(current), {
         name: nameR.value,
         args: nodeList(loc(nameR.value), [current, ...argsR.value]).children,
       })

@@ -11,4 +11,3 @@ export { parseWithContext } from './import-context.ts';
 export { parseInclude } from './include.ts';
 export { STATEMENT_PARSERS } from './registry.ts';
 export { parseSwitch } from './switch.ts';
-export { parseVariableAssignment, parseVariableDeclaration } from './variable.ts';

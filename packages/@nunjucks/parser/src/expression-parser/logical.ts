@@ -5,17 +5,16 @@ import type { Node } from '@nunjucks/nodes';
 import { and, inlineIf, not, nullishCoalesce, or } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
-import { nextToken, peekToken, skipOperator, skipSymbol, skipValue } from '../cursor.ts';
+import { fail, nextToken, peekToken, skipOperator, skipSymbol, skipValue } from '../cursor.ts';
 import { binaryOp } from './binary-helpers.ts';
 import { parseIn } from './comparison.ts';
 
 const parseNullishCoalesce = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(
-    parserContext,
-    nullishCoalesce,
-    (cursor) => skipValue(cursor, TOKEN_OPERATOR, '??'),
-    parseAnd
-  );
+  binaryOp(parserContext, {
+    create: nullishCoalesce,
+    consume: (cursor) => skipValue(cursor, TOKEN_OPERATOR, '??'),
+    next: parseAnd,
+  });
 
 const parseNot = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tokR = peekToken(parserContext);
@@ -41,31 +40,24 @@ const parseNot = (parserContext: ParserContext): Result<Node, TemplateError> => 
     }
     return ok(not(loc(tok), innerR.value));
   }
-  if (skipOperator(parserContext, '!')) {
-    const innerR = parseNot(parserContext);
-    if (isErr(innerR)) {
-      return innerR;
-    }
-    return ok(not(loc(tok), innerR.value));
-  }
+  // WHY: no third `!` branch — the peeked-operator branch above already consumed that
+  // case; the old skipOperator re-test of the same peeked token was unreachable.
   return parseIn(parserContext);
 };
 
 const parseAnd = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(
-    parserContext,
-    and,
-    (cursor) => skipSymbol(cursor, 'and') || skipOperator(cursor, '&&'),
-    parseNot
-  );
+  binaryOp(parserContext, {
+    create: and,
+    consume: (cursor) => skipSymbol(cursor, 'and') || skipOperator(cursor, '&&'),
+    next: parseNot,
+  });
 
 const parseOr = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(
-    parserContext,
-    or,
-    (cursor) => skipSymbol(cursor, 'or') || skipOperator(cursor, '||'),
-    parseNullishCoalesce
-  );
+  binaryOp(parserContext, {
+    create: or,
+    consume: (cursor) => skipSymbol(cursor, 'or') || skipOperator(cursor, '||'),
+    next: parseNullishCoalesce,
+  });
 
 const parseTernary = (parserContext: ParserContext, node: Node): Result<Node, TemplateError> => {
   if (skipValue(parserContext, TOKEN_OPERATOR, '?')) {
@@ -73,18 +65,25 @@ const parseTernary = (parserContext: ParserContext, node: Node): Result<Node, Te
     if (isErr(thenR)) {
       return thenR;
     }
-    if (skipValue(parserContext, TOKEN_COLON, ':')) {
-      const elseR = parseOr(parserContext);
-      if (isErr(elseR)) {
-        return elseR;
-      }
-      const newNode = inlineIf(loc(node), {
-        cond: node,
-        body: thenR.value,
-        alternate: elseR.value,
+    if (!skipValue(parserContext, TOKEN_COLON, ':')) {
+      // WHY: a consumed `?` without its `:` must fail loudly — silently returning the
+      // condition would render `{{ a ? b }}` as `a` (wrong output, no diagnostic).
+      return fail(parserContext, {
+        message: 'expected : in ternary expression',
+        lineno: thenR.value.lineno,
+        colno: thenR.value.colno,
       });
-      return parseTernary(parserContext, newNode);
     }
+    const elseR = parseOr(parserContext);
+    if (isErr(elseR)) {
+      return elseR;
+    }
+    const newNode = inlineIf(loc(node), {
+      cond: node,
+      body: thenR.value,
+      alternate: elseR.value,
+    });
+    return parseTernary(parserContext, newNode);
   }
   return ok(node);
 };

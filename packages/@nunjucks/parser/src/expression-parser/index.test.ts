@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import { createTokenizer } from '@nunjucks/lexer';
+import { createTokenizer, TOKEN_REGEX, type Token } from '@nunjucks/lexer';
+import { isErr } from '@nunjucks/lib';
 import { getNodeTypeName } from '@nunjucks/nodes';
-import { nextTokenOrNull } from '../cursor.ts';
+import { nextTokenOrNull, pushToken } from '../cursor.ts';
 import { createParser } from '../index.ts';
 import { unwrap } from '../test-helpers.ts';
 import { parseExpression, parsePrimary } from './index.ts';
@@ -48,6 +49,30 @@ describe('parseExpression: symbols', () => {
     const node = parse('myVar');
     expect(getNodeTypeName(node)).toBe('symbol');
     expect(node.value).toBe('myVar');
+  });
+});
+
+// WHY: the bundled tokenizer does not emit TOKEN_REGEX today; it is part of the token
+// contract any tokenizer/extension producer may feed, so these tests inject the token
+// directly to pin the parse boundary (including its ReDoS length cap).
+const makeRegexContext = (body: string, flags = '') => {
+  const tk = createTokenizer('{{ }}');
+  const ctx = createParser(tk);
+  nextTokenOrNull(ctx);
+  const regexToken: Token = { type: TOKEN_REGEX, value: { body, flags }, lineno: 0, colno: 0 };
+  pushToken(ctx, regexToken);
+  return ctx;
+};
+
+describe('parseExpression: regex literal tokens', () => {
+  test('parses a short regex literal token', () => {
+    const node = unwrap(parsePrimary(makeRegexContext('^a+$', 'u')));
+    expect(getNodeTypeName(node)).toBe('literal');
+    expect(node.value).toBeInstanceOf(RegExp);
+  });
+  test('rejects an overly long regex literal token (ReDoS cap)', () => {
+    const result = parsePrimary(makeRegexContext('a'.repeat(257)));
+    expect(isErr(result)).toBe(true);
   });
 });
 

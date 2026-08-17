@@ -15,7 +15,7 @@ export const parseFilterStatement = (parserContext: ParserContext): Result<Node,
   }
   const filterTok = filterTokR.value;
   if (!skipSymbol(parserContext, 'filter')) {
-    return fail(parserContext, 'parseFilterStatement: expected filter');
+    return fail(parserContext, { message: 'parseFilterStatement: expected filter' });
   }
 
   const nameR = parseFilterCallName(parserContext);

@@ -69,15 +69,16 @@ export const parseTemplateLiteral = (
       quasi.type === 'expression' && Boolean(quasi.value) && !isSafeTemplateExpression(quasi.value)
   );
   if (unsafe) {
-    return fail(
-      parserContext,
-      'Template literal expressions must be simple identifiers only. ' +
+    return fail(parserContext, {
+      message:
+        'Template literal expressions must be simple identifiers only. ' +
         'Complex expressions like "${' +
         unsafe.value +
         '}" are not allowed. ' +
         'Use filters or `:=` declarations for complex computations.',
-      { lineno: tok.lineno, colno: tok.colno }
-    );
+      lineno: tok.lineno,
+      colno: tok.colno,
+    });
   }
 
   const processedQuasis = map(quasis, (quasi) =>

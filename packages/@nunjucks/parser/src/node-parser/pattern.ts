@@ -61,10 +61,8 @@ const parseInnerPattern = (parserContext: ParserContext): Result<Node, TemplateE
       symbol(loc(symbolTok), isSymbolToken(symbolTok) ? symbolTok.value : String(symbolTok.value))
     );
   }
-  return fail(parserContext, 'parseInnerPattern: expected symbol or pattern', {
-    lineno: tok?.lineno ?? 0,
-    colno: tok?.colno ?? 0,
-  });
+  return fail(parserContext, { message: 'parseInnerPattern: expected symbol or pattern', lineno: tok?.lineno ?? 0,
+    colno: tok?.colno ?? 0, });
 };
 
 const parseAssignmentDefault = (
@@ -153,10 +151,8 @@ const parseArraySymbolElement = ({
   }
   const symTok = symTokR.value;
   if (!symTok || symTok.type !== TOKEN_SYMBOL) {
-    return fail(parserContext, 'parseArrayPattern: expected symbol in pattern', {
-      lineno: symTok?.lineno ?? tok.lineno,
-      colno: symTok?.colno ?? tok.colno,
-    });
+    return fail(parserContext, { message: 'parseArrayPattern: expected symbol in pattern', lineno: symTok?.lineno ?? tok.lineno,
+      colno: symTok?.colno ?? tok.colno, });
   }
   const target = symbol(loc(symTok), symTok.value);
   const withDefaultR = parseAssignmentDefault(parserContext, target);
@@ -192,24 +188,27 @@ const handleArrayElement = ({
   return parseArraySymbolElement({ parserContext, node, tok, sawRest });
 };
 
-interface TrailingCommaConfig {
+interface TrailingCommaInput {
   terminationToken: Token['type'];
   label: string;
+  parserContext: ParserContext;
+  tok: Token;
+  node: ChildrenNode;
+  sawRest: boolean;
 }
 
-const handleTrailingComma = (
-  { terminationToken, label }: TrailingCommaConfig,
-  parserContext: ParserContext,
-  tok: Token,
-  node: ChildrenNode,
-  sawRest: boolean
-): Result<{ node: ChildrenNode; sawRest: boolean; continueLoop: boolean }, TemplateError> => {
+const handleTrailingComma = ({
+  terminationToken,
+  label,
+  parserContext,
+  tok,
+  node,
+  sawRest,
+}: TrailingCommaInput): Result<{ node: ChildrenNode; sawRest: boolean; continueLoop: boolean }, TemplateError> => {
   if ((node.children?.length ?? 0) > 0 && !sawRest) {
     if (!skip(parserContext, TOKEN_COMMA)) {
-      return fail(parserContext, `${label}: expected comma`, {
-        lineno: tok.lineno,
-        colno: tok.colno,
-      });
+      return fail(parserContext, { message: `${label}: expected comma`, lineno: tok.lineno,
+        colno: tok.colno, });
     }
     const afterR = peekToken(parserContext);
     if (isErr(afterR)) {
@@ -229,34 +228,6 @@ const handleTrailingComma = (
   }
   return ok({ node, sawRest, continueLoop: true });
 };
-
-const handleArrayTrailingComma = (
-  parserContext: ParserContext,
-  tok: Token,
-  node: ChildrenNode,
-  sawRest: boolean
-): Result<{ node: ChildrenNode; sawRest: boolean; continueLoop: boolean }, TemplateError> =>
-  handleTrailingComma(
-    { terminationToken: TOKEN_RIGHT_BRACKET, label: 'parseArrayPattern' },
-    parserContext,
-    tok,
-    node,
-    sawRest
-  );
-
-const handleObjectTrailingComma = (
-  parserContext: ParserContext,
-  tok: Token,
-  node: ChildrenNode,
-  sawRest: boolean
-): Result<{ node: ChildrenNode; sawRest: boolean; continueLoop: boolean }, TemplateError> =>
-  handleTrailingComma(
-    { terminationToken: TOKEN_RIGHT_CURLY, label: 'parseObjectPattern' },
-    parserContext,
-    tok,
-    node,
-    sawRest
-  );
 
 const consumeComma = (parserContext: ParserContext): Result<boolean, TemplateError> => {
   if (peekTokenOrNull(parserContext)?.type !== TOKEN_COMMA) {
@@ -299,7 +270,14 @@ const parseArrayIteration = ({
   let node = initialNode;
   let sawRest = initialSawRest;
   if (!skipTrailingCommaCheck) {
-    const commaResult = handleArrayTrailingComma(parserContext, tok, node, sawRest);
+    const commaResult = handleTrailingComma({
+      terminationToken: TOKEN_RIGHT_BRACKET,
+      label: 'parseArrayPattern',
+      parserContext,
+      tok,
+      node,
+      sawRest,
+    });
     if (isErr(commaResult)) {
       return commaResult;
     }
@@ -339,17 +317,21 @@ const parseArrayPattern = (
     return startTokR;
   }
   if (startTokR.value.type !== TOKEN_LEFT_BRACKET) {
-    return fail(parserContext, 'parseArrayPattern: expected [', {
-      lineno: origin.lineno,
-      colno: origin.colno,
-    });
+    return fail(parserContext, { message: 'parseArrayPattern: expected [', lineno: origin.lineno,
+      colno: origin.colno, });
   }
 
-  const parseLoop = (
-    current: ChildrenNode,
-    sawRest: boolean,
-    skipTrailingCommaCheck: boolean
-  ): Result<Node, TemplateError> => {
+  interface ArrayPatternLoopState {
+    current: ChildrenNode;
+    sawRest: boolean;
+    skipTrailingCommaCheck: boolean;
+  }
+
+  const parseLoop = ({
+    current,
+    sawRest,
+    skipTrailingCommaCheck,
+  }: ArrayPatternLoopState): Result<Node, TemplateError> => {
     const iterR = parseArrayIteration({
       parserContext,
       initialNode: current,
@@ -362,10 +344,14 @@ const parseArrayPattern = (
     if (iterR.value.done) {
       return ok(iterR.value.node);
     }
-    return parseLoop(iterR.value.node, iterR.value.sawRest, iterR.value.skipCommaNext);
+    return parseLoop({
+      current: iterR.value.node,
+      sawRest: iterR.value.sawRest,
+      skipTrailingCommaCheck: iterR.value.skipCommaNext,
+    });
   };
 
-  return parseLoop(node, false, false);
+  return parseLoop({ current: node, sawRest: false, skipTrailingCommaCheck: false });
 };
 
 const parseObjectPropertyKey = (
@@ -377,10 +363,8 @@ const parseObjectPropertyKey = (
   }
   const keyTok = keyTokR.value;
   if (keyTok.type !== TOKEN_STRING && keyTok.type !== TOKEN_SYMBOL) {
-    return fail(parserContext, 'parseObjectPattern: expected property name', {
-      lineno: keyTok.lineno,
-      colno: keyTok.colno,
-    });
+    return fail(parserContext, { message: 'parseObjectPattern: expected property name', lineno: keyTok.lineno,
+      colno: keyTok.colno, });
   }
   const keyName = String(keyTok.value);
   return ok({ keyTok, keyName });
@@ -498,7 +482,14 @@ const parseObjectIteration = ({
     return ok({ node, sawRest, done: true });
   }
 
-  const commaResult = handleObjectTrailingComma(parserContext, tok, node, sawRest);
+  const commaResult = handleTrailingComma({
+    terminationToken: TOKEN_RIGHT_CURLY,
+    label: 'parseObjectPattern',
+    parserContext,
+    tok,
+    node,
+    sawRest,
+  });
   if (isErr(commaResult)) {
     return commaResult;
   }
@@ -561,10 +552,8 @@ const parseObjectPattern = (
     return startTokR;
   }
   if (startTokR.value.type !== TOKEN_LEFT_CURLY) {
-    return fail(parserContext, 'parseObjectPattern: expected {', {
-      lineno: origin.lineno,
-      colno: origin.colno,
-    });
+    return fail(parserContext, { message: 'parseObjectPattern: expected {', lineno: origin.lineno,
+      colno: origin.colno, });
   }
 
   const loopR = parseObjectPatternLoop({ parserContext, initialNode: node, initialSawRest: false });
@@ -587,10 +576,8 @@ export const parsePattern = (parserContext: ParserContext): Result<Node | null, 
   if (tok.type === TOKEN_LEFT_CURLY) {
     return parseObjectPattern(parserContext, origin);
   }
-  return fail(parserContext, 'parsePattern: expected [ or {', {
-    lineno: tok.lineno,
-    colno: tok.colno,
-  });
+  return fail(parserContext, { message: 'parsePattern: expected [ or {', lineno: tok.lineno,
+    colno: tok.colno, });
 };
 
 export const tryParsePattern = (

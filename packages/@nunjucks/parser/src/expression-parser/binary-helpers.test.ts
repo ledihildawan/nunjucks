@@ -39,7 +39,7 @@ describe('op: operator predicate', () => {
 
 describe('binaryOp: single operand', () => {
   test('returns the only operand unchanged when no operator follows', () => {
-    const result = binaryOp(makeContext('42'), add, op('+'), parseUnary);
+    const result = binaryOp(makeContext('42'), { create: add, consume: op('+'), next: parseUnary });
     const node = unwrap(result);
     expect(getNodeTypeName(node)).toBe('literal');
   });
@@ -47,7 +47,7 @@ describe('binaryOp: single operand', () => {
 
 describe('binaryOp: folding', () => {
   test('two operands build a binary node using the supplied factory', () => {
-    const result = binaryOp(makeContext('1 + 2'), add, op('+'), parseUnary);
+    const result = binaryOp(makeContext('1 + 2'), { create: add, consume: op('+'), next: parseUnary });
     const addNode = unwrap(result);
     expect(getNodeTypeName(addNode)).toBe('add');
     expect((addNode as { operator: string }).operator).toBe('+');
@@ -56,7 +56,7 @@ describe('binaryOp: folding', () => {
   });
 
   test('folds left-associatively across three operands', () => {
-    const result = binaryOp(makeContext('1 + 2 + 3'), add, op('+'), parseUnary);
+    const result = binaryOp(makeContext('1 + 2 + 3'), { create: add, consume: op('+'), next: parseUnary });
     const outer = unwrap(result);
     expect(getNodeTypeName(outer)).toBe('add');
     expect(getNodeTypeName(leftOf(outer))).toBe('add');
@@ -64,12 +64,12 @@ describe('binaryOp: folding', () => {
   });
 
   test('is generic over the node factory', () => {
-    const result = binaryOp(makeContext('2 * 3'), mul, op('*'), parseUnary);
+    const result = binaryOp(makeContext('2 * 3'), { create: mul, consume: op('*'), next: parseUnary });
     expect(getNodeTypeName(unwrap(result))).toBe('mul');
   });
 
   test('carries a location taken from the operator token', () => {
-    const result = binaryOp(makeContext('1 + 2'), add, op('+'), parseUnary);
+    const result = binaryOp(makeContext('1 + 2'), { create: add, consume: op('+'), next: parseUnary });
     const addNode = unwrap(result) as { lineno: number; colno: number };
     expect(Number.isInteger(addNode.lineno)).toBe(true);
     expect(Number.isInteger(addNode.colno)).toBe(true);
@@ -78,7 +78,7 @@ describe('binaryOp: folding', () => {
 
 describe('binaryOp: error propagation', () => {
   test('a missing right operand surfaces an error result', () => {
-    const result = binaryOp(makeContext('1 +'), add, op('+'), parseUnary);
+    const result = binaryOp(makeContext('1 +'), { create: add, consume: op('+'), next: parseUnary });
     expect(isErr(result)).toBe(true);
   });
 });

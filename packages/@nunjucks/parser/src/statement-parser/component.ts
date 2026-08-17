@@ -16,7 +16,7 @@ export const parseComponent = (parserContext: ParserContext): Result<Node, Templ
   }
   const compTok = compTokR.value;
   if (!skipSymbol(parserContext, 'component')) {
-    return fail(parserContext, 'expected component');
+    return fail(parserContext, { message: 'expected component' });
   }
 
   const nameR = parsePrimaryWithoutPostfix(parserContext);
@@ -30,10 +30,8 @@ export const parseComponent = (parserContext: ParserContext): Result<Node, Templ
   }
   const args = argsR.value;
   if (!isSymbol(name)) {
-    return fail(parserContext, 'expected component name', {
-      lineno: compTok.lineno,
-      colno: compTok.colno,
-    });
+    return fail(parserContext, { message: 'expected component name', lineno: compTok.lineno,
+      colno: compTok.colno, });
   }
 
   const blockEndR = advanceAfterBlockEnd(parserContext, String(compTok.value));

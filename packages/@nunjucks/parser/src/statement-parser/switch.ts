@@ -80,10 +80,9 @@ const handleSwitchEnd = (parserContext: ParserContext): Result<Node | undefined,
       return ok(undefined);
     }
     default:
-      return fail(
-        parserContext,
-        'parseSwitch: expected "case," "default" or "endswitch," got EOF.'
-      );
+      return fail(parserContext, {
+        message: 'parseSwitch: expected "case," "default" or "endswitch," got EOF.',
+      });
   }
 };
 
@@ -126,10 +125,8 @@ export const parseSwitch = (parserContext: ParserContext): Result<Node, Template
       skipSymbol(parserContext, SWITCH_TOKENS.caseDefault)
     )
   ) {
-    return fail(parserContext, 'parseSwitch: expected "switch," "case" or "default"', {
-      lineno: tag.lineno,
-      colno: tag.colno,
-    });
+    return fail(parserContext, { message: 'parseSwitch: expected "switch," "case" or "default"', lineno: tag.lineno,
+      colno: tag.colno, });
   }
 
   const exprR = parseExpression(parserContext);

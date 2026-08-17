@@ -15,10 +15,8 @@ export const parseBlock = (parserContext: ParserContext): Result<Node, TemplateE
   }
   const tag = tagR.value;
   if (!skipSymbol(parserContext, 'block')) {
-    return fail(parserContext, 'parseBlock: expected block', {
-      lineno: tag.lineno,
-      colno: tag.colno,
-    });
+    return fail(parserContext, { message: 'parseBlock: expected block', lineno: tag.lineno,
+      colno: tag.colno, });
   }
 
   const nameR = parsePrimary(parserContext);
@@ -27,10 +25,8 @@ export const parseBlock = (parserContext: ParserContext): Result<Node, TemplateE
   }
   const name = nameR.value;
   if (!isSymbol(name)) {
-    return fail(parserContext, 'parseBlock: variable name expected', {
-      lineno: tag.lineno,
-      colno: tag.colno,
-    });
+    return fail(parserContext, { message: 'parseBlock: variable name expected', lineno: tag.lineno,
+      colno: tag.colno, });
   }
 
   const blockEndR = advanceAfterBlockEnd(parserContext, 'block');

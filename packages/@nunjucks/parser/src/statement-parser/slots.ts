@@ -65,8 +65,24 @@ const parseSlotParams = (parserContext: ParserContext): string[] => {
 const parseSlotBlock = (parserContext: ParserContext): Result<ParsedSlot, TemplateError> => {
   skipSymbol(parserContext, 'slot');
 
-  const nameTok = nextTokenOrNull(parserContext);
-  const name = nameTok && isSymbolToken(nameTok) ? nameTok.value : 'default';
+  // WHY: peek-then-consume — an unconditional nextTokenOrNull would eat the block-end
+  // of the anonymous form `{% slot %}`, making advanceAfterBlockEnd fail below. Only a
+  // real symbol is a slot name; anything else means the documented `default` fallback.
+  const peekedNameR = peekToken(parserContext);
+  if (isErr(peekedNameR)) {
+    return peekedNameR;
+  }
+  const peekedName = peekedNameR.value;
+  let name = 'default';
+  if (isSymbolToken(peekedName)) {
+    const consumedNameR = nextToken(parserContext);
+    if (isErr(consumedNameR)) {
+      return consumedNameR;
+    }
+    if (isSymbolToken(consumedNameR.value)) {
+      name = consumedNameR.value.value;
+    }
+  }
 
   const params: string[] = [];
   const afterNameR = peekToken(parserContext);

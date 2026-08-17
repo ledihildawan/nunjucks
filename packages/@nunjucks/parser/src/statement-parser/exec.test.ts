@@ -31,4 +31,8 @@ describe('parseExec', () => {
     expect(getNodeTypeName(node)).toBe('exec');
     expect(getNodeTypeName((node as { expr: Node }).expr)).toBe('funCall');
   });
+
+  test('rejects a trailing garbage token with a precise exec error', () => {
+    expect(() => parseFirst('{% exec 1 2 %}')).toThrow(/block end in exec/i);
+  });
 });

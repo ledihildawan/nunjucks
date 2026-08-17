@@ -43,7 +43,7 @@ const parseIfAlternate = (
       return ok(null);
     }
     default:
-      return fail(parserContext, 'parseIf: expected elif, else, or endif, got end of file');
+      return fail(parserContext, { message: 'parseIf: expected elif, else, or endif, got end of file' });
   }
 };
 
@@ -61,10 +61,8 @@ export const parseIf = (parserContext: ParserContext): Result<Node, TemplateErro
       skipSymbol(parserContext, 'elseif')
     )
   ) {
-    return fail(parserContext, 'parseIf: expected if, elif, or elseif', {
-      lineno: tag.lineno,
-      colno: tag.colno,
-    });
+    return fail(parserContext, { message: 'parseIf: expected if, elif, or elseif', lineno: tag.lineno,
+      colno: tag.colno, });
   }
 
   const condR = parseExpression(parserContext);

@@ -13,7 +13,8 @@
     "@nunjucks/lib": "workspace:*",
     "@nunjucks/nodes": "workspace:*",
     "@nunjucks/shared": "workspace:*",
-    "@nunjucks/validators": "workspace:*"
+    "@nunjucks/validators": "workspace:*",
+    "remeda": "^2.39.0"
   },
   "description": "Parser for Nunjucks template engine",
   "keywords": [

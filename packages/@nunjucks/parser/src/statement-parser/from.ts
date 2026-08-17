@@ -1,12 +1,12 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Token } from '@nunjucks/lexer';
-import { isSymbolToken, TOKEN_BLOCK_END, TOKEN_COMMA } from '@nunjucks/lexer';
+import { TOKEN_BLOCK_END, TOKEN_COMMA } from '@nunjucks/lexer';
 import { isErr, ok, type Result } from '@nunjucks/lib';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
 import { appendChild, fromImportNode, nodeList, pair } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
-import { fail, nextToken, peekToken, skip, skipSymbol } from '../cursor.ts';
+import { advanceAfterBlockEnd, fail, peekToken, skip, skipSymbol } from '../cursor.ts';
 import { parseExpression, parsePrimary } from '../expression-parser/index.ts';
 import { parseWithContext } from './import-context.ts';
 
@@ -27,10 +27,8 @@ const parseImportName = (
   }
   const name = nameR.value;
   if (isUnderscore(name)) {
-    return fail(parserContext, 'parseFrom: names starting with an underscore cannot be imported', {
-      lineno: name.lineno,
-      colno: name.colno,
-    });
+    return fail(parserContext, { message: 'parseFrom: names starting with an underscore cannot be imported', lineno: name.lineno,
+      colno: name.colno, });
   }
 
   const hasAlias = skipSymbol(parserContext, 'as');
@@ -58,23 +56,16 @@ const handleBlockEnd = (
   fromTok: Token
 ): Result<void, TemplateError> => {
   if (names.children.length === 0) {
-    return fail(parserContext, 'parseFrom: Expected at least one import name', {
-      lineno: fromTok.lineno,
-      colno: fromTok.colno,
-    });
+    return fail(parserContext, { message: 'parseFrom: Expected at least one import name', lineno: fromTok.lineno,
+      colno: fromTok.colno, });
   }
 
-  const nextTokR = peekToken(parserContext);
-  if (isErr(nextTokR)) {
-    return nextTokR;
-  }
-  if (isSymbolToken(nextTokR.value) && nextTokR.value.value[0] === '-') {
-    parserContext.dropLeadingWhitespace = true;
-  }
-
-  const consumedR = nextToken(parserContext);
-  if (isErr(consumedR)) {
-    return consumedR;
+  // WHY: advanceAfterBlockEnd validates the block-end shape and honors `-%}`
+  // whitespace control — the previous hand-rolled nextToken did neither (the dead
+  // symbol-sniffing branch could never fire for a peeked block-end token).
+  const blockEndR = advanceAfterBlockEnd(parserContext, 'from');
+  if (isErr(blockEndR)) {
+    return blockEndR;
   }
   return ok(undefined);
 };
@@ -100,10 +91,8 @@ const parseFromImportIteration = (
   }
 
   if (names.children.length > 0 && !skip(parserContext, TOKEN_COMMA)) {
-    return fail(parserContext, 'parseFrom: expected comma', {
-      lineno: fromTok.lineno,
-      colno: fromTok.colno,
-    });
+    return fail(parserContext, { message: 'parseFrom: expected comma', lineno: fromTok.lineno,
+      colno: fromTok.colno, });
   }
 
   const result = parseImportName(parserContext, names);
@@ -120,7 +109,7 @@ export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateEr
   }
   const fromTok = fromTokR.value;
   if (!skipSymbol(parserContext, 'from')) {
-    return fail(parserContext, 'parseFrom: expected from');
+    return fail(parserContext, { message: 'parseFrom: expected from' });
   }
 
   const templateR = parseExpression(parserContext);
@@ -129,10 +118,8 @@ export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateEr
   }
 
   if (!skipSymbol(parserContext, 'import')) {
-    return fail(parserContext, 'parseFrom: expected import', {
-      lineno: fromTok.lineno,
-      colno: fromTok.colno,
-    });
+    return fail(parserContext, { message: 'parseFrom: expected import', lineno: fromTok.lineno,
+      colno: fromTok.colno, });
   }
 
   const importLoop = (
@@ -146,7 +133,9 @@ export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateEr
     if (iterR.value.done) {
       return ok({ names: accNames, withContext: accWithContext });
     }
-    return importLoop(iterR.value.names, iterR.value.withContext);
+    // WHY: OR-accumulate — a mid-list `with context` marker must survive later
+    // iterations; plain overwrite silently dropped it for every following name.
+    return importLoop(iterR.value.names, iterR.value.withContext ?? accWithContext);
   };
 
   const loopR = importLoop(nodeList(loc(fromTok)), undefined);

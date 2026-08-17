@@ -28,11 +28,11 @@ export const parseDotAccess = (
 
   if (value.type !== TOKEN_SYMBOL) {
     const targetName = target ? String(target.value ?? 'expression') : 'expression';
-    return fail(
-      parserContext,
-      `expected name as lookup value after dot on ${targetName}, got ${value.value}`,
-      { lineno: value.lineno, colno: value.colno }
-    );
+    return fail(parserContext, {
+      message: `expected name as lookup value after dot on ${targetName}, got ${value.value}`,
+      lineno: value.lineno,
+      colno: value.colno,
+    });
   }
 
   const lookup = literal(loc(value), value.value);
