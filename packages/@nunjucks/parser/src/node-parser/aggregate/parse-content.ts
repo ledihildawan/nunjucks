@@ -1,6 +1,7 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { isErr, ok, type Result } from '@nunjucks/lib';
-import type { ChildrenNode, NodeLocation } from '@nunjucks/nodes';
+import type { ChildrenNode, Node, NodeLocation } from '@nunjucks/nodes';
+import { isDict } from '@nunjucks/nodes';
 import type { ParserContext } from '../../cursor.ts';
 import { parseAggregateExpression } from './parse-expressions.ts';
 import { prepareListItem } from './parse-list.ts';
@@ -10,26 +11,30 @@ export const parseContent = (
   initialNode: ChildrenNode,
   origin: NodeLocation
 ): Result<ChildrenNode, TemplateError> => {
-  // WHY: iterative loop (parser loop exemption) — per-element recursion overflows the stack on
-  // large aggregate literals (e.g. tens of thousands of array items).
-  let currentNode = initialNode;
+  // WHY: iterative loop with a local accumulator (parser loop exemption) — per-element recursion
+  // overflows the stack on large aggregate literals, and threading the node through the copying
+  // appendChild is O(n²) in element count (each append re-copies all accumulated children).
+  const children: Node[] = [];
+  const dictAggregate = isDict(initialNode);
   while (true) {
-    const listR = prepareListItem(parserContext, currentNode, origin);
+    const listR = prepareListItem(parserContext, children.length > 0, origin);
     if (isErr(listR)) {
       return listR;
     }
     const listState = listR.value;
-    currentNode = listState.node;
+    if (listState.hole !== null) {
+      children.push(listState.hole);
+    }
     if (listState.done) {
-      return ok(currentNode);
+      return ok({ ...initialNode, children });
     }
     if (listState.skipExpression) {
       continue;
     }
-    const exprR = parseAggregateExpression(parserContext, currentNode, origin);
-    if (isErr(exprR)) {
-      return exprR;
+    const itemR = parseAggregateExpression(parserContext, dictAggregate, origin);
+    if (isErr(itemR)) {
+      return itemR;
     }
-    currentNode = exprR.value;
+    children.push(itemR.value);
   }
 };

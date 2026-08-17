@@ -10,14 +10,14 @@ import {
   TOKEN_SYMBOL,
 } from '@nunjucks/lexer';
 import { isErr, ok, type Result } from '@nunjucks/lib';
-import type { ChildrenNode, NodeLocation } from '@nunjucks/nodes';
-import { appendChild, hole } from '@nunjucks/nodes';
+import type { Node, NodeLocation } from '@nunjucks/nodes';
+import { hole } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../../cursor.ts';
 import { fail, nextToken, peekToken, skip } from '../../cursor.ts';
 
 interface ListState {
-  node: ChildrenNode;
+  hole: Node | null;
   done: boolean;
   skipExpression: boolean;
 }
@@ -33,7 +33,6 @@ const canFollowWithoutComma = (type: string): boolean =>
 
 const prepareAfterComma = (
   parserContext: ParserContext,
-  node: ChildrenNode,
   origin: NodeLocation
 ): Result<ListState, TemplateError> => {
   const afterCommaR = peekToken(parserContext);
@@ -44,9 +43,8 @@ const prepareAfterComma = (
   const followedByHole = afterComma === TOKEN_COMMA;
   const followedByClose = afterComma === TOKEN_RIGHT_BRACKET || afterComma === TOKEN_RIGHT_PAREN;
   if (!followedByHole && !followedByClose) {
-    return ok({ node, done: false, skipExpression: false });
+    return ok({ hole: null, done: false, skipExpression: false });
   }
-  const nextNode = appendChild(node, hole(loc(origin)));
   if (followedByClose) {
     const consumedR = nextToken(parserContext);
     if (isErr(consumedR)) {
@@ -54,7 +52,7 @@ const prepareAfterComma = (
     }
   }
   return ok({
-    node: nextNode,
+    hole: hole(loc(origin)),
     done: followedByClose,
     skipExpression: followedByHole,
   });
@@ -62,7 +60,7 @@ const prepareAfterComma = (
 
 export const prepareListItem = (
   parserContext: ParserContext,
-  node: ChildrenNode,
+  hasItems: boolean,
   origin: NodeLocation
 ): Result<ListState, TemplateError> => {
   const currentR = peekToken(parserContext);
@@ -75,15 +73,15 @@ export const prepareListItem = (
     if (isErr(consumedR)) {
       return consumedR;
     }
-    return ok({ node, done: true, skipExpression: false });
+    return ok({ hole: null, done: true, skipExpression: false });
   }
 
-  if (node.children.length === 0) {
-    return ok({ node, done: false, skipExpression: false });
+  if (!hasItems) {
+    return ok({ hole: null, done: false, skipExpression: false });
   }
 
   if (skip(parserContext, TOKEN_COMMA)) {
-    return prepareAfterComma(parserContext, node, origin);
+    return prepareAfterComma(parserContext, origin);
   }
 
   if (!canFollowWithoutComma(current.type)) {
@@ -93,5 +91,5 @@ export const prepareListItem = (
       colno: current.colno,
     });
   }
-  return ok({ node, done: false, skipExpression: false });
+  return ok({ hole: null, done: false, skipExpression: false });
 };

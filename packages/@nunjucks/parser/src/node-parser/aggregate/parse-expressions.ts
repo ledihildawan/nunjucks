@@ -7,8 +7,8 @@ import {
   TOKEN_SPREAD,
 } from '@nunjucks/lexer';
 import { isErr, ok, type Result } from '@nunjucks/lib';
-import type { ChildrenNode, Node, NodeLocation } from '@nunjucks/nodes';
-import { appendChild, assignmentPattern, isDict, pair, spread, symbol } from '@nunjucks/nodes';
+import type { Node, NodeLocation } from '@nunjucks/nodes';
+import { assignmentPattern, pair, spread, symbol } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../../cursor.ts';
 import { fail, nextToken, peekToken, skip, skipValue } from '../../cursor.ts';
@@ -17,9 +17,8 @@ import { parseExpression, parsePrimary } from '../../expression-parser/index.ts'
 
 const parseSpread = (
   parserContext: ParserContext,
-  node: ChildrenNode,
   origin: NodeLocation
-): Result<ChildrenNode, TemplateError> => {
+): Result<Node, TemplateError> => {
   const consumedR = nextToken(parserContext);
   if (isErr(consumedR)) {
     return consumedR;
@@ -28,7 +27,7 @@ const parseSpread = (
   if (isErr(argumentR)) {
     return argumentR;
   }
-  return ok(appendChild(node, spread(loc(origin), { argument: argumentR.value })));
+  return ok(spread(loc(origin), { argument: argumentR.value }));
 };
 
 const parseDictDefaultAssignment = (
@@ -53,15 +52,14 @@ const parseDictDefaultAssignment = (
 
 const parseDictItem = (
   parserContext: ParserContext,
-  node: ChildrenNode,
   origin: NodeLocation
-): Result<ChildrenNode, TemplateError> => {
+): Result<Node, TemplateError> => {
   const peekR = peekToken(parserContext);
   if (isErr(peekR)) {
     return peekR;
   }
   if (peekR.value.type === TOKEN_SPREAD) {
-    return parseSpread(parserContext, node, origin);
+    return parseSpread(parserContext, origin);
   }
   const keyR = parsePrimary(parserContext);
   if (isErr(keyR)) {
@@ -73,7 +71,7 @@ const parseDictItem = (
     if (isErr(valueR)) {
       return valueR;
     }
-    return ok(appendChild(node, pair(loc(key), { key, val: valueR.value })));
+    return ok(pair(loc(key), { key, val: valueR.value }));
   }
 
   const nextR = peekToken(parserContext);
@@ -83,7 +81,7 @@ const parseDictItem = (
   const next = nextR.value;
   const value = symbol(loc(key), String(key.value));
   if (next.type === TOKEN_COMMA || next.type === TOKEN_RIGHT_CURLY) {
-    return ok(appendChild(node, pair(loc(key), { key, val: value })));
+    return ok(pair(loc(key), { key, val: value }));
   }
 
   if (next?.type === TOKEN_OPERATOR && next.value === '=') {
@@ -91,7 +89,7 @@ const parseDictItem = (
     if (isErr(patternR)) {
       return patternR;
     }
-    return ok(appendChild(node, pair(loc(key), { key, val: patternR.value })));
+    return ok(pair(loc(key), { key, val: patternR.value }));
   }
 
   return fail(parserContext, {
@@ -104,18 +102,18 @@ const parseDictItem = (
 
 export const parseAggregateExpression = (
   parserContext: ParserContext,
-  node: ChildrenNode,
+  dictAggregate: boolean,
   origin: NodeLocation
-): Result<ChildrenNode, TemplateError> => {
-  if (isDict(node)) {
-    return parseDictItem(parserContext, node, origin);
+): Result<Node, TemplateError> => {
+  if (dictAggregate) {
+    return parseDictItem(parserContext, origin);
   }
   const peekR = peekToken(parserContext);
   if (isErr(peekR)) {
     return peekR;
   }
   if (peekR.value.type === TOKEN_SPREAD) {
-    return parseSpread(parserContext, node, origin);
+    return parseSpread(parserContext, origin);
   }
 
   const expressionR = parseExpression(parserContext);
@@ -129,11 +127,8 @@ export const parseAggregateExpression = (
       return defaultValueR;
     }
     return ok(
-      appendChild(
-        node,
-        assignmentPattern(loc(expression), { target: expression, defaultVal: defaultValueR.value })
-      )
+      assignmentPattern(loc(expression), { target: expression, defaultVal: defaultValueR.value })
     );
   }
-  return ok(appendChild(node, expression));
+  return ok(expression);
 };
