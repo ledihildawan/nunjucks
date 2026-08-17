@@ -11,6 +11,12 @@ const prepareAttributeParts = (attr: string | number | null | undefined): (strin
   return [attr];
 };
 
+/**
+ * Compiles a dotted attribute path (`'user.name'`) or a bare index into a
+ * reusable getter. Lookup consults own properties only (`hasOwn`), so
+ * prototype chains and `__proto__` probes stay unreachable; any missing link
+ * resolves to `undefined`.
+ */
 const getAttrGetter = (attribute: string | number): ((item: unknown) => unknown) => {
   const parts = prepareAttributeParts(attribute);
   return (item: unknown): unknown =>

@@ -6,6 +6,11 @@ const collectString = async (stream: AsyncIterable<string>): Promise<string> => 
   }
   return chunks.join('');
 };
+/**
+ * Drains a string generator with a manual `next()` loop (for-await hides the
+ * generator's return value), returning both the joined output and the final
+ * return value in one envelope.
+ */
 const collectStream = async (
   stream: AsyncGenerator<string, unknown>
 ): Promise<{ output: string; returnValue: unknown }> => {

@@ -1,3 +1,8 @@
+/**
+ * Escapes `&`, `<`, `>`, `"`, `'`, and `\` into HTML entities for text and
+ * quoted-attribute markup contexts. Not safe for unquoted attribute values —
+ * use `escapeUnquotedAttribute` there.
+ */
 const escapeHtml = (str: string): string =>
   str
     .replaceAll('&', '&amp;')
@@ -7,6 +12,11 @@ const escapeHtml = (str: string): string =>
     .replaceAll("'", '&#39;')
     .replaceAll('\\', '&#92;');
 
+/**
+ * Escapes a quoted HTML attribute value: the same entity set as `escapeHtml`
+ * except the backslash pass is swapped for a backtick pass, matching the
+ * historical nunjucks attribute encoder.
+ */
 const escapeAttribute = (str: string): string =>
   str
     .replaceAll('&', '&amp;')
@@ -16,6 +26,12 @@ const escapeAttribute = (str: string): string =>
     .replaceAll("'", '&#39;')
     .replaceAll('`', '&#96;');
 
+/**
+ * Escapes a string for embedding inside a quoted JavaScript string literal in
+ * a `<script>` block: backslash and quotes are escaped, control characters
+ * become escape sequences, and `<`/`>` become `\u003c`/`\u003e` so the
+ * literal cannot close the tag early.
+ */
 const escapeScriptString = (str: string): string =>
   str
     .replaceAll('\\', '\\\\')

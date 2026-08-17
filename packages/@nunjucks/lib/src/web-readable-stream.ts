@@ -2,6 +2,11 @@
 
 const encodeChunk = (chunk: string): Uint8Array => new TextEncoder().encode(chunk);
 
+/**
+ * Adapts a string-producing async iterable into a WHATWG `ReadableStream` of
+ * UTF-8 bytes, pulling one chunk per backpressure tick. `cancel` forwards to
+ * the source iterator's `return` so consumers can terminate the chain early.
+ */
 export const toWebReadableStream = (stream: AsyncIterable<string>): ReadableStream<Uint8Array> => {
   const iterator = stream[Symbol.asyncIterator]();
   return new ReadableStream({

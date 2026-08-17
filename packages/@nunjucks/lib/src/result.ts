@@ -37,6 +37,7 @@ const isOk = <T, E>(result: Result<T, E>): result is Ok<T, E> => result.ok;
 /** Type guard narrowing a `Result` to its `Err` failure variant. */
 const isErr = <T, E>(result: Result<T, E>): result is Err<T, E> => !result.ok;
 
+/** Returns the success payload, or `fallback` when the result is `Err`. */
 const getOrElse = <T, E>(result: Result<T, E>, fallback: T): T =>
   result.ok ? result.value : fallback;
 

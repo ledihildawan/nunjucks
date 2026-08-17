@@ -7,6 +7,11 @@ interface NormalizeIndexInput {
   step: number;
 }
 
+/**
+ * Resolves a slice boundary against length `len`: a missing index falls back
+ * to `defaultVal` (steered by `step` direction), negative indexes count from
+ * the end, and the result is clamped to `[0, len]`.
+ */
 const normalizeIndex = ({ idx, len, defaultVal, step }: NormalizeIndexInput): number => {
   if (!isNonNullish(idx)) {
     if (step < 0) {
@@ -36,6 +41,11 @@ const collectForward = ({ source, start, stop, step }: SliceCollectInput): reado
   return collected;
 };
 
+/**
+ * Collects a stepped slice in reverse index order: walks from `start` down to
+ * the exclusive `stop` while staying non-negative, pushing into an array
+ * (loop instead of recursion for stack safety on long slices).
+ */
 const collectBackward = ({ source, start, stop, step }: SliceCollectInput): readonly unknown[] => {
   const collected: unknown[] = [];
   for (let index = start; index > stop && index >= 0; index += step) {
