@@ -26,6 +26,21 @@ const sanitizeExpressOptions = (options: unknown): Record<string, unknown> => {
 // WHY: createEngine closes over a nunjucks() factory instance built once at registration time (loader, filters,
 // globals merged once). The returned Express view-engine function delegates each request to engine.render with
 // two Express-specific per-call overrides — views (the file's directory) and templatePath (the full file path).
+/**
+ * Creates an Express view engine backed by a single `nunjucks()` instance —
+ * config, loader, and custom filters/globals are baked in once at registration
+ * time, not per request.
+ *
+ * @param config - Engine configuration (`NunjucksConfig`); the `views` root is
+ *   overridden per call with the rendered file's directory.
+ * @returns The Express view-engine function. Each call sanitizes Express's
+ *   merged options bag (locals + engine-internal keys are stripped) into
+ *   template context, then delegates to `engine.render` with the file's
+ *   directory as `views` and its path as `templatePath`. All failures flow
+ *   through the Express `callback(err)` channel — `Result` errors pass through
+ *   as-is, unexpected rejections are wrapped in `Error` — so the function
+ *   itself never throws.
+ */
 const createEngine = (config: NunjucksConfig = {}): ExpressEngineFunction => {
   const engine = nunjucks(config);
   return function nunjucksExpressEngine(
