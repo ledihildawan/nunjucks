@@ -1,5 +1,11 @@
 import { createErrorDefinition } from './factory.ts';
 
+/**
+ * Catalogues filter-execution error definitions (code → `ErrorDefinition`).
+ * Message params like `{name}`, `{attr}`, and `{type}` double as pattern
+ * captures; several entries supply `extraFrom` to surface matched values in
+ * interpolated causes and fix hints.
+ */
 export const FILTER_ERRORS = {
   UNKNOWN_FILTER_KWARG: createErrorDefinition({
     name: 'UNKNOWN_FILTER_KWARG',

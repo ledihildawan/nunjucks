@@ -2,6 +2,11 @@ import { createErrorDefinition } from './factory.ts';
 
 const DOCS_BASE = 'https://github.com/ledihildawan/nunjucks/blob/main/docs/templating.md';
 
+/**
+ * Catalogues template-loading error definitions (code → `ErrorDefinition`).
+ * Message params like `{path}`, `{name}`, and `{msg}` double as pattern
+ * captures; include/import guidance is interpolated into causes and fix hints.
+ */
 export const IO_ERRORS = {
   FILE_NOT_FOUND: createErrorDefinition({
     name: 'FILE_NOT_FOUND',

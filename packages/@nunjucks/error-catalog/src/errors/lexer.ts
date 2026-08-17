@@ -1,5 +1,10 @@
 import type { ErrorDefinition } from './types.ts';
 
+/**
+ * Catalogues lexer-phase error definitions (code → `ErrorDefinition`).
+ * Message params `{char}` and `{kind}` double as pattern captures; each entry
+ * carries its own `subjectFrom` and fix hints for classification.
+ */
 export const LEXER_ERRORS = {
   UNEXPECTED_CHAR: {
     name: 'UNEXPECTED_CHAR',

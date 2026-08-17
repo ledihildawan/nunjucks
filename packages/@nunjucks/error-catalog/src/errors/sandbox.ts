@@ -1,5 +1,11 @@
 import { createErrorDefinition } from './factory.ts';
 
+/**
+ * Catalogues sandbox and security error definitions (code → `ErrorDefinition`).
+ * Message params like `{key}`, `{keys}`, `{values}`, and `{violations}` double
+ * as pattern captures; note `DANGEROUS_CONTEXT_VALUE_SCRUBBED` opts into
+ * `severity: 'warning'` as a remediation notice rather than a failure.
+ */
 export const SANDBOX_ERRORS = {
   SANDBOX_ACCESS: createErrorDefinition({
     name: 'SANDBOX_ACCESS',

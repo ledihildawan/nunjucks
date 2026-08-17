@@ -143,6 +143,12 @@ interface ErrorWithExtras {
   severity?: ErrorSeverity;
 }
 
+/**
+ * Classifies any error-like value through the classifier chain (reserved
+ * keyword, code lookup, then pattern match) without throwing. A `null` input
+ * yields the unknown classification, unmatched input falls back to
+ * `DEFAULT_CLASSIFICATION`, and oversized messages skip regex classification.
+ */
 export const classifyFromError = (error: ErrorWithExtras | null): Classification => {
   if (!error) {
     return {

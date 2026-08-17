@@ -48,6 +48,12 @@ const createPattern = (messageTemplate: string): RegExp => {
   return new RegExp(`^${pattern}$`, 'i');
 };
 
+/**
+ * Builds a complete `ErrorDefinition` from options — derives the anchored,
+ * case-insensitive matching `pattern` by expanding the message's
+ * `{placeholder}` params into capture groups, and defaults `severity` to
+ * `'error'` so every definition carries an explicit value.
+ */
 const createErrorDefinition = (options: ErrorDefinitionOptions) => {
   const {
     name,

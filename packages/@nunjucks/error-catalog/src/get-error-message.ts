@@ -8,6 +8,10 @@ const readErrorMessage = (error: unknown): string | null => {
   return null;
 };
 
+/**
+ * Resolves the human-readable message of any thrown value without throwing —
+ * non-Error values degrade to `String()` and stacks are trimmed.
+ */
 export const getErrorMessage = (error: unknown): string => {
   const rawMessage = readErrorMessage(error);
   const baseMessage = rawMessage !== null && rawMessage !== '' ? rawMessage : String(error);

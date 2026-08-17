@@ -2,6 +2,12 @@ import { type ErrorDefinition, firstCapture } from './types.ts';
 
 const DOCS_BASE = 'https://github.com/ledihildawan/nunjucks/blob/main/docs/templating.md';
 
+/**
+ * Catalogues template-validation error definitions (code → `ErrorDefinition`).
+ * Message params like `{key}`, `{name}`, `{type}`, and `{max}` double as
+ * pattern captures; entries mix hand-written and `createErrorDefinition`-built
+ * rules with fix hints pointing at the relevant config option.
+ */
 export const TEMPLATE_ERRORS = {
   VALIDATION_ERROR: {
     name: 'VALIDATION_ERROR',

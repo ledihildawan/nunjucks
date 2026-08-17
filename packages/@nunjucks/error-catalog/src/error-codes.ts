@@ -5,6 +5,11 @@ import type { ERROR_DEFINITIONS } from './errors/index.ts';
 // renaming a definition breaks the build instead of silently drifting.
 const catalogCode = <T extends keyof typeof ERROR_DEFINITIONS>(name: T): T => name;
 
+/**
+ * Catalogues the error-code names that cross-package runtime logic references by
+ * literal — every value flows through `catalogCode`, so renaming or removing a
+ * catalogued definition breaks the build instead of silently drifting.
+ */
 const ERROR_CODES = {
   ASSERT_TYPE_ERROR: catalogCode('ASSERT_TYPE_ERROR'),
   CIRCULAR_INCLUDE: catalogCode('CIRCULAR_INCLUDE'),

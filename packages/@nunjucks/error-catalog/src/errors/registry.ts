@@ -21,8 +21,15 @@ const allErrors = {
 
 type ErrorName = keyof typeof allErrors;
 
+/**
+ * Defines the master error registry: the merged mapping of every catalogued
+ * error code (across runtime, parser, sandbox, I/O, filter, template, and lexer
+ * groups) to its `ErrorDefinition`. Key order follows group merge order and is
+ * the single source of truth for code-name stability.
+ */
 const ERROR_DEFINITIONS: Record<ErrorName, ErrorDefinition> = allErrors;
 
+/** Resolves the definition registered under an exact error code name. */
 const getError = <T extends ErrorName>(name: T): ErrorDefinition => {
   return ERROR_DEFINITIONS[name];
 };
@@ -40,6 +47,10 @@ interface Rule {
   severity?: ErrorDefinition['severity'];
 }
 
+/**
+ * Flattens a definition into a runtime classification rule, defaulting
+ * `subjectFrom` to `firstCapture` when absent while honoring an explicit `null`.
+ */
 const toRule = (def: ErrorDefinition): Rule => ({
   pattern: def.pattern,
   category: def.category,
@@ -56,8 +67,13 @@ const toRule = (def: ErrorDefinition): Rule => ({
   severity: def.severity,
 });
 
+/** Precompiles every registry definition into a classification rule, in registry order. */
 const RULES: Rule[] = pipe(ERROR_DEFINITIONS, values(), map(toRule));
 
+/**
+ * Defines the fallback classification returned when no classifier claims an
+ * input — generic guidance under category `'unknown'` and severity `'error'`.
+ */
 const DEFAULT_CLASSIFICATION: Classification = {
   category: 'unknown',
   undefinedName: null,

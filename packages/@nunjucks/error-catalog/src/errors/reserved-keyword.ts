@@ -16,6 +16,12 @@ const RESERVED_KEYWORD_CONTEXT: Record<
   },
 };
 
+/**
+ * Classifies `RESERVED_KEYWORD_CONTEXT` errors ahead of the generic chain —
+ * looks up keyword-specific guidance (e.g. `super`) and falls back to generic
+ * reserved-word advice for unknown keywords, rendering the title from the
+ * single-sourced title constant.
+ */
 export const reservedKeywordClassifier = (input: ClassifyInput): Classification | null => {
   if (input.code !== 'RESERVED_KEYWORD_CONTEXT') {
     return null;

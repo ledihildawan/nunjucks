@@ -2,6 +2,11 @@ import type { Phase, UndefinedMode } from '@nunjucks/shared';
 import type { ErrorSeverity } from './errors/types.ts';
 import type { LineBase } from './line-base.ts';
 
+/**
+ * Defines the structural shape every error-like value is normalized against —
+ * all fields are optional so raw engine throws, wrapped envelopes, and
+ * diagnostics snapshots flow through one type.
+ */
 export interface ErrorLike {
   message?: string;
   stack?: string;
@@ -20,9 +25,14 @@ export interface ErrorLike {
   environment?: string | null;
 }
 
+/** Narrows any non-null object to the structural `ErrorLike` shape. */
 export const isRecord = (value: unknown): value is ErrorLike =>
   typeof value === 'object' && value !== null;
 
+/**
+ * Defines a non-fatal diagnostic emitted during rendering — mirrors the error
+ * envelope's optional location and context fields without requiring any of them.
+ */
 export interface Warning {
   message: string;
   code?: string | null;

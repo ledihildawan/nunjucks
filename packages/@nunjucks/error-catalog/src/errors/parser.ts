@@ -2,6 +2,11 @@ import { createErrorDefinition } from './factory.ts';
 
 const DOCS_BASE = 'https://github.com/ledihildawan/nunjucks/blob/main/docs/templating.md';
 
+/**
+ * Catalogues parser-phase error definitions (code → `ErrorDefinition`).
+ * Message params like `{token}`, `{tag}`, and `{expected}` double as pattern
+ * captures; entries mix hand-written and `createErrorDefinition`-built rules.
+ */
 export const PARSER_ERRORS = {
   SYNTAX_ERROR: {
     name: 'SYNTAX_ERROR',
