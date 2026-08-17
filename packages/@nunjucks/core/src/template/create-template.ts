@@ -9,13 +9,12 @@ import { createTemplateRenderer } from './template-renderer';
 import { initTemplateState, loadSource } from './template-source';
 import type { TemplateObject, TemplateSource, TemplateState } from './types';
 import { Template } from './types';
-import type { BlockLocation } from '@nunjucks/runtime';
-import { BLOCK_META_KEY, extractBlocks } from '@nunjucks/shared';
+import { extractCompiledBlocks } from './compiled-blocks.ts';
 
 // WHY: adopts pre-computed compiled exports into the template state machine — the
 // same 'compiled' shape commit() produces, minus the eval (the exports object was
-// already loaded by the include-path cache). Blocks/meta extraction mirrors
-// template-compiler exactly so downstream consumers are shape-identical.
+// already loaded by the include-path cache). Block/meta extraction is shared with
+// template-compiler so downstream consumers are shape-identical.
 const adoptCompiledExports = (
   state: TemplateState,
   compiledExports: CompiledTemplateExports
@@ -24,8 +23,7 @@ const adoptCompiledExports = (
   status: 'compiled',
   tmplStr: null,
   tmplProps: compiledExports,
-  blocks: extractBlocks(compiledExports) as Record<string, (...args: unknown[]) => unknown>,
-  blockMeta: (compiledExports[BLOCK_META_KEY] as Record<string, BlockLocation>) ?? {},
+  ...extractCompiledBlocks(compiledExports),
   rootRenderFunc: compiledExports.root,
 });
 

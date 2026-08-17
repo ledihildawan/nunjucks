@@ -2,16 +2,11 @@ import { getError } from '@nunjucks/error-catalog';
 import { createLog, normalizeErrorMetadata, prettifyError } from '@nunjucks/error-formatter';
 import { err, isErr, ok, type Result } from '@nunjucks/lib';
 import type { ParseOptions } from '@nunjucks/parser';
-import type { BlockLocation } from '@nunjucks/runtime';
 import type { UndefinedMode } from '@nunjucks/shared';
 import { HOOK_EVENTS, loadCompiledCode } from '@nunjucks/runtime';
-import {
-  BLOCK_META_KEY,
-  type CompiledTemplateExports,
-  extractBlocks,
-  isCompiledTemplateExports,
-} from '@nunjucks/shared';
+import { type CompiledTemplateExports, isCompiledTemplateExports } from '@nunjucks/shared';
 import { compileToCode } from '../compile-pipeline.ts';
+import { extractCompiledBlocks } from './compiled-blocks.ts';
 import type { TemplateState } from './types';
 
 export { createTemplateCompiler };
@@ -73,8 +68,7 @@ const createTemplateCompiler = ({ getState, commit }: TemplateStateCell) => {
         status: 'compiled',
         tmplStr: null,
         tmplProps: props,
-        blocks: extractBlocks(props) as Record<string, (...args: unknown[]) => unknown>,
-        blockMeta: (props[BLOCK_META_KEY] as Record<string, BlockLocation>) ?? {},
+        ...extractCompiledBlocks(props),
         rootRenderFunc: props.root,
       });
 
