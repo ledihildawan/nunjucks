@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { err, ok } from '@nunjucks/lib';
-import { createLoaderChain, type TemplateLoader, type TemplateLoaderSource } from './loader-chain.ts';
+import {
+  createLoaderChain,
+  type TemplateLoader,
+  type TemplateLoaderSource,
+} from './loader-chain.ts';
 
 interface InMemoryLoaderInput {
   templates: Record<string, string>;

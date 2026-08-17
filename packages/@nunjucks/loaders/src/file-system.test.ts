@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { isOk } from '@nunjucks/lib';
@@ -50,8 +50,10 @@ describe('createFileSystemLoader', () => {
       await writeFile(file, 'before');
       const loader = createFileSystemLoader(dir);
       const first = await loader.getSource('mutable.njk');
-      // force a distinguishable mtime (filesystems may share timestamps within a tick)
-      await new Promise((resolve) => setTimeout(resolve, 12));
+      // WHY: backdate mtime instead of sleeping — the rewrite is then guaranteed a
+      // strictly-greater mtime on every filesystem, regardless of timestamp granularity.
+      const staleTime = new Date(Date.now() - 60_000);
+      await utimes(file, staleTime, staleTime);
       await writeFile(file, 'after');
       const second = await loader.getSource('mutable.njk');
       expect(first !== null && isOk(first)).toBe(true);
