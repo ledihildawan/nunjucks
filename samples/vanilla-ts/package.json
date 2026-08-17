@@ -5,7 +5,8 @@
   "type": "module",
   "main": "main.ts",
   "scripts": {
-    "start": "bun run main.ts"
+    "start": "bun run main.ts",
+    "test": "bun test"
   },
   "dependencies": {
     "@nunjucks/core": "workspace:*",

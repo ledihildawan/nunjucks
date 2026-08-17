@@ -9,7 +9,7 @@
   "dependencies": {
     "remeda": "^2.39.0"
   },
-  "description": "Shared utilities for Nunjucks",
+  "description": "Cross-package invariants for Nunjucks: shared types, constants, and pure predicates",
   "private": true,
   "license": "BSD-2-Clause",
   "keywords": [
