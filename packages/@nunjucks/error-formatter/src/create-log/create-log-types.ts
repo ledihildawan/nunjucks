@@ -178,5 +178,25 @@ interface RawLogData {
 
 type LogType = 'error' | 'warning';
 
-export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, ProjectSourceLocation, ProjectSourceContent, SourceFileReader, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, RawLogData, LogType, BaseContext, NormalizedErrorContext, NormalizedWarningContext, ColnoAdjustmentError };
+export type {
+  ErrorDefinitionEntry,
+  ErrorInfo,
+  WarningInfo,
+  OutputOptions,
+  ProjectSourceLocation,
+  ProjectSourceContent,
+  SourceFileReader,
+  TemplateError,
+  TemplateWarning,
+  ErrorContext,
+  WarningContext,
+  IncludeChain,
+  PrettifyErrorOptions,
+  RawLogData,
+  LogType,
+  BaseContext,
+  NormalizedErrorContext,
+  NormalizedWarningContext,
+  ColnoAdjustmentError,
+};
 export { TEMPLATE_ERROR };

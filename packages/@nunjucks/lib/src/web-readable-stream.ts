@@ -15,6 +15,6 @@ export const toWebReadableStream = (stream: AsyncIterable<string>): ReadableStre
     },
     cancel() {
       iterator.return?.();
-    }
+    },
   });
 };

@@ -68,7 +68,9 @@ const runCase = async (benchCase: BenchCase): Promise<void> => {
   const elapsedMs = performance.now() - startedAt;
   const opsPerSecond = Math.round(benchCase.iterations / (elapsedMs / 1000));
   // biome-ignore lint/suspicious/noConsole: bench is a CLI tool (shell perimeter) — reporting IS the product.
-  console.log(`${benchCase.name.padEnd(36)} ${String(opsPerSecond).padStart(8)} ops/s  (${(elapsedMs / benchCase.iterations).toFixed(3)} ms/op)`);
+  console.log(
+    `${benchCase.name.padEnd(36)} ${String(opsPerSecond).padStart(8)} ops/s  (${(elapsedMs / benchCase.iterations).toFixed(3)} ms/op)`
+  );
 };
 
 const main = async (): Promise<void> => {

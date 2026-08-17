@@ -18,9 +18,7 @@ const unsupportedQueryError = (input: unknown): TemplateError =>
     fallbackMessage: 'urlencode: expected string, array of [key, value] pairs, or object',
   });
 
-const resolveQueryPairs = (
-  input: unknown
-): Result<[string | number, unknown][], TemplateError> => {
+const resolveQueryPairs = (input: unknown): Result<[string | number, unknown][], TemplateError> => {
   if (isArray(input)) {
     if (!input.every(isQueryPair)) {
       return err(unsupportedQueryError(input));
@@ -44,13 +42,7 @@ const urlencode = (queryParameters: unknown): Result<string, TemplateError> => {
   if (!pairsResult.ok) {
     return err(pairsResult.error);
   }
-  return ok(
-    pipe(
-      pairsResult.value,
-      map(encodeQueryPair),
-      join('&')
-    )
-  );
+  return ok(pipe(pairsResult.value, map(encodeQueryPair), join('&')));
 };
 
 export { urlencode };

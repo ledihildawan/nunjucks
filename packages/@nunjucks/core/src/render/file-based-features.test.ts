@@ -148,7 +148,10 @@ describe('include', () => {
   // ignoreMissing is set; the compiled include used to dereference it
   // unconditionally (TypeError: null is not an object).
   test('include ignore missing skips an absent template', async () => {
-    await writeFile(join(tempDir, 'ignore-main.njk'), 'A{% include "absent.njk" ignore missing %}B');
+    await writeFile(
+      join(tempDir, 'ignore-main.njk'),
+      'A{% include "absent.njk" ignore missing %}B'
+    );
     const result = await renderFile('ignore-main.njk', {});
     expect(result).toBe('AB');
   });

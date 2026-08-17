@@ -37,10 +37,7 @@ const processInterpolationChar = (exprChar: string): { depthDelta: number; charT
   return { depthDelta: 0, charToAdd: exprChar };
 };
 
-const parseInterpolation = (
-  initial: LexerState,
-  origin: LexerState
-): ParseInterpolationResult => {
+const parseInterpolation = (initial: LexerState, origin: LexerState): ParseInterpolationResult => {
   // WHY: while loop instead of the previous per-character recursion — long interpolation
   // bodies overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
   // ARCHITECTURE.md.

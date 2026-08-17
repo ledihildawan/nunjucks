@@ -73,12 +73,18 @@ const stringifySafe = (thrown: unknown): string => {
 };
 
 const stringifyThrown = (thrown: unknown): string => {
-  if (typeof thrown === 'string') { return thrown; }
-  if (thrown === null || thrown === undefined) { return String(thrown); }
+  if (typeof thrown === 'string') {
+    return thrown;
+  }
+  if (thrown === null || thrown === undefined) {
+    return String(thrown);
+  }
   const object = readObject(thrown);
   if (object !== null) {
     const message = readOwnStringSafe(object, 'message');
-    if (message !== null) { return message; }
+    if (message !== null) {
+      return message;
+    }
   }
   try {
     const serialized = JSON.stringify(thrown);
@@ -102,7 +108,9 @@ interface NormalizeFallbacksOptions {
 const normalizeFallbacks = ({ source, fallback, templateName }: NormalizeFallbacksOptions) => ({
   lineno: readNumber(readOwnValueSafe(source, 'lineno')) ?? fallback.lineno ?? null,
   colno: readNumber(readOwnValueSafe(source, 'colno')) ?? fallback.colno ?? null,
-  lineBase: normalizeLineBase(readLineBase(readOwnValueSafe(source, 'lineBase')) ?? fallback.lineBase),
+  lineBase: normalizeLineBase(
+    readLineBase(readOwnValueSafe(source, 'lineBase')) ?? fallback.lineBase
+  ),
   phase: readPhase(readOwnValueSafe(source, 'phase')) ?? fallback.phase ?? null,
   templateName,
   templatePath:
@@ -111,7 +119,8 @@ const normalizeFallbacks = ({ source, fallback, templateName }: NormalizeFallbac
     readString(readOwnValueSafe(source, 'sourceContent')) ?? fallback.sourceContent ?? null,
   sourceStartLine:
     readNumber(readOwnValueSafe(source, 'sourceStartLine')) ?? fallback.sourceStartLine ?? 1,
-  renderContext: readContext(readOwnValueSafe(source, 'renderContext')) ?? fallback.renderContext ?? null,
+  renderContext:
+    readContext(readOwnValueSafe(source, 'renderContext')) ?? fallback.renderContext ?? null,
   code: readString(readOwnValueSafe(source, 'code')) ?? fallback.code ?? null,
   subject: readString(readOwnValueSafe(source, 'subject')) ?? fallback.subject ?? null,
 });

@@ -92,7 +92,11 @@ interface HandleSymbolAccessInput {
   sandboxOptions: ResolvedSandboxOptions;
 }
 
-const handleSymbolAccess = ({ target, value, sandboxOptions }: HandleSymbolAccessInput): unknown => {
+const handleSymbolAccess = ({
+  target,
+  value,
+  sandboxOptions,
+}: HandleSymbolAccessInput): unknown => {
   // WHY: mirrors the Proxy get trap's symbol branch — blocked symbols throw SANDBOX_ACCESS and
   // inherited symbol properties must not leak; only own properties are readable.
   if (isBlockedSymbol(value)) {

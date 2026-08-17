@@ -116,22 +116,20 @@ const patternClassifier: Classifier = (input) => {
 // its definition.
 const MAX_CLASSIFY_MESSAGE_LENGTH = 4096;
 
-const classifiers: Classifier[] = [
-  reservedKeywordClassifier,
-  codeClassifier,
-  patternClassifier,
-];
+const classifiers: Classifier[] = [reservedKeywordClassifier, codeClassifier, patternClassifier];
 
 const classifyInput = (input: ClassifyInput): Classification => {
   const boundedInput =
     input.message !== undefined && input.message.length > MAX_CLASSIFY_MESSAGE_LENGTH
       ? { ...input, message: undefined }
       : input;
-  return pipe(
-    classifiers,
-    map((classifier) => classifier(boundedInput)),
-    find((result): result is Classification => result !== null)
-  ) ?? DEFAULT_CLASSIFICATION;
+  return (
+    pipe(
+      classifiers,
+      map((classifier) => classifier(boundedInput)),
+      find((result): result is Classification => result !== null)
+    ) ?? DEFAULT_CLASSIFICATION
+  );
 };
 
 interface ErrorWithExtras {

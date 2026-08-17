@@ -54,6 +54,9 @@ jobs:
           bun-version: latest
       - run: bun install
       - run: bun run lint
+      # WHY: format gate — biome format exits non-zero when any file would change,
+      # keeping the one-time format sweep (this commit) from drifting back.
+      - run: bun run format:check
 
   typecheck:
     runs-on: ubuntu-latest

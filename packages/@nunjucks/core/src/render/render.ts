@@ -107,16 +107,17 @@ const setupRenderConfig = (
     filters,
     tests: testsResult.value,
     globals: { ...defaults.globals, ...(options.globals || {}) },
-    scanContextValues: options.scanContextValues ?? (layeredSecurityExplicitlySet ? false : defaults.scanContextValues),
+    scanContextValues:
+      options.scanContextValues ??
+      (layeredSecurityExplicitlySet ? false : defaults.scanContextValues),
   });
 };
 
 const resolveTemplateName = (template: string, config: RenderConfig): string => {
-  const looksLikeFile = TEMPLATE_FILE_EXTENSION_RE.test(template);
   if (config.templatePath) {
     return config.templatePath;
   }
-  if (looksLikeFile) {
+  if (TEMPLATE_FILE_EXTENSION_RE.test(template)) {
     return template;
   }
   return config.callerFile || 'inline';
@@ -133,10 +134,9 @@ const executeCompiledTemplate = async (
 ): Promise<string> => {
   const frame = createFrame();
   const env = config.env ?? buildExecutionEnv(config);
-  // WHY: deadline enforced cooperatively in the executor's chunk drain — the drain is a
-  // microtask-only chain that starves macrotask timers (runtime/src/executor.ts).
-  // Diagnostics (templateName/renderContext/warningsCollector) wire the runtime bag's
-  // logContext + warnings slot — without them dev undefined-warnings hit console.warn.
+  // WHY: deadline enforced cooperatively in the executor's chunk drain (microtask-only
+  // chain starves macrotask timers); diagnostics fields wire logContext + the warnings
+  // slot — without them dev undefined-warnings hit console.warn.
   return execute({
     code: ctx.code,
     context: ctx.sandboxedCtx,

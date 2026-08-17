@@ -26,9 +26,9 @@ describe('suppressValue', () => {
     }) as string;
     expect(quoted).toBe(escapeForContext(safeJson, 'attribute'));
     expect(quoted).not.toContain('"note":"x');
-    expect(
-      suppressValue(safeString, { autoescape: true, context: 'unquoted-attribute' })
-    ).toBe(escapeForContext(safeJson, 'unquoted-attribute'));
+    expect(suppressValue(safeString, { autoescape: true, context: 'unquoted-attribute' })).toBe(
+      escapeForContext(safeJson, 'unquoted-attribute')
+    );
   });
 
   test('returns value unchanged when autoescape is falsy', () => {

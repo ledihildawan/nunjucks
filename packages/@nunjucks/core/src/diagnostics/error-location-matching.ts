@@ -238,4 +238,9 @@ const extractBareSubjectPosition = (input: CallerPositionInput): SourcePosition 
 };
 
 export type { SourcePosition };
-export { extractBareSubjectPosition, extractQuotedSubjectPosition, extractTemplatePosition, templateLiteralText };
+export {
+  extractBareSubjectPosition,
+  extractQuotedSubjectPosition,
+  extractTemplatePosition,
+  templateLiteralText,
+};

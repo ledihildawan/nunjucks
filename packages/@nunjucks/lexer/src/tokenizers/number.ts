@@ -8,7 +8,10 @@ const parseDigits = (current: LexerState): { num: string; current: LexerState } 
   // native stack. Loop exemption: lexer/tokenizer engine, per ARCHITECTURE.md.
   let scanState = current;
   let num = '';
-  while (scanState.index < scanState.source.length && isDigit(scanState.source[scanState.index] ?? '')) {
+  while (
+    scanState.index < scanState.source.length &&
+    isDigit(scanState.source[scanState.index] ?? '')
+  ) {
     num += scanState.source[scanState.index] ?? '';
     scanState = advance(scanState);
   }

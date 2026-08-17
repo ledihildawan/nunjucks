@@ -125,9 +125,7 @@ describe('createTokenizer large-input regression (no stack overflow)', () => {
   test('lexes a ~100KB string literal and template literal', () => {
     const literalBody = 's'.repeat(100 * 1024);
     const stringTks = tokens(`{{ "${literalBody}" }}`);
-    expect(stringTks.filter((t) => t.type === 'string' && t.value === literalBody).length).toBe(
-      1
-    );
+    expect(stringTks.filter((t) => t.type === 'string' && t.value === literalBody).length).toBe(1);
 
     const templateTks = tokens(`{{ \`${literalBody}\` }}`);
     const templateTokens = templateTks.filter((t) => t.type === 'template-literal');

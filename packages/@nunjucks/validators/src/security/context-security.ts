@@ -66,7 +66,11 @@ interface RecursiveScanInput extends ScanState {
   depth: number;
 }
 
-const scanForDangerousValues = ({ value: context, depth, ...state }: RecursiveScanInput): string[] => {
+const scanForDangerousValues = ({
+  value: context,
+  depth,
+  ...state
+}: RecursiveScanInput): string[] => {
   const { scan, currentPath: path, isTopLevel } = state;
   if (!isKeyedObject(context) || scan.seen.has(context) || depth >= MAX_SCAN_DEPTH) {
     return [];

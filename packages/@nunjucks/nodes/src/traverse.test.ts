@@ -91,7 +91,9 @@ describe('findAll', () => {
     const ast = component(ZERO_LOC, {
       name: 'card',
       body: output(ZERO_LOC, []),
-      fallbackSlots: [{ name: 'fallback', params: [], body: nodeList(ZERO_LOC, [symbol(ZERO_LOC, 'slotBody')]) }],
+      fallbackSlots: [
+        { name: 'fallback', params: [], body: nodeList(ZERO_LOC, [symbol(ZERO_LOC, 'slotBody')]) },
+      ],
     }) as Node;
     const results = findAll(ast, (n: Node) => n.type === 'symbol');
     expect(results).toHaveLength(1);
@@ -102,7 +104,9 @@ describe('findAll', () => {
     const ast = renderNode(ZERO_LOC, {
       callExpr: symbol(ZERO_LOC, 'partial'),
       body: output(ZERO_LOC, []),
-      providedSlots: [{ name: 'header', params: [], body: nodeList(ZERO_LOC, [symbol(ZERO_LOC, 'headerBody')]) }],
+      providedSlots: [
+        { name: 'header', params: [], body: nodeList(ZERO_LOC, [symbol(ZERO_LOC, 'headerBody')]) },
+      ],
     }) as Node;
     const results = findAll(ast, (n: Node) => n.type === 'symbol');
     expect(results.map((n) => (n as { value?: unknown }).value)).toContain('headerBody');
@@ -136,9 +140,11 @@ describe('walk with envelopes', () => {
       }
     ).quasis;
     const expressionQuasi = quasis.find((q) => q.type === 'expression');
-    expect(expressionQuasi && expressionQuasi.type === 'expression' && 'node' in expressionQuasi
-      ? expressionQuasi.node.type
-      : undefined).toBe('literal');
+    expect(
+      expressionQuasi && expressionQuasi.type === 'expression' && 'node' in expressionQuasi
+        ? expressionQuasi.node.type
+        : undefined
+    ).toBe('literal');
   });
 
   test('replaces nodes inside component fallback slot bodies', () => {

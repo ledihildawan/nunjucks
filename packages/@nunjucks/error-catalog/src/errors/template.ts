@@ -155,8 +155,7 @@ export const TEMPLATE_ERRORS = {
       'Timeout or size values cannot be negative',
       'A unit mismatch (e.g. milliseconds vs seconds)',
     ],
-    fixCode:
-      'nunjucks({ limits: { executionTimeout: 30000, maxTemplateSize: 1024 * 1024 } });',
+    fixCode: 'nunjucks({ limits: { executionTimeout: 30000, maxTemplateSize: 1024 * 1024 } });',
     fixComment: 'Use non-negative values for `{subject}` (0 means unlimited)',
     subjectFrom: firstCapture,
   },
@@ -177,5 +176,3 @@ export const TEMPLATE_ERRORS = {
     subjectFrom: null,
   },
 } as const satisfies Record<string, ErrorDefinition>;
-
-

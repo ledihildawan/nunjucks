@@ -1,9 +1,29 @@
 import { pipe } from 'remeda';
 import { DEFAULT_UNDEFINED_MODE, UNDEFINED_MODES } from '@nunjucks/shared';
 import type { UndefinedMode } from '@nunjucks/shared';
-import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, RawLogData, LogType, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, ErrorInfo, WarningInfo, OutputOptions } from './create-log-types.ts';
+import type {
+  TemplateError,
+  TemplateWarning,
+  ErrorDefinitionEntry,
+  RawLogData,
+  LogType,
+  ErrorContext,
+  WarningContext,
+  IncludeChain,
+  PrettifyErrorOptions,
+  ErrorInfo,
+  WarningInfo,
+  OutputOptions,
+} from './create-log-types.ts';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
-import { normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, createErrorEnvelope } from './create-log-helpers.ts';
+import {
+  normalizeErrorContext,
+  normalizeWarningContext,
+  isErrorDefinitionEntry,
+  createBaseMetadata,
+  extractExtraFromContext,
+  createErrorEnvelope,
+} from './create-log-helpers.ts';
 import { createErrorFromDef, createWarningFromDef } from './create-log-error.ts';
 import { isKeyedObject } from '@nunjucks/lib';
 
@@ -31,11 +51,22 @@ function createLog(type: string, fields: CreateLogFields): TemplateError | Templ
 
   if (type === 'error') {
     const normalizedErrorContext = normalizeErrorContext(context);
-    return createErrorFromDef({ errorDef, paramsValue: params, normalized: normalizedErrorContext, extra, subject: subject ?? null });
+    return createErrorFromDef({
+      errorDef,
+      paramsValue: params,
+      normalized: normalizedErrorContext,
+      extra,
+      subject: subject ?? null,
+    });
   }
 
   const normalizedWarningContext = normalizeWarningContext(context);
-  return createWarningFromDef({ errorDef, paramsValue: params, normalizedWarning: normalizedWarningContext, subject: subject ?? null });
+  return createWarningFromDef({
+    errorDef,
+    paramsValue: params,
+    normalizedWarning: normalizedWarningContext,
+    subject: subject ?? null,
+  });
 }
 
 const isTemplateError = (value: unknown): value is TemplateError =>
@@ -59,7 +90,9 @@ const isWarningInfo = (value: unknown): value is WarningInfo => {
 };
 
 const asTemplateError = (err: Error | TemplateError): TemplateError => {
-  if (isTemplateError(err)) { return err; }
+  if (isTemplateError(err)) {
+    return err;
+  }
   const partialErr = err as Partial<TemplateError>;
   return createLog('error', {
     def: { name: partialErr.code ?? 'ERROR', message: err.message },
@@ -74,49 +107,52 @@ const asTemplateError = (err: Error | TemplateError): TemplateError => {
   });
 };
 
-const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError =>
-  Object.assign(createErrorEnvelope(err.message, err), err, {
-    templateName: err.templateName ?? (path ?? null),
-    ...(includeChain ? { includeChain } : {}),
-  });
+const withLocation =
+  ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) =>
+  (err: TemplateError): TemplateError =>
+    Object.assign(createErrorEnvelope(err.message, err), err, {
+      templateName: err.templateName ?? path ?? null,
+      ...(includeChain ? { includeChain } : {}),
+    });
 
-const stripInternals = (path?: string) => (err: TemplateError): TemplateError => {
-  const clean = createErrorEnvelope(err.message, err);
-  clean.name = err.name;
-  clean.lineno = err.lineno;
-  clean.colno = err.colno;
-  clean.path = err.path ?? (path ?? null);
-  clean.templateName = err.templateName ?? (path ?? null);
-  clean.code = err.code;
-  clean.subject = err.subject;
-  clean.phase = err.phase;
-  clean.lineBase = err.lineBase ?? 'zero';
-  if (err.includeChain) {
-    clean.includeChain = err.includeChain;
-  }
-  return clean;
-};
+const stripInternals =
+  (path?: string) =>
+  (err: TemplateError): TemplateError => {
+    const clean = createErrorEnvelope(err.message, err);
+    clean.name = err.name;
+    clean.lineno = err.lineno;
+    clean.colno = err.colno;
+    clean.path = err.path ?? path ?? null;
+    clean.templateName = err.templateName ?? path ?? null;
+    clean.code = err.code;
+    clean.subject = err.subject;
+    clean.phase = err.phase;
+    clean.lineBase = err.lineBase ?? 'zero';
+    if (err.includeChain) {
+      clean.includeChain = err.includeChain;
+    }
+    return clean;
+  };
 
 const prettifyError = (options: PrettifyErrorOptions): TemplateError => {
   const { path, withInternals, err, includeChain } = options;
   if (withInternals) {
-    return pipe(
-      err,
-      asTemplateError,
-      withLocation({ path, includeChain })
-    );
+    return pipe(err, asTemplateError, withLocation({ path, includeChain }));
   }
-  return pipe(
-    err,
-    asTemplateError,
-    withLocation({ path, includeChain }),
-    stripInternals(path)
-  );
+  return pipe(err, asTemplateError, withLocation({ path, includeChain }), stripInternals(path));
 };
 
-const createFromRawData = (type: LogType, rawLogData: RawLogData): TemplateError | TemplateWarning => {
+const createFromRawData = (
+  type: LogType,
+  rawLogData: RawLogData
+): TemplateError | TemplateWarning => {
   const warningInfo: WarningInfo = isWarningInfo(rawLogData.info) ? rawLogData.info : {};
-  const baseMetadata = createBaseMetadata({ message: rawLogData.message, rawLogData, info: warningInfo, type });
+  const baseMetadata = createBaseMetadata({
+    message: rawLogData.message,
+    rawLogData,
+    info: warningInfo,
+    type,
+  });
 
   if (type === 'error') {
     const err = createErrorEnvelope(baseMetadata.message);
@@ -150,4 +186,16 @@ const createFromRawData = (type: LogType, rawLogData: RawLogData): TemplateError
 };
 
 export { createLog, isTemplateError, prettifyError };
-export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain, CreateLogFields, RawLogData };
+export type {
+  ErrorDefinitionEntry,
+  ErrorInfo,
+  WarningInfo,
+  OutputOptions,
+  TemplateError,
+  TemplateWarning,
+  ErrorContext,
+  WarningContext,
+  IncludeChain,
+  CreateLogFields,
+  RawLogData,
+};

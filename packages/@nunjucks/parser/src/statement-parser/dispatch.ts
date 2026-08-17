@@ -45,7 +45,11 @@ export const parseStatement = (
   const tok = tokR.value;
 
   if (tok.type !== TOKEN_SYMBOL) {
-    return fail(parserContext, { message: 'tag name expected', lineno: tok.lineno, colno: tok.colno });
+    return fail(parserContext, {
+      message: 'tag name expected',
+      lineno: tok.lineno,
+      colno: tok.colno,
+    });
   }
 
   if (breakOn?.includes(String(tok.value))) {
@@ -63,45 +67,47 @@ export const parseStatement = (
     (e) => (e.tags ?? []).includes(tagName) && Boolean(e.parse)
   );
   if (ext?.parse) {
-    const parsedNode = ext.parse(
-      parserContext,
-      nodes,
-      {
-        TOKEN_SYMBOL,
-        TOKEN_BLOCK_END,
-        TOKEN_BLOCK_START,
-        TOKEN_VARIABLE_END,
-        TOKEN_VARIABLE_START,
-        TOKEN_COMMENT,
-        TOKEN_LEFT_PAREN,
-        TOKEN_RIGHT_PAREN,
-        TOKEN_LEFT_BRACKET,
-        TOKEN_RIGHT_BRACKET,
-        TOKEN_LEFT_CURLY,
-        TOKEN_RIGHT_CURLY,
-        TOKEN_OPERATOR,
-        TOKEN_COMMA,
-        TOKEN_COLON,
-        TOKEN_TILDE,
-        TOKEN_PIPEFORWARD,
-        TOKEN_INT,
-        TOKEN_FLOAT,
-        TOKEN_BOOLEAN,
-        TOKEN_NONE,
-        TOKEN_STRING,
-        TOKEN_DATA,
-        TOKEN_WHITESPACE,
-        TOKEN_REGEX,
-      }
-    );
+    const parsedNode = ext.parse(parserContext, nodes, {
+      TOKEN_SYMBOL,
+      TOKEN_BLOCK_END,
+      TOKEN_BLOCK_START,
+      TOKEN_VARIABLE_END,
+      TOKEN_VARIABLE_START,
+      TOKEN_COMMENT,
+      TOKEN_LEFT_PAREN,
+      TOKEN_RIGHT_PAREN,
+      TOKEN_LEFT_BRACKET,
+      TOKEN_RIGHT_BRACKET,
+      TOKEN_LEFT_CURLY,
+      TOKEN_RIGHT_CURLY,
+      TOKEN_OPERATOR,
+      TOKEN_COMMA,
+      TOKEN_COLON,
+      TOKEN_TILDE,
+      TOKEN_PIPEFORWARD,
+      TOKEN_INT,
+      TOKEN_FLOAT,
+      TOKEN_BOOLEAN,
+      TOKEN_NONE,
+      TOKEN_STRING,
+      TOKEN_DATA,
+      TOKEN_WHITESPACE,
+      TOKEN_REGEX,
+    });
     if (parsedNode === null) {
       // WHY: a null return must not read as "stop parsing" — that silently truncates the
       // template. Extensions signal completion by returning a node.
-      return fail(parserContext, { message: `extension tag '${String(tagName)}' parse returned no node`, lineno: tok.lineno,
-        colno: tok.colno, });
+      return fail(parserContext, {
+        message: `extension tag '${String(tagName)}' parse returned no node`,
+        lineno: tok.lineno,
+        colno: tok.colno,
+      });
     }
     return ok(parsedNode);
   }
-  return fail(parserContext, { message: `unknown block tag: ${tok.value}`, lineno: tok.lineno,
-    colno: tok.colno, });
+  return fail(parserContext, {
+    message: `unknown block tag: ${tok.value}`,
+    lineno: tok.lineno,
+    colno: tok.colno,
+  });
 };

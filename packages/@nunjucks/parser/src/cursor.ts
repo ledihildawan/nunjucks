@@ -74,8 +74,11 @@ export const nextToken = (
 ): Result<Token, TemplateError> => {
   const tok = nextTokenOrNull(parserContext, options);
   if (tok === null) {
-    return fail(parserContext, { message: 'unexpected end of input', lineno: EOF_LOCATION.lineno,
-      colno: EOF_LOCATION.colno, });
+    return fail(parserContext, {
+      message: 'unexpected end of input',
+      lineno: EOF_LOCATION.lineno,
+      colno: EOF_LOCATION.colno,
+    });
   }
   return ok(tok);
 };
@@ -85,8 +88,11 @@ export const peekToken = (parserContext: ParserContext): Result<Token, TemplateE
     parserContext.peeked = nextTokenOrNull(parserContext);
   }
   if (parserContext.peeked === null) {
-    return fail(parserContext, { message: 'unexpected end of input', lineno: EOF_LOCATION.lineno,
-      colno: EOF_LOCATION.colno, });
+    return fail(parserContext, {
+      message: 'unexpected end of input',
+      lineno: EOF_LOCATION.lineno,
+      colno: EOF_LOCATION.colno,
+    });
   }
   return ok(parserContext.peeked);
 };
@@ -128,8 +134,11 @@ export const expect = (
   }
   const tok = tokResult.value;
   if (tok.type !== type) {
-    return fail(parserContext, { message: `expected ${type}, got ${tok.type}`, lineno: tok.lineno,
-      colno: tok.colno, });
+    return fail(parserContext, {
+      message: `expected ${type}, got ${tok.type}`,
+      lineno: tok.lineno,
+      colno: tok.colno,
+    });
   }
   return ok(tok);
 };

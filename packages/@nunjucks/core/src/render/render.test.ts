@@ -146,13 +146,19 @@ describe('template source security scanning', () => {
 
 describe('dompurify per-render isolation', () => {
   test('dompurify config does not leak across renders', async () => {
-    const firstRenderResult = await renderTemplate('{{ x |> sanitize }}', { x: '<b>bold</b><i>italic</i>' }, {
-      dompurify: { ALLOWED_TAGS: ['b'] },
-    } as Record<string, unknown>);
+    const firstRenderResult = await renderTemplate(
+      '{{ x |> sanitize }}',
+      { x: '<b>bold</b><i>italic</i>' },
+      {
+        dompurify: { ALLOWED_TAGS: ['b'] },
+      } as Record<string, unknown>
+    );
     expect(firstRenderResult).toContain('bold');
     expect(firstRenderResult).not.toContain('<i>');
 
-    const secondRenderResult = await renderTemplate('{{ x |> sanitize }}', { x: '<b>bold</b><i>italic</i>' });
+    const secondRenderResult = await renderTemplate('{{ x |> sanitize }}', {
+      x: '<b>bold</b><i>italic</i>',
+    });
     expect(secondRenderResult).toContain('<i>italic</i>');
   });
 });

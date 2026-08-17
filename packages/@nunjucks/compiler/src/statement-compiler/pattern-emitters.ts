@@ -1,5 +1,11 @@
 import type { Node } from '@nunjucks/nodes';
-import { arrayPattern, isArrayPattern, isObjectPattern, isSymbol, objectPattern } from '@nunjucks/nodes';
+import {
+  arrayPattern,
+  isArrayPattern,
+  isObjectPattern,
+  isSymbol,
+  objectPattern,
+} from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
 
 // WHY: pure source-string emitters and node-shape adapters for destructuring codegen —

@@ -65,8 +65,7 @@ const BUILTIN_TESTS: Readonly<Record<string, TestFn>> = {
     typeof target === 'string' && typeof prefix === 'string' && target.startsWith(prefix),
   endswith: (target, suffix) =>
     typeof target === 'string' && typeof suffix === 'string' && target.endsWith(suffix),
-  matches: (target, pattern) =>
-    typeof target === 'string' && matchesPattern(target, pattern),
+  matches: (target, pattern) => typeof target === 'string' && matchesPattern(target, pattern),
   empty: (target) =>
     target === '' ||
     target === null ||

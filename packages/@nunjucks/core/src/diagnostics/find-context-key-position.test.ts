@@ -52,7 +52,11 @@ describe('findContextKeyPosition', () => {
     );
     try {
       expect(
-        await findContextKeyPosition({ sourceFile: sourcePath, callLine: 9, dangerousPath: 'user.global' })
+        await findContextKeyPosition({
+          sourceFile: sourcePath,
+          callLine: 9,
+          dangerousPath: 'user.global',
+        })
       ).toBeNull();
     } finally {
       await rm(sourceDir, { recursive: true, force: true });

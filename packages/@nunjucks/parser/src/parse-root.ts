@@ -137,8 +137,11 @@ const handleToken = (
     const node = parseRawToken(tok);
     return ok({ continue: true, nodes: [node] });
   }
-  return fail(parserContext, { message: `Unexpected token at top-level: ${tok.type}`, lineno: tok.lineno,
-    colno: tok.colno, });
+  return fail(parserContext, {
+    message: `Unexpected token at top-level: ${tok.type}`,
+    lineno: tok.lineno,
+    colno: tok.colno,
+  });
 };
 
 const parseNodes = (

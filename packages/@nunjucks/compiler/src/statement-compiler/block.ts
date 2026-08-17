@@ -29,7 +29,9 @@ export const compileBlock = (compiler: Compiler, node: BlockNode): void => {
       compiler.emitLine(`yield* ${blockInvoke};`);
     }
   } else if (guard) {
-    compiler.emitLine(`if(parentTemplate === null) { ${compiler.buffer} += await runtime.collectString(${blockInvoke}); }`);
+    compiler.emitLine(
+      `if(parentTemplate === null) { ${compiler.buffer} += await runtime.collectString(${blockInvoke}); }`
+    );
   } else {
     compiler.emitLine(`${compiler.buffer} += await runtime.collectString(${blockInvoke});`);
   }

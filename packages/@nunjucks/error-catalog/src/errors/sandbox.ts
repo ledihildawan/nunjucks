@@ -155,5 +155,3 @@ export const SANDBOX_ERRORS = {
     extraFrom: (groups: RegExpMatchArray) => ({ violations: groups[1] ?? '' }),
   }),
 } as const;
-
-

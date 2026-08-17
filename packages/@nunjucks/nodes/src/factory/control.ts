@@ -174,10 +174,7 @@ interface ExtensionMetadata {
 
 const extensionMetadata = (ext: unknown): ExtensionMetadata => {
   if (ext !== null && typeof ext === 'object') {
-    const { extensionName: rawName, autoescape: rawAutoescape } = ext as Record<
-      string,
-      unknown
-    >;
+    const { extensionName: rawName, autoescape: rawAutoescape } = ext as Record<string, unknown>;
     return {
       extensionName: typeof rawName === 'string' ? rawName : undefined,
       autoescape: typeof rawAutoescape === 'boolean' ? rawAutoescape : undefined,

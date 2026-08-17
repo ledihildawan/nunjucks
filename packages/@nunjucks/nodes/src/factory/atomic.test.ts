@@ -106,10 +106,22 @@ describe('children-bearing nodes', () => {
       typename: T.NODE_LIST,
       build: (position, children) => nodeList(position, children),
     },
-    { factory: 'output', typename: T.OUTPUT, build: (position, children) => output(position, children) },
+    {
+      factory: 'output',
+      typename: T.OUTPUT,
+      build: (position, children) => output(position, children),
+    },
     { factory: 'root', typename: T.ROOT, build: (position, children) => root(position, children) },
-    { factory: 'group', typename: T.GROUP, build: (position, children) => group(position, children) },
-    { factory: 'array', typename: T.ARRAY, build: (position, children) => array(position, children) },
+    {
+      factory: 'group',
+      typename: T.GROUP,
+      build: (position, children) => group(position, children),
+    },
+    {
+      factory: 'array',
+      typename: T.ARRAY,
+      build: (position, children) => array(position, children),
+    },
     { factory: 'dict', typename: T.DICT, build: (position, children) => dict(position, children) },
     {
       factory: 'keywordArgs',

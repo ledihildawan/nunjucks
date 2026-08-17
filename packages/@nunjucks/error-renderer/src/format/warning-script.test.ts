@@ -56,9 +56,9 @@ describe('injectWarningsScript', () => {
 
   test('bootstraps the global array once and emits one console.warn per warning', () => {
     const script = injectWarningsScript([baseWarning, 'second'] as unknown as Warning[]);
-    expect(script.startsWith('<script>window.__nunjucks_warnings__=window.__nunjucks_warnings__||[];')).toBe(
-      true
-    );
+    expect(
+      script.startsWith('<script>window.__nunjucks_warnings__=window.__nunjucks_warnings__||[];')
+    ).toBe(true);
     expect(script.endsWith('</script>')).toBe(true);
     expect(script.match(/console\.warn\('\[Nunjucks\]',/g)).toHaveLength(2);
   });

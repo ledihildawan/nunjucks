@@ -13,9 +13,11 @@ type UndefinedMode = (typeof UNDEFINED_MODES)[number];
 
 // WHY: modes the runtime undefined-resolution path handles explicitly — 'default' passes
 // through with no rule and never reaches the resolver, so its type excludes it.
-const HANDLED_UNDEFINED_MODES = Object.freeze(
-  ['chainable', 'strict', 'debug'] as const satisfies readonly UndefinedMode[]
-);
+const HANDLED_UNDEFINED_MODES = Object.freeze([
+  'chainable',
+  'strict',
+  'debug',
+] as const satisfies readonly UndefinedMode[]);
 
 type HandledUndefinedMode = (typeof HANDLED_UNDEFINED_MODES)[number];
 

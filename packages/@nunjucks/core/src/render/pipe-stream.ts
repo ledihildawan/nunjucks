@@ -100,7 +100,13 @@ interface MidStreamErrorInput {
 // never reaches formatErrorMarker/emitErrorLog with a lying static type.
 const toErrorLike = (err: unknown): Error => (err instanceof Error ? err : new Error(String(err)));
 
-const renderMidStreamError = ({ err, contentType, ide, version, dev }: MidStreamErrorInput): string =>
+const renderMidStreamError = ({
+  err,
+  contentType,
+  ide,
+  version,
+  dev,
+}: MidStreamErrorInput): string =>
   formatErrorMarker(toErrorLike(err), { ide, contentType, version, dev });
 
 // WHY: shallow-clone a TemplateError with renderContext stripped before it reaches the dev ANSI log. renderContext holds the user's render data (potentially PII/secrets) and the ANSI renderer echoes it verbatim — the original error keeps renderContext for response formatting (where blockedKeys + dev gating apply), but the server log must not leak it. message/stack are non-enumerable on Error so they are set explicitly; all other catalog fields ride through Object.assign.
@@ -263,7 +269,13 @@ const pipeRenderStream = async (
         sink.end();
       } else {
         errorCount += 1;
-        emitErrorLog({ error: toErrorLike(streamErr), phase: 'mid-stream', logError, dev, onError });
+        emitErrorLog({
+          error: toErrorLike(streamErr),
+          phase: 'mid-stream',
+          logError,
+          dev,
+          onError,
+        });
         sink.write(renderMidStreamError({ err: streamErr, contentType, ide, version, dev }));
         sink.end();
       }

@@ -27,7 +27,9 @@ describe('stripInlineMarkdown', () => {
   });
 
   test('strips every code segment in a string with multiple code spans (replaceAll regression)', () => {
-    expect(stripInlineMarkdown('use `foo` then `bar` then `baz`')).toBe('use foo then bar then baz');
+    expect(stripInlineMarkdown('use `foo` then `bar` then `baz`')).toBe(
+      'use foo then bar then baz'
+    );
   });
 
   test('strips mixed bold and code segments together', () => {

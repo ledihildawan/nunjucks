@@ -49,22 +49,12 @@ const escape = (str: unknown): Result<SafeString, TemplateError> => ok(safeHtml(
 // autoescape (and the script-context JSON guard), a literal "</script>" inside a value would
 // break out of script/HTML contexts. \u003c-style escapes keep the output valid, round-trippable JSON.
 const escapeJsonForMarkup = (serialized: string): string =>
-  serialized
-    .replaceAll('<', '\\u003c')
-    .replaceAll('>', '\\u003e')
-    .replaceAll('&', '\\u0026');
+  serialized.replaceAll('<', '\\u003c').replaceAll('>', '\\u003e').replaceAll('&', '\\u0026');
 
 const serializeJsonValue = (value: unknown): string => JSON.stringify(value) ?? 'undefined';
 
 const tojson = (value: unknown): Result<SafeString, TemplateError> =>
-  ok(
-    pipe(
-      value,
-      serializeJsonValue,
-      escapeJsonForMarkup,
-      safeString
-    )
-  );
+  ok(pipe(value, serializeJsonValue, escapeJsonForMarkup, safeString));
 
 const DEFAULT_INDENT_WIDTH = 4;
 
@@ -170,12 +160,7 @@ const performReplace = (
 // WHY: returns `unknown` — when the needle or input cannot be resolved to a string, the
 // filter passes the input through untouched (nunjucks parity, pinned by tests); pretending
 // the result is always a string would be an unsound cast.
-const applyReplace = ({
-  str,
-  old: oldValue,
-  newValue,
-  maxCount,
-}: ReplaceOptions): unknown => {
+const applyReplace = ({ str, old: oldValue, newValue, maxCount }: ReplaceOptions): unknown => {
   // WHY: an omitted/invalid replacement defaults to deletion (''). It used to reach
   // Array.join as undefined — coercing the separator to ',' — so `replace("-")` turned
   // "a-b-c" into "a,b,c": silent data corruption (RegExp branch inserted the literal
@@ -183,7 +168,9 @@ const applyReplace = ({
   const replacement = typeof newValue === 'string' ? newValue : '';
   if (oldValue instanceof RegExp) {
     const resolvedString = resolveString(str);
-    return resolvedString === null ? String(str ?? '') : resolvedString.replace(oldValue, replacement);
+    return resolvedString === null
+      ? String(str ?? '')
+      : resolvedString.replace(oldValue, replacement);
   }
   const max = maxCount ?? -1;
   const oldStr = resolveOldString(oldValue);
@@ -220,12 +207,7 @@ const replaceImpl = (replaceOptions: ReplaceOptions): Result<unknown, TemplateEr
 const replace = createFilter(['str', 'old', 'newValue', 'maxCount'], replaceImpl);
 
 const title = createStringFilter((s: string): string =>
-  pipe(
-    s,
-    split(' '),
-    map(capitalizeString),
-    joinRemeda(' ')
-  )
+  pipe(s, split(' '), map(capitalizeString), joinRemeda(' '))
 );
 
 const trim = createStringFilter((s: string): string => s.trim());

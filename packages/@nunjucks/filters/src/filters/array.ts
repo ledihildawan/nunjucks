@@ -119,7 +119,11 @@ interface SliceFilterOptions {
   fill?: unknown;
 }
 
-const sliceImpl = ({ values, slices, fill }: SliceFilterOptions): Result<unknown[][], TemplateError> => {
+const sliceImpl = ({
+  values,
+  slices,
+  fill,
+}: SliceFilterOptions): Result<unknown[][], TemplateError> => {
   if (!isArray(values)) {
     return err(requireArrayError(values, ERROR_DEFINITIONS.LIST_FILTER));
   }

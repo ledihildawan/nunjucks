@@ -65,9 +65,7 @@ function walkValue(value: Node, walker: (node: Node) => Node): Node;
 function walkValue(value: unknown, walker: (node: Node) => Node): unknown;
 function walkValue(value: unknown, walker: (node: Node) => Node): unknown {
   if (Array.isArray(value)) {
-    return mapCOW(value, (item) =>
-      isNode(item) ? walker(item) : walkEnvelopeItem(item, walker)
-    );
+    return mapCOW(value, (item) => (isNode(item) ? walker(item) : walkEnvelopeItem(item, walker)));
   }
   if (isNode(value)) {
     return walker(value);

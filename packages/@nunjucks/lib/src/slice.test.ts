@@ -21,11 +21,15 @@ describe('normalizeIndex', () => {
 
 describe('collectForward', () => {
   test('collects every step-sized element up to (not including) stop', () => {
-    expect(collectForward({ source: [0, 1, 2, 3, 4, 5], start: 0, stop: 6, step: 2 })).toEqual([0, 2, 4]);
+    expect(collectForward({ source: [0, 1, 2, 3, 4, 5], start: 0, stop: 6, step: 2 })).toEqual([
+      0, 2, 4,
+    ]);
   });
 
   test('starts at the given start index', () => {
-    expect(collectForward({ source: [0, 1, 2, 3, 4, 5], start: 1, stop: 5, step: 2 })).toEqual([1, 3]);
+    expect(collectForward({ source: [0, 1, 2, 3, 4, 5], start: 1, stop: 5, step: 2 })).toEqual([
+      1, 3,
+    ]);
   });
 
   test('returns an empty array when start is already past stop', () => {
@@ -35,7 +39,9 @@ describe('collectForward', () => {
 
 describe('collectBackward', () => {
   test('collects backwards while the index stays above stop', () => {
-    expect(collectBackward({ source: [0, 1, 2, 3], start: 3, stop: 0, step: -1 })).toEqual([3, 2, 1]);
+    expect(collectBackward({ source: [0, 1, 2, 3], start: 3, stop: 0, step: -1 })).toEqual([
+      3, 2, 1,
+    ]);
   });
 
   test('stops at (does not include) the stop index', () => {

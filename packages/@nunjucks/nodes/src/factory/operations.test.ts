@@ -231,9 +231,24 @@ describe('unary operators', () => {
     operator: string;
     build: (loc: Loc) => UnaryOpNode;
   }> = [
-    { factory: 'not', typename: T.NOT, operator: 'not', build: (position) => not(position, targetOperand) },
-    { factory: 'neg', typename: T.NEG, operator: '-', build: (position) => neg(position, targetOperand) },
-    { factory: 'pos', typename: T.POS, operator: '+', build: (position) => pos(position, targetOperand) },
+    {
+      factory: 'not',
+      typename: T.NOT,
+      operator: 'not',
+      build: (position) => not(position, targetOperand),
+    },
+    {
+      factory: 'neg',
+      typename: T.NEG,
+      operator: '-',
+      build: (position) => neg(position, targetOperand),
+    },
+    {
+      factory: 'pos',
+      typename: T.POS,
+      operator: '+',
+      build: (position) => pos(position, targetOperand),
+    },
   ];
 
   unaryOpCases.forEach(({ factory, typename, operator, build }) => {
@@ -297,13 +312,19 @@ describe('call nodes', () => {
       factory: 'funCall',
       typename: T.FUN_CALL,
       build: (position, args) =>
-        funCall(position, args === undefined ? { name: targetOperand } : { name: targetOperand, args }),
+        funCall(
+          position,
+          args === undefined ? { name: targetOperand } : { name: targetOperand, args }
+        ),
     },
     {
       factory: 'pipe',
       typename: T.PIPE,
       build: (position, args) =>
-        pipe(position, args === undefined ? { name: targetOperand } : { name: targetOperand, args }),
+        pipe(
+          position,
+          args === undefined ? { name: targetOperand } : { name: targetOperand, args }
+        ),
     },
     {
       factory: 'optionalCall',
@@ -417,8 +438,16 @@ describe('increment and decrement', () => {
     typename: IncDecNode['type'];
     build: (loc: Loc, fields: { target: Node; isPostfix: boolean }) => IncDecNode;
   }> = [
-    { factory: 'increment', typename: T.INCREMENT, build: (position, fields) => increment(position, fields) },
-    { factory: 'decrement', typename: T.DECREMENT, build: (position, fields) => decrement(position, fields) },
+    {
+      factory: 'increment',
+      typename: T.INCREMENT,
+      build: (position, fields) => increment(position, fields),
+    },
+    {
+      factory: 'decrement',
+      typename: T.DECREMENT,
+      build: (position, fields) => decrement(position, fields),
+    },
   ];
 
   incDecCases.forEach(({ factory, typename, build }) => {

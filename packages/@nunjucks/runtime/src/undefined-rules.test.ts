@@ -1,9 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { WARNINGS_CONTEXT_KEY } from '@nunjucks/shared';
-import type {
-  NullAccessResult,
-  PropertyNotFoundResult,
-} from './member-access.ts';
+import type { NullAccessResult, PropertyNotFoundResult } from './member-access.ts';
 import type { ResolveUndefinedOptions } from './undefined-rules.ts';
 import {
   resolveNullAccess,
@@ -47,7 +44,10 @@ describe('resolveUndefinedProperty', () => {
   test('chainable mode returns "undefined" without throwing or warning', () => {
     const { runtimeContext, warnings } = makeWarningsContext();
     expect(
-      resolveUndefinedProperty(propNotFound(), makeResolveOptions('chainable', 'user', runtimeContext))
+      resolveUndefinedProperty(
+        propNotFound(),
+        makeResolveOptions('chainable', 'user', runtimeContext)
+      )
     ).toBe('undefined');
     expect(warnings).toHaveLength(0);
   });
@@ -55,7 +55,10 @@ describe('resolveUndefinedProperty', () => {
   test('debug mode collects an UNDEFINED_PROPERTY warning naming path and parent', () => {
     const { runtimeContext, warnings } = makeWarningsContext();
     expect(
-      resolveUndefinedProperty(propNotFound('age', 'user'), makeResolveOptions('debug', 'user', runtimeContext))
+      resolveUndefinedProperty(
+        propNotFound('age', 'user'),
+        makeResolveOptions('debug', 'user', runtimeContext)
+      )
     ).toBe('undefined');
     expect(warnings).toHaveLength(1);
     const warning = warnings[0] as { code: string; message: string };
@@ -94,7 +97,10 @@ describe('resolveNullAccess', () => {
   test('debug mode collects a NULL_VALUE warning naming the access path', () => {
     const { runtimeContext, warnings } = makeWarningsContext();
     expect(
-      resolveNullAccess(nullAccess('name', 'user'), makeResolveOptions('debug', 'user', runtimeContext))
+      resolveNullAccess(
+        nullAccess('name', 'user'),
+        makeResolveOptions('debug', 'user', runtimeContext)
+      )
     ).toBe('undefined');
     expect(warnings).toHaveLength(1);
     const warning = warnings[0] as { code: string; message: string };
@@ -135,9 +141,7 @@ describe('resolveUndefinedValue', () => {
   });
 
   test('strict mode with a varName throws UNDEFINED_VARIABLE naming it', () => {
-    expect(() => resolveUndefinedValue(makeResolveOptions('strict', 'myVar'))).toThrow(
-      "'myVar'"
-    );
+    expect(() => resolveUndefinedValue(makeResolveOptions('strict', 'myVar'))).toThrow("'myVar'");
     try {
       resolveUndefinedValue(makeResolveOptions('strict', 'myVar'));
     } catch (thrown) {

@@ -40,7 +40,10 @@ const baseRoutes: readonly RouteEntry[] = [
   },
   { path: '/undefined/:mode', intent: 'Undefined variable modes — strict, debug, chainable' },
   { path: '/warnings', intent: 'Dev warnings — surface console hints without aborting render' },
-  { path: '/remote', intent: 'Async composition — engine-rendered shell + client fetch with error branch' },
+  {
+    path: '/remote',
+    intent: 'Async composition — engine-rendered shell + client fetch with error branch',
+  },
 ] as const;
 
 // WHY: bind loopback only — this demo serves rich dev error pages and project source

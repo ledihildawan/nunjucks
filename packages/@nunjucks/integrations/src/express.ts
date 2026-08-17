@@ -35,7 +35,8 @@ const createEngine = (config: NunjucksConfig = {}): ExpressEngineFunction => {
   ): void {
     const renderContext = sanitizeExpressOptions(options);
     const renderOptions = { views: path.dirname(filePath), templatePath: filePath };
-    engine.render(path.basename(filePath), renderContext, renderOptions)
+    engine
+      .render(path.basename(filePath), renderContext, renderOptions)
       .then((result) => {
         if (isOk(result)) {
           callback(null, result.value);

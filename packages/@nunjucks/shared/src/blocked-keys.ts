@@ -188,7 +188,11 @@ export const isDangerousGlobal = (key: string): boolean => DANGEROUS_GLOBALS.has
 // RCE must not depend on the host remembering to enable the sandbox; own properties are the
 // host's explicit choice and remain allowed. Deliberately narrower than OBJECT_INTRINSICS —
 // harmless inherited members (toString/valueOf) keep working.
-const PROTOTYPE_ESCAPE_KEYS: ReadonlySet<string> = new Set(['__proto__', 'constructor', 'prototype']);
+const PROTOTYPE_ESCAPE_KEYS: ReadonlySet<string> = new Set([
+  '__proto__',
+  'constructor',
+  'prototype',
+]);
 
 const isPrototypeEscapeKey = (key: string): boolean => PROTOTYPE_ESCAPE_KEYS.has(key);
 

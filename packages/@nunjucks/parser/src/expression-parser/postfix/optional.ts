@@ -33,8 +33,11 @@ const handleComma = (
     return nextR;
   }
   if (nextR.value.type !== TOKEN_COMMA) {
-    return fail(parserContext, { message: 'expected comma after expression', lineno: nextR.value.lineno ?? 0,
-      colno: nextR.value.colno ?? 0, });
+    return fail(parserContext, {
+      message: 'expected comma after expression',
+      lineno: nextR.value.lineno ?? 0,
+      colno: nextR.value.colno ?? 0,
+    });
   }
   const consumedR = nextToken(parserContext);
   if (isErr(consumedR)) {
@@ -134,8 +137,11 @@ const parseOptionalBracket = (
     return rightBracketR;
   }
   if (rightBracketR.value.type !== 'right-bracket') {
-    return fail(parserContext, { message: 'expected right bracket', lineno: rightBracketR.value.lineno,
-      colno: rightBracketR.value.colno, });
+    return fail(parserContext, {
+      message: 'expected right bracket',
+      lineno: rightBracketR.value.lineno,
+      colno: rightBracketR.value.colno,
+    });
   }
 
   const node = optionalChain(loc(tok), { target, val: startR.value });

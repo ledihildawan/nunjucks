@@ -20,7 +20,9 @@ describe('parseMatch', () => {
   });
 
   test('parses multiple when branches', () => {
-    const node = parseFirst('{% match x %}{% when 1 %}one{% when 2 %}two{% endmatch %}') as MatchNode;
+    const node = parseFirst(
+      '{% match x %}{% when 1 %}one{% when 2 %}two{% endmatch %}'
+    ) as MatchNode;
     expect(getNodeTypeName(node)).toBe('match');
     expect(node.cases).toHaveLength(2);
   });

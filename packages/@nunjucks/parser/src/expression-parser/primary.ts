@@ -52,8 +52,11 @@ const handleLiteralToken = (
     case TOKEN_BOOLEAN: {
       const value = parseBooleanValue(tok);
       if (value === undefined) {
-        return fail(parserContext, { message: `invalid boolean: ${tok.value}`, lineno: tok.lineno,
-          colno: tok.colno, });
+        return fail(parserContext, {
+          message: `invalid boolean: ${tok.value}`,
+          lineno: tok.lineno,
+          colno: tok.colno,
+        });
       }
       return ok(literal(loc(tok), value));
     }
@@ -141,8 +144,11 @@ const parsePrimaryRaw = (parserContext: ParserContext): Result<Node, TemplateErr
   }
   const aggregateNode = aggregateR.value;
   if (!aggregateNode) {
-    return fail(parserContext, { message: `expected expression, got ${tok.type}`, lineno: tok.lineno,
-      colno: tok.colno, });
+    return fail(parserContext, {
+      message: `expected expression, got ${tok.type}`,
+      lineno: tok.lineno,
+      colno: tok.colno,
+    });
   }
   return ok(aggregateNode);
 };

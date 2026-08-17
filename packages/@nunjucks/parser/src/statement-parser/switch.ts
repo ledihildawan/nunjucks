@@ -125,8 +125,11 @@ export const parseSwitch = (parserContext: ParserContext): Result<Node, Template
       skipSymbol(parserContext, SWITCH_TOKENS.caseDefault)
     )
   ) {
-    return fail(parserContext, { message: 'parseSwitch: expected "switch," "case" or "default"', lineno: tag.lineno,
-      colno: tag.colno, });
+    return fail(parserContext, {
+      message: 'parseSwitch: expected "switch," "case" or "default"',
+      lineno: tag.lineno,
+      colno: tag.colno,
+    });
   }
 
   const exprR = parseExpression(parserContext);

@@ -47,7 +47,9 @@ const isLoaderMissCode = (loaderError: unknown): boolean => {
   const errorCode =
     isKeyedObject(loaderError) && typeof loaderError.code === 'string' ? loaderError.code : null;
   return (
-    errorCode === 'ENOENT' || errorCode === 'MODULE_NOT_FOUND' || errorCode === 'ERR_MODULE_NOT_FOUND'
+    errorCode === 'ENOENT' ||
+    errorCode === 'MODULE_NOT_FOUND' ||
+    errorCode === 'ERR_MODULE_NOT_FOUND'
   );
 };
 

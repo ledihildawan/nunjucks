@@ -32,8 +32,8 @@ describe('dashboardData invariants', () => {
   });
 
   test('every product price renders through formatPrice without a fallback dash', () => {
-    expect(
-      dashboardData.products.every((product) => formatPrice(product.price) !== '—')
-    ).toBe(true);
+    expect(dashboardData.products.every((product) => formatPrice(product.price) !== '—')).toBe(
+      true
+    );
   });
 });

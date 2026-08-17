@@ -54,8 +54,9 @@ const STREAM_ALREADY_CONSUMED = createErrorDefinition({
     'The same stream returned by `renderToStream()` was iterated a second time',
     'A render stream is single-use — each iteration drains the underlying generator',
   ],
-  fixCode: "const result = await njk.renderToStream(template); // call again for a fresh stream",
-  fixComment: 'Call `renderToStream()` again to obtain a new stream instead of re-iterating the old one',
+  fixCode: 'const result = await njk.renderToStream(template); // call again for a fresh stream',
+  fixComment:
+    'Call `renderToStream()` again to obtain a new stream instead of re-iterating the old one',
 });
 
 const UNAVAILABLE_IN_ENV = createErrorDefinition({
@@ -66,7 +67,7 @@ const UNAVAILABLE_IN_ENV = createErrorDefinition({
     'The environment was created without registering this filter or test',
     'A custom environment is missing the filter/test handler',
   ],
-  fixCode: "const njk = nunjucks({ filters: { myFilter: (value) => value } })",
+  fixCode: 'const njk = nunjucks({ filters: { myFilter: (value) => value } })',
   fixComment: 'Register the missing filter in the factory config `filters`, or a test via `tests`',
 });
 

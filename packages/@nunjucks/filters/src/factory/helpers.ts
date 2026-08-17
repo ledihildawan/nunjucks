@@ -97,8 +97,7 @@ const validateItemsHaveAttr = ({
   errorDef,
 }: ValidateItemsInput): Result<Record<string, unknown>[], TemplateError> => {
   const everyHasAttr = items.every(
-    (item) =>
-      item !== null && typeof item === 'object' && Object.hasOwn(item, attr)
+    (item) => item !== null && typeof item === 'object' && Object.hasOwn(item, attr)
   );
   if (!everyHasAttr) {
     return err(

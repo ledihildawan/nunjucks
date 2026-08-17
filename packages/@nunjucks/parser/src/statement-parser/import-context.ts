@@ -19,8 +19,11 @@ export const parseWithContext = (
       : null;
 
   if (withContext !== null && !skipSymbol(parserContext, 'context')) {
-    return fail(parserContext, { message: 'parseFrom: expected context after with/without', lineno: tok.lineno,
-      colno: tok.colno, });
+    return fail(parserContext, {
+      message: 'parseFrom: expected context after with/without',
+      lineno: tok.lineno,
+      colno: tok.colno,
+    });
   }
 
   return ok(withContext);

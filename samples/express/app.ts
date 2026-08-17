@@ -91,7 +91,8 @@ const createApp = (): Express => {
     if (!('renderContext' in error)) {
       return error;
     }
-    const { renderContext: _redacted, ...propertyDescriptors } = Object.getOwnPropertyDescriptors(error);
+    const { renderContext: _redacted, ...propertyDescriptors } =
+      Object.getOwnPropertyDescriptors(error);
     // WHY: descriptor rebuild instead of object spread — spread drops the non-enumerable Error
     // fields (message, stack), leaving the log formatter without err.message and crashing it.
     return Object.create(Object.getPrototypeOf(error), propertyDescriptors);

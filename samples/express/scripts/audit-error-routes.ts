@@ -69,7 +69,9 @@ const discoverRoutes = async (base: string): Promise<string[]> => {
   try {
     errorsSrc = readFileSync(ERRORS_TS, 'utf8');
   } catch {
-    throw new Error(`Cannot read ${ERRORS_TS} — route fallback requires routes/errors.ts (run from samples/express)`);
+    throw new Error(
+      `Cannot read ${ERRORS_TS} — route fallback requires routes/errors.ts (run from samples/express)`
+    );
   }
   return [
     ...new Set(
@@ -224,41 +226,45 @@ const pad = (value: string | null | undefined, width: number): string =>
 
 const run = async (base: string): Promise<number> => {
   const routes = await discoverRoutes(base);
-  const rows: RouteRow[] = (await Promise.all(
-    routes.map(async (route): Promise<RouteRow> => {
-      try {
-        // WHY: timeout guard — a hung route surfaces as an ERROR row via the catch below,
-        // never an indefinite stall of the whole Promise.all batch.
-        const response = await fetch(`${base}/errors/${route}`, { signal: AbortSignal.timeout(10_000) });
-        const html = await response.text();
-        const parsed = parse(html);
-        const info: RouteInfo = {
-          loc: parsed.loc,
-          caret: parsed.caret,
-          code: parsed.code,
-          title: parsed.title,
-          threw: response.status >= 400,
-          hasErrorPage: /class="error-(?:wrapper|title|location)"/u.test(html),
-        };
-        const validation = validate(route, info);
-        return { route, status: validation.status, reason: validation.reason, info };
-      } catch (err: unknown) {
-        return {
-          route,
-          status: 'ERROR',
-          reason: String(err),
-          info: {
-            loc: null,
-            caret: null,
-            code: null,
-            title: null,
-            threw: false,
-            hasErrorPage: false,
-          },
-        };
-      }
-    })
-  )).toSorted((a, b) => routes.indexOf(a.route) - routes.indexOf(b.route));
+  const rows: RouteRow[] = (
+    await Promise.all(
+      routes.map(async (route): Promise<RouteRow> => {
+        try {
+          // WHY: timeout guard — a hung route surfaces as an ERROR row via the catch below,
+          // never an indefinite stall of the whole Promise.all batch.
+          const response = await fetch(`${base}/errors/${route}`, {
+            signal: AbortSignal.timeout(10_000),
+          });
+          const html = await response.text();
+          const parsed = parse(html);
+          const info: RouteInfo = {
+            loc: parsed.loc,
+            caret: parsed.caret,
+            code: parsed.code,
+            title: parsed.title,
+            threw: response.status >= 400,
+            hasErrorPage: /class="error-(?:wrapper|title|location)"/u.test(html),
+          };
+          const validation = validate(route, info);
+          return { route, status: validation.status, reason: validation.reason, info };
+        } catch (err: unknown) {
+          return {
+            route,
+            status: 'ERROR',
+            reason: String(err),
+            info: {
+              loc: null,
+              caret: null,
+              code: null,
+              title: null,
+              threw: false,
+              hasErrorPage: false,
+            },
+          };
+        }
+      })
+    )
+  ).toSorted((a, b) => routes.indexOf(a.route) - routes.indexOf(b.route));
 
   console.log(`${pad('ROUTE', 26) + pad('STATUS', 11) + pad('LOCATION', 46)}CODE`);
   console.log('-'.repeat(120));

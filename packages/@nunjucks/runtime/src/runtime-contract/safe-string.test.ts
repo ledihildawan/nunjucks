@@ -34,9 +34,9 @@ describe('isSafeString', () => {
   test('rejects plain context objects carrying a val field (autoescape bypass vector)', () => {
     expect(isSafeString({ val: '</script><script>alert(1)</script>' })).toBe(false);
     expect(isSafeString({ val: 'x', toString: () => 'x' })).toBe(false);
-    expect(isSafeString(Object.create(String.prototype, { val: { value: 'x', enumerable: true } }))).toBe(
-      false
-    );
+    expect(
+      isSafeString(Object.create(String.prototype, { val: { value: 'x', enumerable: true } }))
+    ).toBe(false);
   });
 
   test('rejects partially forged shapes missing the full own non-enumerable property set', () => {

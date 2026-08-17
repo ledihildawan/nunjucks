@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { normalizeErrorMetadata } from '@nunjucks/error-formatter';
-import { buildErrorDef, extractErrorSnapshot, resolveErrorProps, toRenderContext } from './error-snapshot.ts';
+import {
+  buildErrorDef,
+  extractErrorSnapshot,
+  resolveErrorProps,
+  toRenderContext,
+} from './error-snapshot.ts';
 
 type NormalizedMetadata = ReturnType<typeof normalizeErrorMetadata>;
 
@@ -56,7 +61,9 @@ describe('resolveErrorProps', () => {
   });
 
   test('drops empty causes and invalid severity', () => {
-    const props = resolveErrorProps(Object.assign(new Error('e'), { causes: [], severity: 'loud' }));
+    const props = resolveErrorProps(
+      Object.assign(new Error('e'), { causes: [], severity: 'loud' })
+    );
     expect(props.resolvedCauses).toBeUndefined();
     expect(props.originalSeverity).toBeUndefined();
   });

@@ -4,10 +4,9 @@ import { renderTemplate } from './render-test-helper.ts';
 
 describe('sandbox security - prototype pollution', () => {
   test('constructor.constructor code execution is blocked even WITHOUT sandbox', async () => {
-    const err = (await renderTemplate(
-      '{{ user.constructor.constructor("return 41+1")() }}',
-      { user: {} }
-    ).catch((e) => e)) as TemplateError;
+    const err = (await renderTemplate('{{ user.constructor.constructor("return 41+1")() }}', {
+      user: {},
+    }).catch((e) => e)) as TemplateError;
     expect(err.code).toBeTruthy();
   });
 

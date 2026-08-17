@@ -1,6 +1,15 @@
 import { describe, expect, test } from 'bun:test';
 import type { Node } from '@nunjucks/nodes';
-import { block, findAll, funCall, nodeList, output, root, symbol, templateData } from '@nunjucks/nodes';
+import {
+  block,
+  findAll,
+  funCall,
+  nodeList,
+  output,
+  root,
+  symbol,
+  templateData,
+} from '@nunjucks/nodes';
 import { ZERO_LOC } from '@nunjucks/shared';
 import { transform } from './index.ts';
 
@@ -74,9 +83,7 @@ describe('transform (liftSuper)', () => {
     const outerBlock = findAll(transformed, 'block').find(
       (n) => (n as { name?: unknown }).name === 'outer'
     ) as { body: { children: readonly Node[] } };
-    expect(
-      outerBlock.body.children.some((child) => child.type === 'super')
-    ).toBe(false);
+    expect(outerBlock.body.children.some((child) => child.type === 'super')).toBe(false);
   });
 
   test('preserves block structure after transform', () => {

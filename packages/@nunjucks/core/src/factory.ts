@@ -3,7 +3,12 @@ import type { TemplateError } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
 import type { Result } from '@nunjucks/lib';
 import { isErr } from '@nunjucks/lib';
-import { createFileSystemLoader, createLoaderChain, type FileSystemLoader, type TemplateLoader } from '@nunjucks/loaders';
+import {
+  createFileSystemLoader,
+  createLoaderChain,
+  type FileSystemLoader,
+  type TemplateLoader,
+} from '@nunjucks/loaders';
 import { validateConfig } from '@nunjucks/validators';
 import { PACKAGE_VERSION } from './config/global.ts';
 import type {

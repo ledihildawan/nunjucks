@@ -20,7 +20,11 @@ import type { ContentType } from '@nunjucks/shared';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
 import { serializeErrorPayload } from './pipe-stream.ts';
 import { buildExecutionEnv } from './render-env.ts';
-import { coerceChunk, createStreamTimeoutError, withStreamDeadline } from './render-stream-adapters.ts';
+import {
+  coerceChunk,
+  createStreamTimeoutError,
+  withStreamDeadline,
+} from './render-stream-adapters.ts';
 import type { PreparedTemplate, RenderMarkerError } from './render-types.ts';
 import type { DisplaySeverity } from './severity-levels.ts';
 import { getSeverity } from './severity-levels.ts';
@@ -138,7 +142,14 @@ const formatErrorMarker = (
     blockedKeys: error.blockedKeys ?? null,
   });
   const humanTitle = classifyAndBuildTitle(error);
-  return toHtmlMarker(error, { sourceTrace: trace, ide, severity: 'block', humanTitle, version, dev });
+  return toHtmlMarker(error, {
+    sourceTrace: trace,
+    ide,
+    severity: 'block',
+    humanTitle,
+    version,
+    dev,
+  });
 };
 
 interface StreamChunkInput {

@@ -25,8 +25,12 @@ describe('compareValues', () => {
   });
 
   test('coerces non-primitive values to their string form', () => {
-    expect(compareValues({ left: null, right: 'null', caseSens: true, sortReverse: false })).toBe(0);
-    expect(compareValues({ left: {}, right: '[object Object]', caseSens: true, sortReverse: false })).toBe(0);
+    expect(compareValues({ left: null, right: 'null', caseSens: true, sortReverse: false })).toBe(
+      0
+    );
+    expect(
+      compareValues({ left: {}, right: '[object Object]', caseSens: true, sortReverse: false })
+    ).toBe(0);
   });
 });
 

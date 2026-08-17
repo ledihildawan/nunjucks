@@ -37,6 +37,8 @@
   "scripts": {
     "build": "bun run scripts/bundle.js",
     "lint": "biome lint packages samples bench",
+    "format": "biome format --write packages samples bench scripts",
+    "format:check": "biome format packages samples bench scripts",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "bench": "bun run bench/render.bench.ts",

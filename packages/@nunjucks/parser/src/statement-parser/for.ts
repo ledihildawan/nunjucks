@@ -60,8 +60,11 @@ export const parseFor = (parserContext: ParserContext): Result<Node, TemplateErr
   const forTok = forTokR.value;
 
   if (!skipSymbol(parserContext, 'for')) {
-    return fail(parserContext, { message: 'parseFor: expected for', lineno: forTok.lineno,
-      colno: forTok.colno, });
+    return fail(parserContext, {
+      message: 'parseFor: expected for',
+      lineno: forTok.lineno,
+      colno: forTok.colno,
+    });
   }
   const endBlock = 'endfor';
 
@@ -72,8 +75,11 @@ export const parseFor = (parserContext: ParserContext): Result<Node, TemplateErr
   const name = nameR.value;
 
   if (!skipSymbol(parserContext, 'in')) {
-    return fail(parserContext, { message: 'parseFor: expected "in" keyword for loop', lineno: forTok.lineno,
-      colno: forTok.colno, });
+    return fail(parserContext, {
+      message: 'parseFor: expected "in" keyword for loop',
+      lineno: forTok.lineno,
+      colno: forTok.colno,
+    });
   }
 
   const arrR = parseExpression(parserContext);

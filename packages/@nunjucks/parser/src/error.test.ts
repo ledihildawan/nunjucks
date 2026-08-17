@@ -42,7 +42,10 @@ describe('error: cause inference', () => {
 
   test('unknown-block messages map to the tag-typo causes', () => {
     const errObj = error(makeCtx('{{ x }}'), { message: 'unknown block tag: iffoo' });
-    expect(errObj.causes).toEqual(['**Typo** in block tag name', 'Block tag is not registered or not yet supported']);
+    expect(errObj.causes).toEqual([
+      '**Typo** in block tag name',
+      'Block tag is not registered or not yet supported',
+    ]);
   });
 
   test('expected-in messages map to the for-loop causes', () => {

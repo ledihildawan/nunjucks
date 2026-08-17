@@ -7,7 +7,7 @@ const collectString = async (stream: AsyncIterable<string>): Promise<string> => 
   return chunks.join('');
 };
 const collectStream = async (
-  stream: AsyncGenerator<string, unknown>,
+  stream: AsyncGenerator<string, unknown>
 ): Promise<{ output: string; returnValue: unknown }> => {
   const chunks: string[] = [];
   while (true) {

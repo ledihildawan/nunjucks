@@ -1,11 +1,11 @@
 const result = await Bun.build({
-  entrypoints: ["./packages/@nunjucks/core/src/index.ts"],
-  outdir: "./dist",
-  format: "esm",
+  entrypoints: ['./packages/@nunjucks/core/src/index.ts'],
+  outdir: './dist',
+  format: 'esm',
   splitting: false,
   minify: false,
-  sourcemap: "linked",
-  target: "bun",
+  sourcemap: 'linked',
+  target: 'bun',
 });
 
 if (!result.success) {
@@ -13,4 +13,4 @@ if (!result.success) {
   process.exit(1);
 }
 
-console.log("Build complete!");
+console.log('Build complete!');

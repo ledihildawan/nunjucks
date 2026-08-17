@@ -62,9 +62,7 @@ describe('parseFrom', () => {
   });
 
   test('rejects "with" not followed by "context"', () => {
-    expect(() => parseFirst('{% from "lib.html" import foo with ctx %}')).toThrow(
-      /context/i
-    );
+    expect(() => parseFirst('{% from "lib.html" import foo with ctx %}')).toThrow(/context/i);
   });
 
   test('a mid-list "with context" marker survives later names', () => {

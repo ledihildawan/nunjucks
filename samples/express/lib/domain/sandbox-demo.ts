@@ -66,8 +66,7 @@ const runTests = async ({
         config: testConfig,
       });
       const blocked = isErr(result);
-      const passed =
-        test.shouldPass === undefined ? null : isOk(result) === test.shouldPass;
+      const passed = test.shouldPass === undefined ? null : isOk(result) === test.shouldPass;
       return { name: test.name, outcome: result, blocked, passed };
     })
   );
@@ -75,8 +74,7 @@ const runTests = async ({
 const outcomeError = (row: SandboxTestResult): Error | null =>
   row.outcome.ok ? null : row.outcome.error;
 
-const outcomeOutput = (row: SandboxTestResult): string =>
-  row.outcome.ok ? row.outcome.value : '';
+const outcomeOutput = (row: SandboxTestResult): string => (row.outcome.ok ? row.outcome.value : '');
 
 const prototypeEscapeKeys = ['__proto__', 'constructor', 'prototype'];
 

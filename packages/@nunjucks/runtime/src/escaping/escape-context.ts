@@ -22,10 +22,10 @@ const escapeForContext = (str: string, context: HtmlContext): string => {
       return escapeScriptString(str);
     case 'style':
       return escapeStyle(str);
-  case 'comment':
-    // WHY: both HTML-spec abrupt-close sequences terminate comments — `-->` and the
-    // legacy `--!>`; escaping only the first leaves the second as a comment breakout.
-    return str.replaceAll('-->', '--&gt;').replaceAll('--!>', '--!&gt;');
+    case 'comment':
+      // WHY: both HTML-spec abrupt-close sequences terminate comments — `-->` and the
+      // legacy `--!>`; escaping only the first leaves the second as a comment breakout.
+      return str.replaceAll('-->', '--&gt;').replaceAll('--!>', '--!&gt;');
     default:
       return escapeHtml(str);
   }

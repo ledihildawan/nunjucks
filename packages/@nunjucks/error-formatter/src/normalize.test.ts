@@ -47,7 +47,11 @@ describe('normalizeErrorMetadata', () => {
   });
 
   test('applies fallback values when the source lacks fields', () => {
-    const meta = normalizeErrorMetadata(new Error('e'), { lineno: 9, phase: 'compile', templateName: 't.njk' });
+    const meta = normalizeErrorMetadata(new Error('e'), {
+      lineno: 9,
+      phase: 'compile',
+      templateName: 't.njk',
+    });
     expect(meta.lineno).toBe(9);
     expect(meta.phase).toBe('compile');
     expect(meta.templateName).toBe('t.njk');

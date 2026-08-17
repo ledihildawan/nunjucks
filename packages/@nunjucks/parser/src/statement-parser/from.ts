@@ -27,8 +27,11 @@ const parseImportName = (
   }
   const name = nameR.value;
   if (isUnderscore(name)) {
-    return fail(parserContext, { message: 'parseFrom: names starting with an underscore cannot be imported', lineno: name.lineno,
-      colno: name.colno, });
+    return fail(parserContext, {
+      message: 'parseFrom: names starting with an underscore cannot be imported',
+      lineno: name.lineno,
+      colno: name.colno,
+    });
   }
 
   const hasAlias = skipSymbol(parserContext, 'as');
@@ -56,8 +59,11 @@ const handleBlockEnd = (
   fromTok: Token
 ): Result<void, TemplateError> => {
   if (names.children.length === 0) {
-    return fail(parserContext, { message: 'parseFrom: Expected at least one import name', lineno: fromTok.lineno,
-      colno: fromTok.colno, });
+    return fail(parserContext, {
+      message: 'parseFrom: Expected at least one import name',
+      lineno: fromTok.lineno,
+      colno: fromTok.colno,
+    });
   }
 
   // WHY: advanceAfterBlockEnd validates the block-end shape and honors `-%}`
@@ -91,8 +97,11 @@ const parseFromImportIteration = (
   }
 
   if (names.children.length > 0 && !skip(parserContext, TOKEN_COMMA)) {
-    return fail(parserContext, { message: 'parseFrom: expected comma', lineno: fromTok.lineno,
-      colno: fromTok.colno, });
+    return fail(parserContext, {
+      message: 'parseFrom: expected comma',
+      lineno: fromTok.lineno,
+      colno: fromTok.colno,
+    });
   }
 
   const result = parseImportName(parserContext, names);
@@ -118,8 +127,11 @@ export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateEr
   }
 
   if (!skipSymbol(parserContext, 'import')) {
-    return fail(parserContext, { message: 'parseFrom: expected import', lineno: fromTok.lineno,
-      colno: fromTok.colno, });
+    return fail(parserContext, {
+      message: 'parseFrom: expected import',
+      lineno: fromTok.lineno,
+      colno: fromTok.colno,
+    });
   }
 
   const importLoop = (

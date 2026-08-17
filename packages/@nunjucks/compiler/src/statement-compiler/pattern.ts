@@ -87,7 +87,12 @@ const compileArrayPattern = (
       if (state.done) {
         return state;
       }
-      const result = handleArrayPatternChild({ destructuringContext, child, source, index: state.index });
+      const result = handleArrayPatternChild({
+        destructuringContext,
+        child,
+        source,
+        index: state.index,
+      });
       return { index: result.newIndex, done: result.shouldBreak };
     },
     { index: 0, done: false }

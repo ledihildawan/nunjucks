@@ -2,10 +2,33 @@ import { describe, test, expect } from 'bun:test';
 import { createLog, isTemplateError, prettifyError } from './create-log.ts';
 import type { ErrorDefinitionEntry, ErrorContext, WarningContext } from './create-log.ts';
 
-const def: ErrorDefinitionEntry = { name: 'TEST_ERR', message: 'something failed', pattern: /test/ };
-const errContext: ErrorContext = { lineno: 5, colno: 10, phase: 'render', templateName: 'foo.njk', lineBase: 'zero' };
-const noNameCtx: ErrorContext = { lineno: 1, colno: 1, phase: 'render', templateName: null, lineBase: 'zero' };
-const warnContext: WarningContext = { varName: 'x', lineno: 1, colno: 1, phase: 'render', templateName: null, lineBase: 'zero' };
+const def: ErrorDefinitionEntry = {
+  name: 'TEST_ERR',
+  message: 'something failed',
+  pattern: /test/,
+};
+const errContext: ErrorContext = {
+  lineno: 5,
+  colno: 10,
+  phase: 'render',
+  templateName: 'foo.njk',
+  lineBase: 'zero',
+};
+const noNameCtx: ErrorContext = {
+  lineno: 1,
+  colno: 1,
+  phase: 'render',
+  templateName: null,
+  lineBase: 'zero',
+};
+const warnContext: WarningContext = {
+  varName: 'x',
+  lineno: 1,
+  colno: 1,
+  phase: 'render',
+  templateName: null,
+  lineBase: 'zero',
+};
 
 describe('createLog', () => {
   test('creates a TemplateError from a definition', () => {
@@ -25,7 +48,12 @@ describe('createLog', () => {
       message: (args) => `got ${(args as Record<string, string> | undefined)?.name ?? ''}`,
       pattern: /x/,
     };
-    const err = createLog('error', { def: fnDef, params: { name: 'foo' }, subject: null, context: noNameCtx });
+    const err = createLog('error', {
+      def: fnDef,
+      params: { name: 'foo' },
+      subject: null,
+      context: noNameCtx,
+    });
     expect(err.message).toBe('got foo');
   });
 
@@ -47,10 +75,14 @@ describe('createLog', () => {
 
 describe('isTemplateError', () => {
   test('true for createLog error output, false for plain Error and warnings', () => {
-    expect(isTemplateError(createLog('error', { def, subject: null, context: errContext }))).toBe(true);
+    expect(isTemplateError(createLog('error', { def, subject: null, context: errContext }))).toBe(
+      true
+    );
     expect(isTemplateError(new Error('plain'))).toBe(false);
     expect(isTemplateError(null)).toBe(false);
-    expect(isTemplateError(createLog('warning', { def, subject: null, context: warnContext }))).toBe(false);
+    expect(
+      isTemplateError(createLog('warning', { def, subject: null, context: warnContext }))
+    ).toBe(false);
   });
 });
 

@@ -74,7 +74,8 @@ const normalizePattern = (node: Node): Node => {
 };
 
 const isExpressionContext = (tok: Token): boolean =>
-  tok && (tok.type === TOKEN_OPERATOR || tok.type === TOKEN_RIGHT_PAREN || tok.type === TOKEN_COMMA);
+  tok &&
+  (tok.type === TOKEN_OPERATOR || tok.type === TOKEN_RIGHT_PAREN || tok.type === TOKEN_COMMA);
 
 const handleWalrusAssignment = (
   node: Node,

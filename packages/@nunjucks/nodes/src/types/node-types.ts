@@ -47,12 +47,7 @@ import type {
   VariableDeclNode,
   WhenNode,
 } from './statement-nodes.ts';
-import type {
-  HoleNode,
-  LiteralNode,
-  SymbolNode,
-  TemplateDataNode,
-} from './value-nodes.ts';
+import type { HoleNode, LiteralNode, SymbolNode, TemplateDataNode } from './value-nodes.ts';
 
 type NodeTypeInterfaceMap = {
   [T.LITERAL]: LiteralNode;

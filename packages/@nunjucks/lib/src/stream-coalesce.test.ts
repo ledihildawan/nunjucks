@@ -15,7 +15,11 @@ const drainInto = async (stream: AsyncGenerator<string>): Promise<string[]> => {
 
 describe('coalesceStream', () => {
   test('passes every chunk through unchanged at the default threshold', async () => {
-    expect(await drainInto(coalesceStream(sourceOf(['a', 'bb', 'ccc'])))).toEqual(['a', 'bb', 'ccc']);
+    expect(await drainInto(coalesceStream(sourceOf(['a', 'bb', 'ccc'])))).toEqual([
+      'a',
+      'bb',
+      'ccc',
+    ]);
   });
 
   test('passes every chunk through unchanged at threshold zero', async () => {

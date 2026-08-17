@@ -81,7 +81,9 @@ describe('filters/string', () => {
 
     test('escapes markup-significant characters to prevent script-context breakout', () => {
       const result = String(getOrElse(tojson('</script><script>alert(1)</script>'), null));
-      expect(result).toBe('"\\u003c/script\\u003e\\u003cscript\\u003ealert(1)\\u003c/script\\u003e"');
+      expect(result).toBe(
+        '"\\u003c/script\\u003e\\u003cscript\\u003ealert(1)\\u003c/script\\u003e"'
+      );
       expect(result).not.toContain('</script>');
     });
 

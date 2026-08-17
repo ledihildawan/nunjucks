@@ -134,7 +134,11 @@ interface StringArrayInput {
   type: string;
 }
 
-const validateStringArray = ({ value, subject, type }: StringArrayInput): ConfigValidationError[] =>
+const validateStringArray = ({
+  value,
+  subject,
+  type,
+}: StringArrayInput): ConfigValidationError[] =>
   // WHY: null is tolerated as "unset" — the flat options bag preserves null for keys
   // like blockedContextKeys (see factory compact()), and a JS caller passing null must
   // get the catalogued INVALID_CONFIG error, not a TypeError from value.every.
@@ -227,9 +231,21 @@ export const validateConfig = (config: Config): ConfigValidationResult => {
   const errors = [
     ...validateNumericConfig(config),
     ...validateEnumConfig(config),
-    ...validateStringArray({ value: config.blockedContextKeys, subject: 'blockedContextKeys', type: 'security' }),
-    ...validateStringArray({ value: config.sandboxAllowlist, subject: 'sandboxAllowlist', type: 'security' }),
-    ...validateStringArray({ value: config.allowedGlobals, subject: 'allowedGlobals', type: 'security' }),
+    ...validateStringArray({
+      value: config.blockedContextKeys,
+      subject: 'blockedContextKeys',
+      type: 'security',
+    }),
+    ...validateStringArray({
+      value: config.sandboxAllowlist,
+      subject: 'sandboxAllowlist',
+      type: 'security',
+    }),
+    ...validateStringArray({
+      value: config.allowedGlobals,
+      subject: 'allowedGlobals',
+      type: 'security',
+    }),
     ...validateViews(config.views),
     ...validateCallableValues(config.customFilters, 'filters'),
     ...validateCallableValues(config.customTests, 'tests'),

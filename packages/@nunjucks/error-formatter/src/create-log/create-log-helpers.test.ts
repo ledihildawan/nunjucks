@@ -1,5 +1,9 @@
 import { describe, test, expect } from 'bun:test';
-import { resolveMessage, isErrorDefinitionEntry, extractExtraFromContext } from './create-log-helpers.ts';
+import {
+  resolveMessage,
+  isErrorDefinitionEntry,
+  extractExtraFromContext,
+} from './create-log-helpers.ts';
 
 describe('resolveMessage', () => {
   test('returns a plain string message unchanged', () => {
@@ -7,7 +11,8 @@ describe('resolveMessage', () => {
   });
 
   test('invokes a function message with the params', () => {
-    const message = (p?: Record<string, string> | string[]) => `hi ${(p as Record<string, string> | undefined)?.name ?? ''}`;
+    const message = (p?: Record<string, string> | string[]) =>
+      `hi ${(p as Record<string, string> | undefined)?.name ?? ''}`;
     expect(resolveMessage(message, { name: 'world' })).toBe('hi world');
   });
 
@@ -47,7 +52,15 @@ describe('extractExtraFromContext', () => {
   });
 
   test('strips the known structural keys, keeping extras', () => {
-    const ctx = { lineno: 1, colno: 2, phase: 'render', templateName: 't', lineBase: 'zero', custom: 9, other: 'y' } as Record<string, unknown>;
+    const ctx = {
+      lineno: 1,
+      colno: 2,
+      phase: 'render',
+      templateName: 't',
+      lineBase: 'zero',
+      custom: 9,
+      other: 'y',
+    } as Record<string, unknown>;
     const extra = extractExtraFromContext(ctx as never);
     expect(extra).toEqual({ custom: 9, other: 'y' });
   });
