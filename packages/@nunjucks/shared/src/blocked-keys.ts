@@ -123,6 +123,10 @@ const DANGEROUS_GLOBALS = toSet(
 
 const CODE_EXECUTION_PATTERNS = toSet(BLOCKED_KEY_CATEGORIES.CODE_EXECUTION);
 
+/**
+ * Freezes the named sandbox environment identifiers — `ENVIRONMENT_VALUES` derives its
+ * members from this map, so adding an environment here is the single edit required.
+ */
 export const ENVIRONMENTS = {
   NODE: 'node',
   BROWSER: 'browser',
@@ -133,8 +137,13 @@ export const ENVIRONMENTS = {
 // their membership set from this tuple instead of re-listing the members.
 export const ENVIRONMENT_VALUES = ['auto', ...Object.values(ENVIRONMENTS)] as const;
 
+/**
+ * Narrows a config string to `'auto' | 'node' | 'browser' | 'deno'` — all members flow
+ * from `ENVIRONMENTS`.
+ */
 export type Environment = (typeof ENVIRONMENT_VALUES)[number];
 
+/** Checks whether a name matches a known code-execution sink such as `eval` or `exec`. */
 export const isCodeExecutionPattern = (key: string): boolean => CODE_EXECUTION_PATTERNS.has(key);
 
 const checkEnvGlobals = (key: string, env: Environment): BlockedKeyCategory | null => {
@@ -153,6 +162,10 @@ const checkEnvGlobals = (key: string, env: Environment): BlockedKeyCategory | nu
   return null;
 };
 
+/**
+ * Classifies a key by blocklist category — `'auto'` widens the environment-specific tiers,
+ * and a miss on every tier returns `null` (not blocked) rather than defaulting to intrinsic.
+ */
 export const getBlockedKeyCategory = (
   key: string,
   env: Environment = 'auto'
@@ -166,6 +179,10 @@ export const getBlockedKeyCategory = (
   return checkEnvGlobals(key, env);
 };
 
+/**
+ * Reports whether `key` is blocked for `env`: every environment inherits the base union of
+ * object intrinsics and universal globals, while `'auto'` takes the union of all three tiers.
+ */
 export const isBlockedKey = (key: string, env: Environment = 'auto'): boolean => {
   switch (env) {
     case 'auto':
@@ -181,6 +198,7 @@ export const isBlockedKey = (key: string, env: Environment = 'auto'): boolean =>
   }
 };
 
+/** Checks membership in the environment-globals union, excluding object intrinsics. */
 export const isDangerousGlobal = (key: string): boolean => DANGEROUS_GLOBALS.has(key);
 
 // WHY: the minimal inherited-key set that yields code execution (`x.constructor.constructor`
@@ -194,13 +212,31 @@ const PROTOTYPE_ESCAPE_KEYS: ReadonlySet<string> = new Set([
   'prototype',
 ]);
 
+/**
+ * Reports whether reading `key` as an inherited property escapes the prototype chain to
+ * code execution — blocked unconditionally, independent of any sandbox configuration.
+ */
 const isPrototypeEscapeKey = (key: string): boolean => PROTOTYPE_ESCAPE_KEYS.has(key);
 
+/**
+ * Lists every key blocked under `'auto'` (base plus all three environment tiers) as a
+ * plain array snapshot — set order is unspecified, so consumers must not rely on it.
+ */
 export const BLOCKED_KEYS_LIST: readonly string[] = [...AUTO_BLOCKED_KEYS];
+/** Lists the environment-global names (universal, Node, browser, Deno) as an array snapshot. */
 export const DANGEROUS_GLOBALS_LIST: readonly string[] = [...DANGEROUS_GLOBALS];
 export { isPrototypeEscapeKey };
 
+/** Lists the frozen object-intrinsic names (`__proto__`, `constructor`, `prototype`, …). */
 export const OBJECT_INTRINSICS: readonly string[] = [...BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS];
+/**
+ * Lists the code-execution sink names — overlapping the global tiers by design, since the
+ * same name (`eval`, `Function`) is both a reachable global and a direct execution vector.
+ */
 export const CODE_EXECUTION_KEYS: readonly string[] = [...BLOCKED_KEY_CATEGORIES.CODE_EXECUTION];
 
+/**
+ * Matches the cross-realm reachability globals (`globalThis`, `process`, window-tree
+ * aliases) case-insensitively — narrower than `DANGEROUS_GLOBALS_LIST` by intent.
+ */
 export const DANGEROUS_KEY_PATTERN = /^(?:globalThis|process|window|parent|top|frames|opener)$/iu;

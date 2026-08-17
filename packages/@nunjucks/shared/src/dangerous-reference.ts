@@ -21,6 +21,10 @@ const checkSelf = (value: unknown): boolean =>
 const checkBuffer = (value: unknown): boolean =>
   typeof Buffer !== 'undefined' && value instanceof Buffer;
 
+/**
+ * Detects dangerous host references by value identity rather than shape — primitives are
+ * always safe, and every per-global check tolerates hosts where that global is absent.
+ */
 const isDangerousReference = (value: unknown): boolean => {
   if (isPrimitive(value)) {
     return false;
