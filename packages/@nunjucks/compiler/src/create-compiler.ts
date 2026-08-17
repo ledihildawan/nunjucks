@@ -36,6 +36,10 @@ export interface Emitter {
 export interface ScopeManager {
   scopeStack: string[];
   inBlock: boolean;
+  // WHY: set by compileRoot when the template extends another — root-scope OUTPUT
+  // (text + {{ }}) is suppressed because the parent's delegation pass renders the
+  // page (Jinja parity); block bodies and buffered contexts still compile.
+  suppressRootOutput: boolean;
   undefinedMode: UndefinedMode;
   emitFuncBegin: (node: Node, name: string) => void;
   emitFuncEnd: (noReturn?: boolean) => void;
@@ -83,6 +87,7 @@ export const createCompiler = ({
     bufferStack: [],
     scopeStack: [],
     inBlock: false,
+    suppressRootOutput: false,
     undefinedMode: undefinedMode ?? DEFAULT_UNDEFINED_MODE,
     compiledLine: 0,
 

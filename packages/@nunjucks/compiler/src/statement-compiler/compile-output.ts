@@ -36,6 +36,11 @@ const emitEnsureDefinedClose = (
 const isVariableLike = (child: Node): boolean =>
   isVariableDeclaration(child) || isVariableAssignment(child);
 
+// WHY: "root scope" = the lexical scope where `parentTemplate` lives (direct root
+// children, not inside a block function or a buffered capture/slot/component body).
+const isRootOutputSuppressed = (compiler: Compiler): boolean =>
+  compiler.suppressRootOutput && !compiler.inBlock && compiler.buffer === null;
+
 const compileTemplateDataChild = (compiler: Compiler, child: Node): void => {
   if (child.value) {
     compiler.emit(appendTarget(compiler));
@@ -84,7 +89,9 @@ const compileOutputChild = (compiler: Compiler, child: Node, frame: Frame): void
 
 const processOutputChild = (compiler: Compiler, child: Node, frame: Frame): void => {
   if (isTemplateData(child)) {
-    compileTemplateDataChild(compiler, child);
+    if (!isRootOutputSuppressed(compiler)) {
+      compileTemplateDataChild(compiler, child);
+    }
     return;
   }
   if (isVariableLike(child)) {
@@ -100,6 +107,13 @@ const processOutputChild = (compiler: Compiler, child: Node, frame: Frame): void
     } else {
       compiler.compile(child, frame);
     }
+    return;
+  }
+  // WHY: root-scope {{ expr }} output is dropped under extends (the parent renders the
+  // page); block bodies (inBlock) and buffered contexts (capture/slot/component —
+  // buffer !== null) run at call time where parentTemplate is irrelevant, so they keep
+  // compiling. Walrus above still emits for its assignment side effect.
+  if (isRootOutputSuppressed(compiler)) {
     return;
   }
   compileOutputChild(compiler, child, frame);

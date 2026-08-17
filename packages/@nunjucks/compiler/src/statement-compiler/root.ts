@@ -113,6 +113,12 @@ export const compileRoot = (compiler: Compiler, node: ChildrenNode): void => {
   const blocks = findAll(node, 'block').filter(isBlock);
   const { frame } = setupRootFunction(compiler, node);
 
+  // WHY: Jinja parity — under extends the parent's delegation pass renders the page,
+  // so the child's root-scope non-block output (stray text / {{ }}) would only prepend
+  // noise. Blocks still compile (they ARE the override surface) and variable-like
+  // children (walrus) keep running for their side effects.
+  compiler.suppressRootOutput = findAll(node, 'extends').length > 0;
+
   compileRootChildren(compiler, node, frame);
 
   emitParentTemplateDelegation(compiler);

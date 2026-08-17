@@ -49,6 +49,20 @@ describe('extends and blocks', () => {
     expect(result).toBe('XOIY');
   });
 
+  test('child non-block output is suppressed under extends (Jinja parity)', async () => {
+    await Promise.all([
+      writeFile(join(tempDir, 'sup-p.njk'), 'P-START{% block b %}P-B{% endblock %}P-END'),
+      writeFile(
+        join(tempDir, 'sup-child.njk'),
+        'STRAY-TEXT{{ stray_expr }}{% extends "sup-p.njk" %}{% block b %}C-B{% endblock %}TRAILING'
+      ),
+    ]);
+    const result = await renderFile('sup-child.njk', {});
+    // WHY: text before the extends tag, output expressions, and trailing content are
+    // all suppressed — the parent's delegation pass renders the page.
+    expect(result).toBe('P-STARTC-BP-END');
+  });
+
   test('3-level extends resolves ancestor blocks the direct parent omits', async () => {
     await Promise.all([
       writeFile(
@@ -79,9 +93,10 @@ describe('extends and blocks', () => {
     ]);
 
     const result = await renderFile('cap-child.njk', {});
-    // WHY: the guarded top-level buffer path must NOT capture the block in the child —
-    // the parent's hole is its single render site; the capture stays empty.
-    expect(result).toBe('[]PRECHILD-BPOST');
+    // WHY: the block renders exactly once (the parent's hole) and the child's capture
+    // stays empty; the child's literal "[]" text is suppressed under extends (the
+    // parent's delegation pass renders the page — Jinja parity).
+    expect(result).toBe('PRECHILD-BPOST');
   });
 
   test('block without extends uses default content', async () => {
