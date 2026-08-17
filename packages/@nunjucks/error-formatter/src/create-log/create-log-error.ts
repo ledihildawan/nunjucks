@@ -46,6 +46,19 @@ const resolveTraceLineBase = (err: TemplateError, isJsCaller: boolean | undefine
   return normalizeLineBase(err.lineBase);
 };
 
+/**
+ * Repoints a `NULL_VALUE` error's column at the accessed property on the
+ * parent object instead of the raw null position, so the source-trace caret
+ * lands on the offending member (the `.name` in `user.name`, not the null).
+ *
+ * Non-`NULL_VALUE` errors, missing source/line, or messages without a
+ * parseable "on null/undefined 'parent'" suffix pass `err.colno` through
+ * unchanged.
+ *
+ * @param err - The branded error carrying `code`, `sourceContent`, `lineno`,
+ *   `colno`, and `lineBase`.
+ * @returns The adjusted column, interpreted under the error's `lineBase`.
+ */
 const adjustColnoForNullValue = (err: ColnoAdjustmentError): number | null | undefined => {
   if (err.code !== ERROR_CODES.NULL_VALUE || !err.sourceContent || err.lineno == null) {
     return err.colno;
@@ -118,6 +131,23 @@ const formatErrorOutput = ({ err, options, format }: FormatErrorOutputInput): st
   return toHtml(err, options);
 };
 
+/**
+ * Formats a template error into a human-readable report (HTML error page, ANSI
+ * terminal output, or plain text).
+ *
+ * Plain `Error` inputs are normalized to `TemplateError` shape before formatting;
+ * hostile error objects (throwing getters, trapped proxies) degrade to placeholders
+ * instead of throwing — `formatError` itself never throws.
+ *
+ * @param err - Error to format. A branded `TemplateError` renders with full
+ *   diagnostics (code, location, subject, fix hints); a plain `Error` is treated
+ *   as an engine-level failure.
+ * @param options - Output shaping. `format` picks `'html' | 'ansi' | 'text'`
+ *   (default: HTML); `verbosity`, `dev`, and `ide` control detail level and
+ *   editor links; source/snippet fields override template source resolution;
+ *   `sourceFileReader` supplies caller project sources for JS-originating errors.
+ * @returns The formatted error report as a string.
+ */
 const formatError = (err: Error | TemplateError, options: OutputOptions = {}): string => {
   const templateError = isTemplateErrorLog(err) ? err : toTemplateError(err, options);
   const sourceTrace = buildSourceTraceIfNeeded(templateError, options);

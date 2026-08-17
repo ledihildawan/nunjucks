@@ -34,6 +34,18 @@ interface CreateLogFields {
   context?: ErrorContext | WarningContext | null;
 }
 
+/**
+ * Creates a branded `TemplateError` or `TemplateWarning` from a catalog
+ * definition or raw log data — the monorepo's single error/warning factory.
+ *
+ * @param type - `'error'` produces a `TemplateError`; `'warning'` produces a
+ *   `TemplateWarning`; any other string degrades to a `TemplateError` carrying
+ *   an "Unknown log type" message.
+ * @param fields - `def` is either a catalog `ErrorDefinitionEntry` (code,
+ *   message template, causes, fix hints) or `RawLogData` forwarded as-is;
+ *   `params` interpolate the definition's message; `subject` and `context`
+ *   supply location, phase, and template metadata.
+ */
 function createLog(type: 'error', fields: CreateLogFields): TemplateError;
 function createLog(type: 'warning', fields: CreateLogFields): TemplateWarning;
 function createLog(type: string, fields: CreateLogFields): TemplateError | TemplateWarning {
