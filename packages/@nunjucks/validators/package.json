@@ -7,7 +7,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@nunjucks/filters": "workspace:*",
+    "@nunjucks/error-catalog": "workspace:*",
     "@nunjucks/lib": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "@nunjucks/nodes": "workspace:*",

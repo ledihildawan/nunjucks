@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import { err, ok, type Result } from '@nunjucks/lib';
 import type { BaseValidationError } from '@nunjucks/shared';
 import { findDangerousValues } from './security/context-security.ts';
@@ -35,7 +36,7 @@ const validateRenderContext = (
   const [first] = dangerous;
   return err([
     {
-      code: 'DANGEROUS_CONTEXT_VALUES',
+      code: ERROR_CODES.DANGEROUS_CONTEXT_VALUES,
       message: `Context contains unsafe values: ${dangerous.join(', ')}`,
       subject: first,
       dangerousPaths: dangerous,

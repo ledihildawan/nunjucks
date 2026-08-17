@@ -55,42 +55,59 @@ describe('scrubber', () => {
   });
 
   describe('visitAndScrub', () => {
+    const visit = (value: unknown): unknown =>
+      visitAndScrub({ value, seen: new WeakSet(), depth: 0 });
+
     test('returns non-objects unchanged', () => {
-      expect(visitAndScrub(42, new WeakSet())).toBe(42);
-      expect(visitAndScrub('test', new WeakSet())).toBe('test');
-      expect(visitAndScrub(null, new WeakSet())).toBeNull();
+      expect(visit(42)).toBe(42);
+      expect(visit('test')).toBe('test');
+      expect(visit(null)).toBeNull();
+    });
+
+    test('passes exotic objects through untouched (prototype carries behavior)', () => {
+      const createdAt = new Date(0);
+      const registry = new Map([['k', 1]]);
+      const result = visit({ createdAt, registry }) as Record<string, unknown>;
+      expect(result.createdAt).toBe(createdAt);
+      expect((result.createdAt as Date).getFullYear()).toBe(1970);
+      expect(result.registry).toBe(registry);
+      expect((result.registry as Map<string, number>).get('k')).toBe(1);
     });
 
     test('removes top-level dangerous references', () => {
-      const seen = new WeakSet();
-      const result = visitAndScrub({ a: 1, dangerous: globalThis }, seen) as Record<
-        string,
-        unknown
-      >;
+      const result = visit({ a: 1, dangerous: globalThis }) as Record<string, unknown>;
       expect(Object.hasOwn(result, 'dangerous')).toBe(false);
       expect(result.a).toBe(1);
     });
 
     test('preserves nested objects', () => {
-      const seen = new WeakSet();
       const nested = { x: 10 };
-      const result = visitAndScrub({ nested }, seen) as Record<string, unknown>;
+      const result = visit({ nested }) as Record<string, unknown>;
       expect(result.nested).toEqual(nested);
     });
 
     test('handles arrays by scrubbing elements', () => {
-      const seen = new WeakSet();
-      const result = visitAndScrub([1, 2, 3], seen);
+      const result = visit([1, 2, 3]);
       expect(result).toEqual([1, 2, 3]);
     });
 
-    test('tracks seen objects to prevent infinite recursion', () => {
-      const seen = new WeakSet();
-      const obj: Record<string, unknown> = { a: 1 };
+    test('cycles become placeholders — no dangerous reference survives through a cycle', () => {
+      const obj: Record<string, unknown> = { a: 1, dangerous: globalThis };
       obj.self = obj;
-      const result = visitAndScrub(obj, seen) as Record<string, unknown>;
+      const result = visit(obj) as Record<string, unknown>;
       expect(result.a).toBe(1);
-      expect(result.self).toBe(obj);
+      expect(result.self).toBe('[Circular]');
+      const reachable = (result.self as { dangerous?: unknown }).dangerous;
+      expect(reachable).toBeUndefined();
+    });
+
+    test('deeply nested values past the depth cap pass through without overflowing', () => {
+      let deep: Record<string, unknown> = { leaf: true };
+      for (let i = 0; i < 50_000; i += 1) {
+        deep = { nested: deep };
+      }
+      const result = visit({ deep }) as Record<string, unknown>;
+      expect(Object.hasOwn(result as object, 'deep')).toBe(true);
     });
   });
 });

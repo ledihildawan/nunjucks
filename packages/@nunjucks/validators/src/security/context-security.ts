@@ -21,6 +21,12 @@ interface ScanState {
   currentPath: string;
 }
 
+// WHY: recursion bound — the scanner is the pre-render security defense; a hostile
+// deeply-nested context must not turn it into a stack overflow that escapes the
+// render Result contract. Past the cap, scanning stops (pathological nesting is not
+// by itself a dangerous reference — the runtime guards still apply at render time).
+const MAX_SCAN_DEPTH = 128;
+
 const checkKeyDangerous = (key: string, { isTopLevel, currentPath }: ScanState): string[] => {
   if (isBlockedNestedContextKey(key)) {
     return [currentPath];
@@ -31,11 +37,18 @@ const checkKeyDangerous = (key: string, { isTopLevel, currentPath }: ScanState):
   return [];
 };
 
-const checkValueDangerous = (
-  value: unknown,
-  key: string,
-  { scan, isTopLevel, currentPath }: ScanState
-): string[] => {
+interface CheckValueDangerousInput extends ScanState {
+  value: unknown;
+  key: string;
+}
+
+const checkValueDangerous = ({
+  value,
+  key,
+  scan,
+  isTopLevel,
+  currentPath,
+}: CheckValueDangerousInput): string[] => {
   if (!isFunction(value) || !isTopLevel) {
     return [];
   }
@@ -48,9 +61,14 @@ const checkValueDangerous = (
   return dangerous ? [currentPath] : [];
 };
 
-const scanForDangerousValues = (context: unknown, state: ScanState): string[] => {
+interface RecursiveScanInput extends ScanState {
+  value: unknown;
+  depth: number;
+}
+
+const scanForDangerousValues = ({ value: context, depth, ...state }: RecursiveScanInput): string[] => {
   const { scan, currentPath: path, isTopLevel } = state;
-  if (!isKeyedObject(context) || scan.seen.has(context)) {
+  if (!isKeyedObject(context) || scan.seen.has(context) || depth >= MAX_SCAN_DEPTH) {
     return [];
   }
   scan.seen.add(context);
@@ -62,12 +80,18 @@ const scanForDangerousValues = (context: unknown, state: ScanState): string[] =>
     const entryState: ScanState = { scan, isTopLevel, currentPath: childPath };
     const nested =
       value && typeof value === 'object' && !isDangerousReference(value)
-        ? scanForDangerousValues(value, { scan, isTopLevel: false, currentPath: childPath })
+        ? scanForDangerousValues({
+            scan,
+            isTopLevel: false,
+            currentPath: childPath,
+            value,
+            depth: depth + 1,
+          })
         : [];
 
     return [
       ...checkKeyDangerous(key, entryState),
-      ...checkValueDangerous(value, key, entryState),
+      ...checkValueDangerous({ ...entryState, value, key }),
       ...(isDangerousReference(value) ? [childPath] : []),
       ...nested,
     ];
@@ -78,10 +102,12 @@ export const findDangerousValues = (
   context: unknown,
   allowedGlobals?: readonly string[] | null
 ): string[] => {
-  const paths = scanForDangerousValues(context, {
+  const paths = scanForDangerousValues({
     scan: { allowedGlobals, seen: new WeakSet() },
     isTopLevel: true,
     currentPath: '',
+    value: context,
+    depth: 0,
   });
   return [...new Set(paths)];
 };

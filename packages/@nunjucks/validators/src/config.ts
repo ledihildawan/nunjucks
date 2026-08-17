@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import { err, isErr, ok, type Result } from '@nunjucks/lib';
 import {
   CONTENT_TYPES,
@@ -60,7 +61,7 @@ const validateNonNegativeNumeric = (
   value !== undefined && (!Number.isFinite(value) || value < 0)
     ? [
         {
-          code: 'INVALID_CONFIG',
+          code: ERROR_CODES.INVALID_CONFIG,
           message: `Invalid configuration: ${subject} must be >= 0`,
           subject,
           type: 'numeric',
@@ -92,7 +93,7 @@ const validateEnumMembership = ({
   value !== undefined && !validValues.has(value)
     ? [
         {
-          code: 'INVALID_CONFIG',
+          code: ERROR_CODES.INVALID_CONFIG,
           message: `Invalid configuration: ${subject} must be one of ${[...validValues].join(', ')}`,
           subject,
           type,
@@ -134,10 +135,13 @@ interface StringArrayInput {
 }
 
 const validateStringArray = ({ value, subject, type }: StringArrayInput): ConfigValidationError[] =>
-  value !== undefined && !value.every((entry) => typeof entry === 'string')
+  // WHY: null is tolerated as "unset" — the flat options bag preserves null for keys
+  // like blockedContextKeys (see factory compact()), and a JS caller passing null must
+  // get the catalogued INVALID_CONFIG error, not a TypeError from value.every.
+  value !== undefined && value !== null && !value.every((entry) => typeof entry === 'string')
     ? [
         {
-          code: 'INVALID_CONFIG',
+          code: ERROR_CODES.INVALID_CONFIG,
           message: `Invalid configuration: ${subject} must be an array of strings`,
           subject,
           type,
@@ -153,7 +157,7 @@ const validateViews = (views: unknown): ConfigValidationError[] =>
   views !== undefined && views !== null && !isValidViewsValue(views)
     ? [
         {
-          code: 'INVALID_CONFIG',
+          code: ERROR_CODES.INVALID_CONFIG,
           message: 'Invalid configuration: views must be a string path or an array of string paths',
           subject: 'views',
           type: 'path',
@@ -174,7 +178,7 @@ const validateCallableValues = (
       typeof values[name] !== 'function'
         ? [
             {
-              code: 'INVALID_CONFIG',
+              code: ERROR_CODES.INVALID_CONFIG,
               message: `Invalid configuration: ${subject}.${name} must be a function`,
               subject: `${subject}.${name}`,
               type: 'callable',

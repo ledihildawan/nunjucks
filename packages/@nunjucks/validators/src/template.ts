@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import { err, ok, type Result } from '@nunjucks/lib';
 import type { BaseValidationError } from '@nunjucks/shared';
 import { join, map, pipe } from 'remeda';
@@ -34,8 +35,10 @@ const checkTemplateSize = (
   if (size > config.maxTemplateSize) {
     return [
       {
-        code: 'TEMPLATE_SIZE_EXCEEDED',
-        message: `Template exceeds maximum size of ${config.maxTemplateSize} bytes`,
+        code: ERROR_CODES.TEMPLATE_SIZE_EXCEEDED,
+        // WHY: "characters", not "bytes" — template.length counts UTF-16 code units;
+        // claiming bytes would understate the real byte footprint of non-ASCII sources.
+        message: `Template exceeds maximum size of ${config.maxTemplateSize} characters`,
         subject: 'maxTemplateSize',
       },
     ];
@@ -57,11 +60,11 @@ const checkDangerousCode = (
   const [first] = violations;
   return [
     {
-      code: 'DANGEROUS_TEMPLATE_CODE',
+      code: ERROR_CODES.DANGEROUS_TEMPLATE_CODE,
       subject: first?.name ?? 'template',
       message: `Template contains dangerous code: ${pipe(
         violations,
-        map((v) => v.message),
+        map((violation) => violation.message),
         join('; ')
       )}`,
       violations,

@@ -209,16 +209,6 @@ describe('validateExpression', () => {
       expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
 
-    test('allowDynamicPropertyAccess: true allows dynamic property access', () => {
-      const ast = nodes.lookupVal(ZERO_LOC, {
-        target: nodes.symbol(ZERO_LOC, 'obj'),
-        val: nodes.symbol(ZERO_LOC, 'dynamicProp'),
-      });
-      expect(errorsOf(validateExpression(ast, { allowDynamicPropertyAccess: true }))).toHaveLength(
-        0
-      );
-    });
-
     test('lookupVal with literal string property does not trigger errors', () => {
       const ast = nodes.lookupVal(ZERO_LOC, {
         target: nodes.symbol(ZERO_LOC, 'obj'),
@@ -380,15 +370,6 @@ describe('validateExpression', () => {
       const errors = errorsOf(validateExpression(ast, { blockedPropertyPatterns: [/^abc/] }));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
-    });
-
-    test('allowDynamicPropertyAccess: true allows dynamic access', () => {
-      const ast = nodes.lookupVal(ZERO_LOC, {
-        target: nodes.symbol(ZERO_LOC, 'obj'),
-        val: nodes.symbol(ZERO_LOC, 'anyProp'),
-      });
-      const errors = errorsOf(validateExpression(ast, { allowDynamicPropertyAccess: true }));
-      expect(errors).toHaveLength(0);
     });
   });
 

@@ -1,6 +1,6 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import { err, ok, type Result } from '@nunjucks/lib';
-import { BUILTIN_FILTER_NAMES } from '@nunjucks/filters';
-import { BLOCKED_KEYS_LIST } from '@nunjucks/shared';
+import { BLOCKED_KEYS_LIST, BUILTIN_FILTER_NAMES } from '@nunjucks/shared';
 import { JS_BUILTIN_CONSTRUCTORS } from './js-builtins.ts';
 
 const RESERVED_KEYWORDS = new Set<string>([
@@ -95,9 +95,9 @@ const RESERVED_KEYWORDS = new Set<string>([
   'toString',
   'valueOf',
   'toJSON',
-  // WHY: built-in filter names derive from @nunjucks/filters itself (filter-names.ts
-  // includes the upstream aliases) — adding a filter there automatically reserves
-  // its name here; no hand-maintained list to drift.
+  // WHY: built-in filter names come from the static shared list — kept in sync with the
+  // real filter registry by filters/src/filter-names.test.ts, so adding a filter there
+  // fails that drift pin until the name is registered in shared and thus reserved here.
   ...BUILTIN_FILTER_NAMES,
   ...BLOCKED_KEYS_LIST,
 ]);
@@ -112,7 +112,7 @@ interface ReservedNameError {
 const validateReservedName = (name: string, type = 'name'): Result<void, ReservedNameError> => {
   if (RESERVED_KEYWORDS.has(name)) {
     return err({
-      code: 'RESERVED_KEYWORD',
+      code: ERROR_CODES.RESERVED_KEYWORD,
       subject: name,
       type,
       message: `Cannot use reserved ${type} '${name}'`,

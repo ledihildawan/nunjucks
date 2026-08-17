@@ -1,24 +1,45 @@
-import { isKeyedObject } from '@nunjucks/lib';
+import { isPlainObject } from '@nunjucks/lib';
 import { keys } from 'remeda';
 import { isDangerousReference } from '@nunjucks/shared';
 
-const visitAndScrub = (value: unknown, seen: WeakSet<object>): unknown => {
-  if (!isKeyedObject(value)) {
+// WHY: recursion bound — the scrubber walks untrusted context shapes before render;
+// a hostile deeply-nested object must not turn the security pass itself into a
+// stack overflow. Past the cap the value passes through as-is (same posture as the
+// scanner's cap: pathological nesting is not by itself a dangerous reference).
+const MAX_SCRUB_DEPTH = 128;
+
+interface ScrubVisit {
+  value: unknown;
+  seen: WeakSet<object>;
+  depth: number;
+}
+
+const visitAndScrub = ({ value, seen, depth }: ScrubVisit): unknown => {
+  // WHY: only plain objects/arrays are rebuilt — exotic keyed values (Date, Map, Set,
+  // RegExp, class instances) carry behavior in their prototype, and fromEntries would
+  // flatten them to {} (destroying {{ createdAt.getFullYear() }} in dev-warn renders).
+  if (!isPlainObject(value) && !Array.isArray(value)) {
     return value;
   }
+  // WHY: cycles return a placeholder, NOT the original — re-embedding the original
+  // would re-admit any dangerous reference reachable through the cycle that the
+  // top-level pass just scrubbed.
   if (seen.has(value)) {
-    return value;
+    return '[Circular]';
   }
-  if (Array.isArray(value)) {
-    seen.add(value);
-    return value.map((item) => visitAndScrub(item, seen));
+  if (depth >= MAX_SCRUB_DEPTH) {
+    return value;
   }
   seen.add(value);
+  const nextDepth = depth + 1;
+  if (Array.isArray(value)) {
+    return value.map((item) => visitAndScrub({ value: item, seen, depth: nextDepth }));
+  }
   const record = value as Record<string, unknown>;
   return Object.fromEntries(
     keys(record)
       .filter((key) => !isDangerousReference(record[key]))
-      .map((key) => [key, visitAndScrub(record[key], seen)])
+      .map((key) => [key, visitAndScrub({ value: record[key], seen, depth: nextDepth })])
   );
 };
 
@@ -32,7 +53,7 @@ export const scrubDangerousReferences = (context: unknown): unknown => {
   // value, so the result is structurally assignable back to the input's shape. Dangerous keys
   // are *removed*, making the result a structural subtype — never a supertype — so the cast
   // is a sound upper bound. TS cannot prove the round-trip, hence the cast.
-  return visitAndScrub(context, seen);
+  return visitAndScrub({ value: context, seen, depth: 0 });
 };
 
 export { visitAndScrub };
