@@ -3,6 +3,13 @@ import { err, ok, type Result } from '@nunjucks/lib';
 import { BLOCKED_KEYS_LIST, BUILTIN_FILTER_NAMES } from '@nunjucks/shared';
 import { JS_BUILTIN_CONSTRUCTORS } from './js-builtins.ts';
 
+/**
+ * Frozen catalog of names unavailable to user-defined filters, globals, and
+ * tests: parser statement tags, JS builtin constructors, shared blocked keys,
+ * and built-in filter names. Entries are sourced from their canonical lists
+ * (see the WHY comments inline) so this set cannot drift from the parser or
+ * filter registry.
+ */
 const RESERVED_KEYWORDS = new Set<string>([
   'if',
   'elif',
@@ -109,6 +116,7 @@ interface ReservedNameError {
   message: string;
 }
 
+/** Rejects a name that collides with `RESERVED_KEYWORDS`, tagged by `type`. */
 const validateReservedName = (name: string, type = 'name'): Result<void, ReservedNameError> => {
   if (RESERVED_KEYWORDS.has(name)) {
     return err({
@@ -121,12 +129,15 @@ const validateReservedName = (name: string, type = 'name'): Result<void, Reserve
   return ok(undefined);
 };
 
+/** Rejects custom filter names that shadow reserved or builtin filters. */
 const validateFilterName = (name: string): Result<void, ReservedNameError> =>
   validateReservedName(name, 'filter');
 
+/** Rejects custom global names that shadow reserved or builtin globals. */
 const validateGlobalName = (name: string): Result<void, ReservedNameError> =>
   validateReservedName(name, 'global');
 
+/** Returns a fresh array of all reserved keywords; mutating it cannot affect the live set. */
 const getReservedKeywords = (): string[] => [...RESERVED_KEYWORDS];
 
 export type { ReservedNameError };

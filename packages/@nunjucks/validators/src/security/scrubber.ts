@@ -14,6 +14,7 @@ interface ScrubVisit {
   depth: number;
 }
 
+/** Recursively rebuilds a value with dangerous entries removed; see inline WHYs. */
 const visitAndScrub = ({ value, seen, depth }: ScrubVisit): unknown => {
   // WHY: only plain objects/arrays are rebuilt — exotic keyed values (Date, Map, Set,
   // RegExp, class instances) carry behavior in their prototype, and fromEntries would

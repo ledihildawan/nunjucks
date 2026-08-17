@@ -1,3 +1,7 @@
+/**
+ * One regex hit in a template scan: the `pattern` source, human-readable
+ * `message`, 1-based `line`/`col`, and the matched identifier if any.
+ */
 export interface DangerousCodeViolation {
   message: string;
   pattern: string;
@@ -40,6 +44,12 @@ const toViolation = ({
   return { message, pattern: pattern.source, line, col, name };
 };
 
+/**
+ * Scans raw template source for code-execution calls (`eval`, `Function`,
+ * `require`, dynamic `import`) and returns every match with position info.
+ * Regex-based and therefore heuristic — it runs before compilation, not on
+ * the parsed AST.
+ */
 const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeViolation[] =>
   DANGEROUS_PATTERNS.flatMap(({ pattern, message }) => {
     const regex = new RegExp(pattern.source, 'gu');

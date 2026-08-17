@@ -23,6 +23,10 @@ export {
 
 const NON_CHILD_KEYS = new Set(['lineno', 'colno', 'fields']);
 
+/**
+ * Shape of one expression-policy violation: the AST `path` where it occurred
+ * plus `lineno`/`colno` source positions lifted from the offending node.
+ */
 export interface ExpressionValidationError extends BaseValidationError {
   code: string;
   path: readonly (string | number)[];
@@ -30,6 +34,7 @@ export interface ExpressionValidationError extends BaseValidationError {
   colno: number;
 }
 
+/** Result envelope for expression validation; `Err` carries at least one error. */
 export type ExpressionValidationResult = Result<
   void,
   readonly [ExpressionValidationError, ...ExpressionValidationError[]]
@@ -197,6 +202,13 @@ const createExpressionWalker = (blocked: readonly RegExp[]) => {
   return walk;
 };
 
+/**
+ * Validates a compiled expression AST, rejecting statically-named access to
+ * dangerous properties (`__proto__`, `constructor`), calls to dangerous
+ * callees, and properties matching `blockedPropertyPatterns` (defaults to
+ * `DEFAULT_SECURITY_CONFIG` when unset). Only statically-known names are
+ * checked — dynamic lookups fall through to the runtime sandbox.
+ */
 const validateExpression = (
   ast: Node,
   config: ExpressionSecurityConfig = {}

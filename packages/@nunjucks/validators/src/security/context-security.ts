@@ -102,6 +102,12 @@ const scanForDangerousValues = ({
   });
 };
 
+/**
+ * Scans a render context for dangerous values — blocked keys, dangerous
+ * globals, top-level functions outside `allowedGlobals`, and dangerous
+ * references — returning deduped dotted paths. Cycles are tracked via
+ * `WeakSet` and nesting is depth-capped; an empty array means safe.
+ */
 export const findDangerousValues = (
   context: unknown,
   allowedGlobals?: readonly string[] | null

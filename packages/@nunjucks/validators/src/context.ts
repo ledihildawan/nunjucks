@@ -20,6 +20,13 @@ interface ContextValidatorConfig {
   allowedGlobals?: readonly string[];
 }
 
+/**
+ * Validates a render context before rendering, returning `Err` with the
+ * `DANGEROUS_CONTEXT_VALUES` code and the offending dotted paths when the
+ * strict-mode/value-scan gates are enabled and dangerous values are found.
+ * Returns `Ok` immediately when neither `strictMode` nor `scanContextValues`
+ * is set — scanning is opt-in, not free.
+ */
 const validateRenderContext = (
   context: unknown,
   config: ContextValidatorConfig
@@ -44,6 +51,7 @@ const validateRenderContext = (
   ] as const);
 };
 
+/** Finds dangerous value paths in a context; non-object contexts yield `[]`. */
 const findContextDangerousValues = (
   context: unknown,
   config: { allowedGlobals?: readonly string[] } = {}

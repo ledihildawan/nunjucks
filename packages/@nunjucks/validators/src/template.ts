@@ -19,6 +19,10 @@ type TemplateValidationResult = Result<
   readonly [TemplateValidationError, ...TemplateValidationError[]]
 >;
 
+/**
+ * Options for template validation: `maxTemplateSize` bounds source length in
+ * UTF-16 code units and `strictMode` opts in dangerous-code scanning.
+ */
 export interface TemplateValidatorConfig {
   maxTemplateSize?: number;
   strictMode?: boolean;
@@ -74,6 +78,11 @@ const checkDangerousCode = (
   ];
 };
 
+/**
+ * Validates raw template source before compilation: size is checked first,
+ * then strict-mode dangerous-code scanning; every violation is collected into
+ * one `Err` tuple rather than failing on the first hit.
+ */
 export const validateTemplate = (
   template: string,
   config: TemplateValidatorConfig

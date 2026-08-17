@@ -229,6 +229,12 @@ const validateCustomGlobals = (config: Config): ConfigValidationError[] => {
   );
 };
 
+/**
+ * Validates engine configuration at factory creation, rejecting invalid values
+ * (NaN/negative numerics, bad enums, non-string arrays, non-callable or
+ * reserved-named customs) as an `Err` tuple instead of crashing at render time.
+ * Collects violations from every category before failing — no short-circuit.
+ */
 export const validateConfig = (config: Config): ConfigValidationResult => {
   const errors = [
     ...validateNumericConfig(config),
