@@ -6,6 +6,11 @@ import { type NodeType, T } from './constants.ts';
 // of that type process-wide.
 const frozen = (fields: string[]): readonly string[] => Object.freeze(fields);
 
+/**
+ * Registry of the child-bearing field names for every node type; `createNode` embeds
+ * each frozen array by reference into the nodes it builds, so traversal can discover
+ * a node's slots generically.
+ */
 export const FIELDS: Readonly<Record<NodeType, readonly string[]>> = {
   [T.LITERAL]: frozen(['value']),
   [T.SYMBOL]: frozen(['value']),

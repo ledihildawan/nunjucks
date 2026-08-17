@@ -9,12 +9,14 @@ const getFields = (node: Node): string[] => {
 
 const getNodeField = (node: Node, field: string): unknown => Reflect.get(node, field);
 
+/** Returns the `type` tag when the value is a `Node`, else `undefined`. */
 const getNodeTypeName = (node: unknown): string | undefined => {
   if (isNode(node)) {
     return node.type;
   }
 };
 
+/** Appends a child to a node's children array without mutating the original. */
 const appendChild = <K extends ChildrenNode>(node: K, child: Node): K => ({
   ...node,
   children: [...node.children, child],
@@ -47,6 +49,7 @@ const unwrapEnvelope = (item: unknown): EnvelopeBinding | undefined => {
   return undefined;
 };
 
+/** Unwraps an expression or `SlotBlock` envelope to the `Node` it carries, else `undefined`. */
 const getEnvelopeNode = (item: unknown): Node | undefined => unwrapEnvelope(item)?.node;
 
 const walkEnvelopeItem = (item: unknown, walker: (node: Node) => Node): unknown => {
@@ -117,6 +120,12 @@ const walkChildren = (node: Node, walker: (node: Node) => Node): Node => {
   return node;
 };
 
+/**
+ * Depth-first AST walk that threads a replace-visitor through every child slot; returns
+ * a new tree when the visitor returns new nodes, else the same reference. Descends into
+ * template-literal quasis and `SlotBlock` envelopes, and short-circuits a subtree whose
+ * visitor returned a replacement.
+ */
 const walk = (ast: Node, visitor: (node: Node) => Node | undefined): Node => {
   if (!ast || typeof ast !== 'object') {
     return ast;
@@ -150,6 +159,11 @@ const getFieldNodes = (node: Node, field: string): Node[] => {
   return isNode(value) ? [value] : [];
 };
 
+/**
+ * Collects the direct children of a node: the `children` array, then `args`/`contentArgs`
+ * for call-extension nodes, then every node reachable through the remaining field slots
+ * (descending through expression and `SlotBlock` envelopes).
+ */
 const getChildNodes = (node: Node): Node[] => {
   const children = Array.isArray(node.children) ? node.children.filter(isNode) : [];
   const callExtChildren = isCallExtNode(node)
@@ -159,6 +173,11 @@ const getChildNodes = (node: Node): Node[] => {
   return [...children, ...callExtChildren, ...fieldChildren];
 };
 
+/**
+ * Collects all descendants (including the root) matching a `type` string or predicate,
+ * in document order; a `seen` set guards against shared-reference cycles so each node
+ * is visited at most once.
+ */
 const findAll = (node: Node, predicate: string | ((node: Node) => boolean)): Node[] => {
   const seen = new Set<Node>();
   const collect = (current: Node): Node[] => {

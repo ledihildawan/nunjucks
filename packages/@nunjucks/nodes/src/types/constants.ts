@@ -1,3 +1,7 @@
+/**
+ * Frozen registry mapping node-type constants to their runtime `type` tag strings
+ * (`T.LITERAL` → `'literal'`); every node kind in the AST has exactly one entry.
+ */
 export const T = Object.freeze({
   LITERAL: 'literal',
   SYMBOL: 'symbol',
@@ -79,6 +83,8 @@ export const T = Object.freeze({
   RENDER: 'render',
 } as const);
 
+/** Union of every node `type` tag string, derived from the `T` registry. */
 export type NodeType = (typeof T)[keyof typeof T];
 
+/** Symbol-keyed marker distinguishing nodes produced via bracket notation. */
 export const BracketNotation = Symbol('BracketNotation');

@@ -130,8 +130,13 @@ type NodeTypeInterfaceMap = {
   [T.RENDER]: RenderNode;
 };
 
+/**
+ * Union of every AST node interface, resolved through `NodeTypeInterfaceMap` so adding
+ * a type to the map automatically widens this union.
+ */
 type Node = NodeTypeInterfaceMap[NodeType];
 
+/** Resolves the concrete node interface for a given `NodeType` tag `K`. */
 type NodeOf<K extends NodeType> = NodeTypeInterfaceMap[K];
 
 export type {

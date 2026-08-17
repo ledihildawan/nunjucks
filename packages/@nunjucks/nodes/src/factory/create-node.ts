@@ -1,6 +1,11 @@
 import type { Loc } from '@nunjucks/shared';
 import { FIELDS, type NodeOf, type NodeType, T } from '../types/index.ts';
 
+/**
+ * Creates a node of the given type tagged with `lineno`/`colno` and the frozen `FIELDS`
+ * slot list for that type; extra `data` is spread over the defaults so callers can
+ * override any slot.
+ */
 const createNode = <K extends NodeType>(
   nodeType: K,
   loc: Loc,

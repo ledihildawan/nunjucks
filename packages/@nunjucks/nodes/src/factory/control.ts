@@ -12,6 +12,7 @@ import type {
 import { nodeList } from './atomic.ts';
 import { createNode, T } from './create-node.ts';
 
+/** Fields for `if` and `inlineIf` nodes; `alternate` defaults to `null` when omitted. */
 interface InlineIfFields {
   cond?: Node;
   body?: Node;
@@ -23,14 +24,18 @@ interface BlockFields {
   body?: Node;
 }
 
+/** Creates a `block` node naming an overridable template region. */
 const block = (loc: Loc, fields: BlockFields = {}) => createNode(T.BLOCK, loc, { ...fields });
 
+/** Creates an `if` node; `alternate` is normalized to `null` when not supplied. */
 const ifNode = (loc: Loc, fields: InlineIfFields = {}) =>
   createNode(T.IF, loc, { alternate: null, ...fields });
 
+/** Creates an `inlineIf` node for `x if cond else y` expressions. */
 const inlineIf = (loc: Loc, fields: InlineIfFields = {}) =>
   createNode(T.INLINE_IF, loc, { alternate: null, ...fields });
 
+/** Fields for a `for` node; `alternate` defaults to `null` for the else branch. */
 interface ForFields {
   arr?: Node;
   name?: Node;
@@ -38,9 +43,11 @@ interface ForFields {
   alternate?: Node | null;
 }
 
+/** Creates a `for` loop node with an optional `alternate` run on empty iterables. */
 const forNode = (loc: Loc, fields: ForFields = {}) =>
   createNode(T.FOR, loc, { alternate: null, ...fields });
 
+/** Fields for a `component` node; `args` and `fallbackSlots` default to empty. */
 interface ComponentFields {
   name: string;
   args?: readonly Node[];
@@ -48,18 +55,22 @@ interface ComponentFields {
   fallbackSlots?: SlotBlock[];
 }
 
+/** Creates a `component` node invoking a template as a custom tag with slot content. */
 const component = (loc: Loc, fields: ComponentFields) =>
   createNode(T.COMPONENT, loc, { args: [], fallbackSlots: [], ...fields });
 
+/** Fields for an `import` node; `withContext` defaults to `false`. */
 interface ImportFields {
   template: Node | string;
   target: string;
   withContext?: boolean;
 }
 
+/** Creates an `import` node loading a template's exports under a name. */
 const importNode = (loc: Loc, fields: ImportFields) =>
   createNode(T.IMPORT, loc, { withContext: false, ...fields });
 
+/** Fields for a `fromImport` node; `names` defaults to an empty `nodeList`. */
 interface FromImportFields {
   template: Node | string;
   names?: Node;
@@ -73,30 +84,37 @@ const fromImportNode = (loc: Loc, fields: FromImportFields) =>
     names: fields.names ?? nodeList(ZERO_LOC),
   });
 
+/** Fields for a `capture` node; `name` defaults to `null` for anonymous captures. */
 interface CaptureFields {
   body: Node;
   name?: string | null;
 }
 
+/** Creates a `capture` node rendering its body to a string instead of output. */
 const capture = (loc: Loc, fields: CaptureFields): CaptureNode =>
   createNode(T.CAPTURE, loc, { name: null, ...fields });
 
+/** Creates an `exec` node running an expression purely for its side effects. */
 const execNode = (loc: Loc, expr: Node) => createNode(T.EXEC, loc, { expr });
 
+/** Fields for a `scope` node; `assignments` and `body` default to empty/null. */
 interface ScopeFields {
   assignments?: readonly Node[];
   body?: Node | null;
 }
 
+/** Creates a `scope` node exposing `pair` assignments to its body only. */
 const scopeNode = (loc: Loc, fields: ScopeFields = {}) =>
   createNode(T.SCOPE, loc, { assignments: [], body: null, ...fields });
 
+/** Fields for a `switch` node; `cases` and `default_` default to empty/null. */
 interface SwitchFields {
   expr: Node;
   cases?: Node[];
   default_?: Node | null;
 }
 
+/** Creates a `switch` node dispatching on `expr` across `case` children. */
 const switchNode = (loc: Loc, fields: SwitchFields) =>
   createNode(T.SWITCH, loc, {
     expr: fields.expr,
@@ -104,6 +122,7 @@ const switchNode = (loc: Loc, fields: SwitchFields) =>
     default: fields.default_ ?? null,
   });
 
+/** Fields for a `case` clause node. */
 interface CaseFields {
   cond: Node;
   body: Node;
@@ -118,6 +137,7 @@ interface ExtendsFields {
 const extendsNode = (loc: Loc, fields: ExtendsFields) =>
   createNode(T.EXTENDS, loc, { template: fields.template });
 
+/** Fields for an `include` node; `ignoreMissing` defaults to `null`. */
 interface IncludeFields {
   template?: Node;
   ignoreMissing?: boolean | null;
@@ -125,32 +145,39 @@ interface IncludeFields {
   with?: Node;
 }
 
+/** Creates an `include` node inlining another template's rendered output. */
 const include = (loc: Loc, fields: IncludeFields = {}) =>
   createNode(T.INCLUDE, loc, { ignoreMissing: null, ...fields });
 
+/** Fields for a `super` node; `sym` defaults to `null`. */
 interface SuperFields {
   blockName: string;
   sym?: Node | null;
 }
 
+/** Creates a `super` node rendering the parent template's overridden block. */
 const superNode = (loc: Loc, fields: SuperFields) =>
   createNode(T.SUPER, loc, { blockName: fields.blockName, symbol: fields.sym ?? null });
 
+/** Fields for a `match` node; `cases` and `default` default to empty/null. */
 interface MatchFields {
   expr: Node;
   cases?: WhenNode[];
   default?: Node | null;
 }
 
+/** Creates a `match` node dispatching on `expr` across `when` clauses. */
 const match = (loc: Loc, fields: MatchFields): MatchNode =>
   createNode(T.MATCH, loc, { cases: [], default: null, ...fields });
 
+/** Fields for a `when` clause node; `guard` defaults to `null`. */
 interface WhenFields {
   pattern: Node;
   body: Node;
   guard?: Node | null;
 }
 
+/** Creates a `when` clause node binding a `match` pattern, with optional guard. */
 const when = (loc: Loc, fields: WhenFields): WhenNode =>
   createNode(T.WHEN, loc, {
     pattern: fields.pattern,
@@ -158,12 +185,14 @@ const when = (loc: Loc, fields: WhenFields): WhenNode =>
     body: fields.body,
   });
 
+/** Fields for a `render` node; `providedSlots` defaults to empty. */
 interface RenderFields {
   callExpr: Node;
   body: Node;
   providedSlots?: SlotBlock[];
 }
 
+/** Creates a `render` node invoking a template with a default body and named slots. */
 const renderNode = (loc: Loc, fields: RenderFields): RenderNode =>
   createNode(T.RENDER, loc, { providedSlots: [], ...fields });
 
@@ -193,6 +222,7 @@ const extensionName = (ext: unknown, metadata: ExtensionMetadata): string => {
   return '';
 };
 
+/** Fields for extension call nodes; `args`/`contentArgs` default to empty. */
 interface CallExtensionFields {
   ext: unknown;
   prop: string;
@@ -215,6 +245,7 @@ const buildCallExtension = (
   });
 };
 
+/** Creates a synchronous extension call node, normalizing `ext` metadata and defaults. */
 const callExtension = (loc: Loc, fields: CallExtensionFields): CallExtensionNode =>
   buildCallExtension(T.CALL_EXTENSION, loc, fields);
 
