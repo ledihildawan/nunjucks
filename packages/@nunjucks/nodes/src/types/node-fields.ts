@@ -80,3 +80,11 @@ export const FIELDS: Readonly<Record<NodeType, readonly string[]>> = {
   [T.RANGE]: ['left', 'right'],
   [T.RENDER]: ['callExpr', 'body', 'providedSlots'],
 };
+
+// WHY: each FIELDS array is shared by reference into every node of its type
+// (create-node.ts embeds it directly) — freezing them once at module init makes a stray
+// mutation anywhere fail loudly instead of silently corrupting all nodes of that type
+// process-wide.
+Object.values(FIELDS).forEach((fields) => {
+  Object.freeze(fields);
+});

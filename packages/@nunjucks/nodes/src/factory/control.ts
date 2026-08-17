@@ -174,7 +174,14 @@ interface ExtensionMetadata {
 
 const extensionMetadata = (ext: unknown): ExtensionMetadata => {
   if (ext !== null && typeof ext === 'object') {
-    return ext as ExtensionMetadata;
+    const { extensionName: rawName, autoescape: rawAutoescape } = ext as Record<
+      string,
+      unknown
+    >;
+    return {
+      extensionName: typeof rawName === 'string' ? rawName : undefined,
+      autoescape: typeof rawAutoescape === 'boolean' ? rawAutoescape : undefined,
+    };
   }
   return {};
 };
@@ -214,6 +221,9 @@ const buildCallExtension = (
 const callExtension = (loc: Loc, fields: CallExtensionFields): CallExtensionNode =>
   buildCallExtension(T.CALL_EXTENSION, loc, fields);
 
+// WHY: extension-author surface — async extension tags (custom tags registered with an
+// async parse/run contract) build this variant so the compiler can emit the awaited
+// call path; symmetric with callExtension by design.
 const callExtensionAsync = (loc: Loc, fields: CallExtensionFields): CallExtensionNode =>
   buildCallExtension(T.CALL_EXTENSION_ASYNC, loc, fields);
 

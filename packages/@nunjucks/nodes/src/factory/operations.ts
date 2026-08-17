@@ -174,10 +174,13 @@ interface VariableDeclFields {
   val: Node;
 }
 
+// WHY: targets is copied — the node owns its children (same ownership rule as the
+// `children` factories); a caller mutating its input array post-construction must not
+// mutate the node.
 const variableDeclaration = (loc: Loc, fields: VariableDeclFields): VariableDeclNode =>
-  createNode(T.VARIABLE_DECLARATION, loc, { targets: fields.targets, value: fields.val });
+  createNode(T.VARIABLE_DECLARATION, loc, { targets: [...fields.targets], value: fields.val });
 const variableAssignment = (loc: Loc, fields: VariableDeclFields): VariableDeclNode =>
-  createNode(T.VARIABLE_ASSIGNMENT, loc, { targets: fields.targets, value: fields.val });
+  createNode(T.VARIABLE_ASSIGNMENT, loc, { targets: [...fields.targets], value: fields.val });
 
 interface CompoundAssignmentFields {
   targets: Node[];
