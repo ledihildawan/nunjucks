@@ -50,7 +50,9 @@ const ERRORS_TS = path.join(__dirname, '..', 'routes', 'errors.ts');
 
 const discoverRoutes = async (base: string): Promise<string[]> => {
   try {
-    const response = await fetch(`${base}/errors/`);
+    // WHY: timeout guard — a hung server must fail the probe into the source-parse
+    // fallback instead of blocking the audit script forever.
+    const response = await fetch(`${base}/errors/`, { signal: AbortSignal.timeout(10_000) });
     if (response.ok) {
       const html = await response.text();
       const found = [...html.matchAll(/href="\/errors\/([a-z0-9-]+)"/gu)]
@@ -63,7 +65,12 @@ const discoverRoutes = async (base: string): Promise<string[]> => {
   } catch {
     // fallthrough to source parsing
   }
-  const errorsSrc = readFileSync(ERRORS_TS, 'utf8');
+  let errorsSrc: string;
+  try {
+    errorsSrc = readFileSync(ERRORS_TS, 'utf8');
+  } catch {
+    throw new Error(`Cannot read ${ERRORS_TS} — route fallback requires routes/errors.ts (run from samples/express)`);
+  }
   return [
     ...new Set(
       [...errorsSrc.matchAll(/router\.get\(\s*'\/([a-z0-9-]+)'/gu)]
@@ -182,13 +189,12 @@ const validate = (_route: string, info: RouteInfo): ValidationResult => {
   }
 
   if (isTs) {
-    const before = src.slice(0, loc.col - 1);
     const word = (src.slice(loc.col - 1).match(/^[\w$]+/u) || [''])[0];
-    if (word === 'render' && /\brender$/u.test(before + word) === false) {
-      const idx = src.indexOf('render(');
-      if (idx >= 0 && loc.col - 1 === idx) {
-        return { status: 'MISMATCH', reason: 'caret on render( call, not template argument' };
-      }
+    // WHY: for JS-caller errors the caret must land on the template argument; landing on
+    // the `render` identifier itself (immediately followed by the call paren) means the
+    // reported location was mispointed at the call site instead of the argument.
+    if (word === 'render' && src[loc.col - 1 + word.length] === '(') {
+      return { status: 'MISMATCH', reason: 'caret on render( call, not template argument' };
     }
   }
 
@@ -218,10 +224,12 @@ const pad = (value: string | null | undefined, width: number): string =>
 
 const run = async (base: string): Promise<number> => {
   const routes = await discoverRoutes(base);
-  const rows: RouteRow[] = await Promise.all(
+  const rows: RouteRow[] = (await Promise.all(
     routes.map(async (route): Promise<RouteRow> => {
       try {
-        const response = await fetch(`${base}/errors/${route}`);
+        // WHY: timeout guard — a hung route surfaces as an ERROR row via the catch below,
+        // never an indefinite stall of the whole Promise.all batch.
+        const response = await fetch(`${base}/errors/${route}`, { signal: AbortSignal.timeout(10_000) });
         const html = await response.text();
         const parsed = parse(html);
         const info: RouteInfo = {
@@ -232,8 +240,8 @@ const run = async (base: string): Promise<number> => {
           threw: response.status >= 400,
           hasErrorPage: /class="error-(?:wrapper|title|location)"/u.test(html),
         };
-        const v = validate(route, info);
-        return { route, status: v.status, reason: v.reason, info };
+        const validation = validate(route, info);
+        return { route, status: validation.status, reason: validation.reason, info };
       } catch (err: unknown) {
         return {
           route,
@@ -250,9 +258,7 @@ const run = async (base: string): Promise<number> => {
         };
       }
     })
-  );
-
-  rows.sort((a, b) => routes.indexOf(a.route) - routes.indexOf(b.route));
+  )).toSorted((a, b) => routes.indexOf(a.route) - routes.indexOf(b.route));
 
   console.log(`${pad('ROUTE', 26) + pad('STATUS', 11) + pad('LOCATION', 46)}CODE`);
   console.log('-'.repeat(120));
@@ -322,7 +328,7 @@ const bootstrap = async (): Promise<void> => {
   if (headless) {
     const headlessIssueCount = await runHeadless();
     if (headlessIssueCount > 0) {
-      process.exitCode = headlessIssueCount;
+      process.exitCode = 1;
     }
     return;
   }

@@ -12,7 +12,7 @@
 
   <h2>Exec with string operation</h2>
   {% exec name.append("!") %}
-  <p>Name: {{ name }}</p>
+  <p>Name: {{ name.value }}</p>
 
   <h2>Exec with logging</h2>
   {% exec items.push("item1") %}

@@ -1,5 +1,9 @@
 import express, { type Request, type Response, type Router } from 'express';
-import { renderTable, runTests, sandboxSuites } from '../lib/domain/sandbox-demo.ts';
+import { createSandboxSuites, renderTable, runTests } from '../lib/domain/sandbox-demo.ts';
+
+// WHY: the shell route owns the Node boundary — it supplies the real process reference for
+// the sandbox scanner probes so lib/domain stays environment-neutral (mirrors routes/errors.ts).
+const sandboxSuites = createSandboxSuites({ process });
 
 const router: Router = express.Router();
 

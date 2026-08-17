@@ -30,7 +30,7 @@
     const config = {{ configData }};
     console.log('Config loaded:', config);
   </script>
-  <div class="script-output">const config = {{ configData }};</div>
+  <div class="script-output">const config = {{ configData |> tojson }};</div>
 
   <h2>3. Context-aware escaping — attribute</h2>
   <p>Attribute values get quote-aware escaping.</p>

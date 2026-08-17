@@ -45,8 +45,8 @@
   <div class="demo">
     <h3>Object in Script Tag</h3>
     <pre><code>&lt;script&gt;
-  const config = {{ configData }};
-  const user = {{ userData }};
+  const config = {{ configData |> tojson }};
+  const user = {{ userData |> tojson }};
 &lt;/script&gt;</code></pre>
     <p class="safe">✓ Objects are automatically JSON-encoded (no need for manual tojson filter)</p>
   </div>

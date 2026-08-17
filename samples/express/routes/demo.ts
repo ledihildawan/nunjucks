@@ -22,7 +22,7 @@ router.get('/exec', async (_req: Request, res: Response, next: NextFunction) => 
         arr: [],
         name: {
           append: function (this: { value: string }, suffix: string) {
-            return this.value + suffix;
+            this.value += suffix;
           },
           value: 'Hello',
         },

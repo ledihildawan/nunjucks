@@ -7,6 +7,8 @@ import { VIEWS } from './views-path.ts';
 // /stream-normal is a non-strict blocking benchmark; /stream-api adds the JSON content type (fatal sentinels).
 // Configuring once at module load avoids rebuilding the engine per request.
 const baseStreamConfig = {
+  // WHY: explicit even though the engine default is true — security samples should not rely on defaults.
+  autoescape: true,
   dev: true,
   views: VIEWS,
   filters: { slow, formatPrice },

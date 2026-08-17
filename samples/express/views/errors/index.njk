@@ -558,14 +558,16 @@
     };
 
     function applyTheme(theme) {
+      // localStorage is untrusted — only allowlisted keys may reach the innerHTML sink.
+      const safeTheme = THEMES.includes(theme) ? theme : 'system';
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (theme === 'system') {
+      if (safeTheme === 'system') {
         document.documentElement.style.colorScheme = prefersDark ? 'dark' : 'light';
       } else {
-        document.documentElement.style.colorScheme = theme;
+        document.documentElement.style.colorScheme = safeTheme;
       }
-      localStorage.setItem(THEME_KEY, theme);
-      themeIcon.innerHTML = THEME_ICONS[theme];
+      localStorage.setItem(THEME_KEY, safeTheme);
+      themeIcon.innerHTML = THEME_ICONS[safeTheme];
     }
 
     function toggleTheme() {

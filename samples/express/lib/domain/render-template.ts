@@ -1,5 +1,5 @@
 import { type NunjucksConfig, nunjucks } from '@nunjucks/core';
-import { err, isErr, ok, type Result } from '@nunjucks/lib';
+import type { Result } from '@nunjucks/lib';
 
 interface RenderTemplateOptions {
   context?: Record<string, unknown>;
@@ -10,16 +10,10 @@ interface RenderTemplateOptions {
 // the demo's `/errors` routes intentionally vary these per scenario, so memoizing the factory would
 // couple unrelated routes' configuration. The cost is acceptable because the factory is cheap and the
 // sample server is single-process for demonstration.
-const renderTemplate = async (
+const renderTemplate = (
   template: string,
   { context = {}, config = {} }: RenderTemplateOptions = {}
-): Promise<Result<string, Error>> => {
-  const result = await nunjucks(config).render(template, context);
-  if (isErr(result)) {
-    return err(result.error);
-  }
-  return ok(result.value);
-};
+): Promise<Result<string, Error>> => nunjucks(config).render(template, context);
 
 interface RenderDemoTemplateOptions {
   context?: Record<string, unknown>;

@@ -29,10 +29,10 @@
   <div class="try">
     <h2>Try variants</h2>
     <ul>
-      <li><a href="/boundary?name=Alice&count=5">/boundary?name=Alice&amp;count=5</a> — valid</li>
-      <li><a href="/boundary?name=&count=0">/boundary?name=&amp;count=0</a> — empty name, non-positive count → <code>400</code></li>
+      <li><a href="/boundary?name=Alice&amp;count=5">/boundary?name=Alice&amp;count=5</a> — valid</li>
+      <li><a href="/boundary?name=&amp;count=0">/boundary?name=&amp;count=0</a> — empty name, non-positive count → <code>400</code></li>
       <li><a href="/boundary?name=Alice">/boundary?name=Alice</a> — missing count → <code>400</code></li>
-      <li><a href="/boundary?name=Alice&count=abc">/boundary?name=Alice&amp;count=abc</a> — non-numeric count → <code>400</code></li>
+      <li><a href="/boundary?name=Alice&amp;count=abc">/boundary?name=Alice&amp;count=abc</a> — non-numeric count → <code>400</code></li>
     </ul>
   </div>
 

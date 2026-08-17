@@ -1,5 +1,3 @@
-import { formatError } from '@nunjucks/core';
-import { PACKAGE_VERSION } from '@nunjucks/integrations/express';
 import express, { type NextFunction, type Request, type Response, type Router } from 'express';
 import { dashboardData } from '../lib/domain/dashboard-data.ts';
 import { isoTimestamp } from '../lib/io/clock.ts';
@@ -53,26 +51,16 @@ router.get('/stream', async (req: Request, res: Response, next: NextFunction) =>
   });
 });
 
-// WHY: benchmark comparison — same template + data + config, but blocking render. Both routes succeed (non-strict for normal) so the comparison is purely about SPEED: /stream shows progressive block-by-block render; /stream-normal buffers everything, user waits for the full render before seeing anything. The `req.destroyed` guard skips sending a buffered response to a client that disconnected during the (potentially long) blocking render — the render itself cannot be aborted mid-flight (no signal on the blocking API), but executionTimeout bounds its total time.
-router.get('/stream-normal', async (req: Request, res: Response) => {
+// WHY: benchmark comparison — same template + data + config, but blocking render. Both routes succeed (non-strict for normal) so the comparison is purely about SPEED: /stream shows progressive block-by-block render; /stream-normal buffers everything, user waits for the full render before seeing anything. The `req.destroyed` guard skips sending a buffered response to a client that disconnected during the (potentially long) blocking render — the render itself cannot be aborted mid-flight (no signal on the blocking API), but executionTimeout bounds its total time. Errors delegate to the central error middleware (app.ts) so this route shares the same source-file diagnostics + PII-redacted logging as every other route instead of a drifting inline formatter.
+router.get('/stream-normal', async (req: Request, res: Response, next: NextFunction) => {
   const result = await blockingNjk.render('stream-dashboard.njk', dashboardContext('Blocking'));
   if (req.destroyed) {
     return;
   }
   if (result.ok) {
-    res.type('html').send(result.value);
-  } else {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error(formatError(result.error, { format: 'ansi' }));
-    }
-    res.status(500).type('html').send(
-      formatError(result.error, {
-        format: 'html',
-        dev: process.env.NODE_ENV !== 'production',
-        version: PACKAGE_VERSION,
-      })
-    );
+    return res.type('html').send(result.value);
   }
+  return next(result.error);
 });
 
 // WHY: JSON streaming API — same dashboard data but rendered as JSON. Walrus operator computes derived field inline. NOTE: JSON cannot absorb inline error markers without corrupting the response (a bare {error:...} fragment after a JSON prefix is unparseable), so streamContentType: 'json' makes any mid-stream recoverable sentinel FATAL — the stream aborts to the Tier 3 mid-stream path (onError fires, response ends) rather than emitting a marker. Use html/text if you want per-expression inline recovery.

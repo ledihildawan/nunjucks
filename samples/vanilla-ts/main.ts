@@ -1,28 +1,8 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { nunjucks } from '@nunjucks/core';
-import { isOk } from '@nunjucks/lib';
+import { isErr, isOk } from '@nunjucks/lib';
+import { engineConfig } from './engine-config.ts';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const VIEWS = path.join(__dirname, 'views');
-
-const njk = nunjucks({
-  views: VIEWS,
-  globals: {
-    appName: 'Nunjucks App',
-    greet: ({ name, greeting }: { name: string; greeting: string }) => `${greeting}, ${name}!`,
-  },
-  filters: {
-    formatDate: (
-      date: Date,
-      { format = 'long', locale = 'en-US' }: { format?: string; locale?: string }
-    ) =>
-      new Intl.DateTimeFormat(locale, { dateStyle: format === 'long' ? 'long' : 'short' }).format(
-        date
-      ),
-  },
-});
+const njk = nunjucks(engineConfig);
 
 // WHY: independent renders are scheduled concurrently — engine.render is an async boundary,
 // so sequential awaiting here would add latencies for no data dependency.
@@ -48,3 +28,8 @@ const outcomeLines = outcomes.map((result) =>
   isOk(result) ? result.value : `render failed: ${result.error.message}`
 );
 console.log(outcomeLines.join('\n'));
+
+const failedCount = outcomes.filter(isErr).length;
+if (failedCount > 0) {
+  process.exitCode = 1;
+}

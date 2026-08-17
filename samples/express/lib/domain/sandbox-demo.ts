@@ -41,6 +41,12 @@ interface RunTestsInput {
   config?: NunjucksConfig;
 }
 
+// WHY: dangerous references arrive from the shell route (mirroring the probe injection in
+// routes/errors.ts) so this domain data stays free of Node-environment coupling.
+interface DangerousContextValues {
+  process: unknown;
+}
+
 const runTests = async ({
   tests,
   context,
@@ -184,7 +190,7 @@ const renderTable = (table: SandboxTestResult[], suite: SandboxSuite): string =>
   );
 };
 
-const sandboxSuites: SandboxSuite[] = [
+const createSandboxSuites = (dangerousValues: DangerousContextValues): SandboxSuite[] => [
   {
     key: 'test',
     title: 'Sandbox Test Results',
@@ -221,11 +227,12 @@ const sandboxSuites: SandboxSuite[] = [
       {
         // WHY: process is context-injected (mirroring /errors/sandbox-process) so the
         // contextStrict scanner must reject it — `{{ this.process }}` never resolved to anything.
+        // The reference itself is threaded in by the shell route via dangerousValues.
         name: 'Access process (Node blocked)',
         template: '{{ user.process }}',
         sandbox: true,
         security: { contextStrict: 'error' },
-        context: { user: { process } },
+        context: { user: { process: dangerousValues.process } },
       },
       {
         name: 'Access prototype (blocked)',
@@ -260,7 +267,7 @@ const sandboxSuites: SandboxSuite[] = [
       {
         name: 'Context-injected process (dev scanner)',
         template: '{{ user.process }}',
-        context: { user: { process } },
+        context: { user: { process: dangerousValues.process } },
       },
     ],
   },
@@ -348,4 +355,4 @@ const sandboxSuites: SandboxSuite[] = [
   },
 ];
 
-export { renderTable, runTests, sandboxSuites };
+export { renderTable, runTests, createSandboxSuites };

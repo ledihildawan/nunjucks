@@ -1,4 +1,5 @@
 import express, { type NextFunction, type Request, type Response, type Router } from 'express';
+import { escapeHtml } from '@nunjucks/lib';
 import { renderTemplate } from '../lib/domain/render-template.ts';
 import { localizedTime } from '../lib/io/clock.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
@@ -25,7 +26,7 @@ router.get('/api/hello', (_req: Request, res: Response) => {
 });
 
 router.get('/api/time', (_req: Request, res: Response) => {
-  res.type('html').send(`Current time: <strong>${localizedTime()}</strong>`);
+  res.type('html').send(`Current time: <strong>${escapeHtml(localizedTime())}</strong>`);
 });
 
 router.get('/api/slow', (req: Request, res: Response) => {

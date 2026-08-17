@@ -7,6 +7,13 @@ let baseUrl: string;
 
 const get = async (path: string): Promise<Response> => fetch(`${baseUrl}${path}`);
 
+// WHY: loopback JSON bodies are still external data — narrow from unknown instead of casting.
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isRejectionPayload = (value: unknown): value is { ok: boolean } =>
+  isRecord(value) && 'ok' in value && typeof value.ok === 'boolean';
+
 beforeAll(async () => {
   server = createServer(createApp());
   await new Promise<void>((resolve) => {
@@ -56,7 +63,10 @@ describe('boundary validation route', () => {
     const response = await get('/boundary?name=&count=0');
 
     expect(response.status).toBe(400);
-    const payload = (await response.json()) as { ok: boolean };
+    const payload: unknown = await response.json();
+    if (!isRejectionPayload(payload)) {
+      throw new Error(`Expected rejection payload with boolean ok, received: ${typeof payload}`);
+    }
     expect(payload.ok).toBe(false);
   });
 });
@@ -84,6 +94,31 @@ describe('streaming route', () => {
   }, 30000);
 });
 
+describe('streaming JSON API route', () => {
+  test('streams the dashboard KPIs as a parsable JSON document', async () => {
+    const response = await get('/stream-api');
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')?.includes('application/json')).toBe(true);
+    const payload: unknown = await response.json();
+    if (!isRecord(payload)) {
+      throw new Error(`Expected JSON object, received: ${typeof payload}`);
+    }
+    expect(payload.revenue).toBe('$125,430');
+    expect(Array.isArray(payload.orders)).toBe(true);
+  }, 30000);
+});
+
+describe('remote fragment route', () => {
+  test('time fragment returns the localized clock label', async () => {
+    const response = await get('/remote/api/time');
+
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    expect(body).toContain('Current time:');
+  });
+});
+
 describe('homepage', () => {
   // WHY: regression — index.njk displays literal template tags ({% switch %}, etc.)
   // inside <code> samples; without {% raw %} wrapping the page 500s with PARSER_ERROR.
@@ -95,6 +130,34 @@ describe('homepage', () => {
     expect(body).toContain('{% switch %}');
     expect(body).toContain('{% component %}');
     expect(body).toContain('Scoped variables via walrus');
+  });
+});
+
+describe('uncovered-router smokes (one route per router)', () => {
+  test('/demo/pipe renders the pipe-forward filter chains', async () => {
+    const response = await get('/demo/pipe');
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    expect(body).toContain('HELLO WORLD');
+  });
+
+  test('/undefined/strict returns the 400 strict-mode error page', async () => {
+    const response = await get('/undefined/strict');
+    expect(response.status).toBe(400);
+    const body = await response.text();
+    expect(body).toContain('Strict Mode');
+  });
+
+  test('/sandbox renders the sandbox overview page', async () => {
+    const response = await get('/sandbox');
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('Sandbox Mode Demo');
+  });
+
+  test('/warnings renders the debug-mode undefined demo', async () => {
+    const response = await get('/warnings');
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('This value is defined');
   });
 });
 
