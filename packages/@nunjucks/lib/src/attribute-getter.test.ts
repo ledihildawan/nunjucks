@@ -26,4 +26,16 @@ describe('getAttrGetter', () => {
     const getter = getAttrGetter(0);
     expect(getter([99, 88])).toBe(99);
   });
+
+  test('never resolves inherited prototype keys', () => {
+    expect(getAttrGetter('__proto__')({})).toBeUndefined();
+    expect(getAttrGetter('constructor')({})).toBeUndefined();
+    expect(getAttrGetter('a.constructor')({ a: {} })).toBeUndefined();
+    expect(getAttrGetter('toString')([])).toBeUndefined();
+  });
+
+  test('still resolves an own __proto__ defined via defineProperty', () => {
+    const item = Object.defineProperty({}, '__proto__', { value: 42, enumerable: true });
+    expect(getAttrGetter('__proto__')(item)).toBe(42);
+  });
 });

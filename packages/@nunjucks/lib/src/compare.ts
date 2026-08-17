@@ -34,7 +34,7 @@ const getCompareValue = (item: unknown, sortAttr: string | undefined): unknown =
   if (!sortAttr) {
     return item;
   }
-  return getAttrGetter(sortAttr)(item as Record<string, unknown>);
+  return getAttrGetter(sortAttr)(item);
 };
 
 interface SortComparatorOptions {

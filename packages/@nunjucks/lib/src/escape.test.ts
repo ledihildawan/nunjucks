@@ -39,4 +39,16 @@ describe('escapeStyle', () => {
   test('escapes angle brackets and quotes', () => {
     expect(escapeStyle('a < b "c"')).toBe('a &lt; b &quot;c&quot;');
   });
+
+  test('escapes itself first so attacker-crafted escapes cannot form', () => {
+    expect(escapeStyle('\\3B')).toBe('\\5C 3B');
+  });
+
+  test('escapes statement and block-close delimiters with CSS hex escapes', () => {
+    expect(escapeStyle('color: red; } body')).toBe('color: red\\3B  \\7D  body');
+  });
+
+  test('does not corrupt the semicolons inside emitted HTML entities', () => {
+    expect(escapeStyle('a&b<c')).toBe('a&amp;b&lt;c');
+  });
 });

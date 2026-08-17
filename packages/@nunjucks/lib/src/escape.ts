@@ -24,7 +24,15 @@ const escapeScriptString = (str: string): string => str
   .replaceAll('<', '\\u003c')
   .replaceAll('>', '\\u003e');
 
+// WHY: inside a <style> context browsers decode CSS escapes (\XX hex), not HTML entities,
+// so CSS delimiters must be neutralized with CSS escapes to stop statement/block injection
+// (`background:url(...)` payloads terminated by `;` or `}`). Order is load-bearing:
+// backslash first (later passes emit new backslashes), then `;`/`}` — both BEFORE the `&`
+// pass, whose entity output (`&amp;` etc.) contains semicolons that must not be re-encoded.
 const escapeStyle = (str: string): string => str
+  .replaceAll('\\', '\\5C ')
+  .replaceAll(';', '\\3B ')
+  .replaceAll('}', '\\7D ')
   .replaceAll('&', '&amp;')
   .replaceAll('<', '&lt;')
   .replaceAll('>', '&gt;')

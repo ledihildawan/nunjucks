@@ -7,7 +7,7 @@ export * from './escape-regex.ts';
 export * from './escape.ts';
 export * from './slice.ts';
 export * from './path-security.ts';
-export * from './compare.ts';
+export { createSortComparator } from './compare.ts';
 export * from './attribute-getter.ts';
 export * from './normalize.ts';
 export * from './strip-inline-markdown.ts';
