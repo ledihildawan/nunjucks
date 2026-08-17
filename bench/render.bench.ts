@@ -29,6 +29,15 @@ const drainStream = async (): Promise<void> => {
   }
 };
 
+// WHY: file-based twin of the loop case — exercises the loader-resolution +
+// compiled-code-cache path the inline cases skip; the dominant per-render cost here
+// is the FS loader's verification pass (realpath/stat/readFile), NOT compilation.
+const fileEngine = nunjucks({
+  views: import.meta.dir,
+  limits: { executionTimeout: 10_000 },
+});
+const renderLoopFile = () => fileEngine.render('fixtures/loop.njk', { items });
+
 const benchCases: BenchCase[] = [
   {
     name: 'render: simple interpolation',
@@ -38,6 +47,11 @@ const benchCases: BenchCase[] = [
   {
     name: 'render: 200-item loop with filter',
     render: () => engine.render(loopTemplate, { items }),
+    iterations: 500,
+  },
+  {
+    name: 'render: file-based loop (cached compile)',
+    render: renderLoopFile,
     iterations: 500,
   },
   {

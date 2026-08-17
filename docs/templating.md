@@ -199,4 +199,5 @@ The walrus operator's right-hand side is **not** undefined-checked, even under `
 | `dev` | `false` (appends warnings script when warnings exist) |
 | `security.sandbox` | `false` |
 | `security.sandboxEnvironment` | `'auto'` (environment-aware blocking: `'auto'`/`'node'`/`'browser'`/`'deno'`) |
+| `cache.templates` | `true` (compiled-code LRU for loader-resolved templates; keys include the source content hash, so edited files are picked up on the next render — set `false` to always recompile) |
 | `limits.*` | `0` (unlimited) |
