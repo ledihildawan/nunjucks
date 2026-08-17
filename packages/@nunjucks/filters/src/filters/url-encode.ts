@@ -1,6 +1,6 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { err, ok, type Result } from '@nunjucks/lib';
-import { entries, isPlainObject, join as joinRemeda, map, pipe } from 'remeda';
+import { entries, isPlainObject, join, map, pipe } from 'remeda';
 import { createFilterError, isArray } from '../factory/index.ts';
 
 // WHY: type predicate (not plain boolean) so Array.prototype.every narrows the input
@@ -48,7 +48,7 @@ const urlencode = (queryParameters: unknown): Result<string, TemplateError> => {
     pipe(
       pairsResult.value,
       map(encodeQueryPair),
-      joinRemeda('&')
+      join('&')
     )
   );
 };

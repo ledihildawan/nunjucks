@@ -74,7 +74,11 @@ interface IndentOptions {
   indentfirst?: boolean;
 }
 
-const indentImpl = ({ str, width, indentfirst }: IndentOptions): Result<string, TemplateError> => {
+const indentImpl = ({
+  str,
+  width,
+  indentfirst,
+}: IndentOptions): Result<string | SafeString, TemplateError> => {
   const normalizedString = normalize(str, '');
   if (normalizedString === '') {
     return ok('');
@@ -95,18 +99,20 @@ const indentImpl = ({ str, width, indentfirst }: IndentOptions): Result<string, 
 
 const indent = createFilter(['str', 'width', 'indentfirst'], indentImpl);
 
-// WHY: positional arity is the template-language contract (upstream `join(d, attr)`
-// syntax) — folding the params into a kwargs object would change template syntax, not
-// just internal code shape.
-const joinFilter = (
-  values: unknown,
-  delimiter?: string,
-  attr?: string
-): Result<string, TemplateError> => {
+// WHY: createFilter-wrapped so BOTH forms bind — positional `join('-')` and kwargs
+// `join(delim='-')`. A bare positional function would receive the compiler's keywords
+// envelope as the delimiter and render "[object Object]" separators.
+interface JoinFilterOptions {
+  values: unknown;
+  delim?: string;
+  attr?: string;
+}
+
+const joinImpl = ({ values, delim, attr }: JoinFilterOptions): Result<string, TemplateError> => {
   if (!isArray(values)) {
     return err(requireArrayError(values, ERROR_DEFINITIONS.JOIN_FILTER));
   }
-  const resolvedDelimiter = defaultTo(delimiter, '');
+  const resolvedDelimiter = defaultTo(delim, '');
   if (!attr) {
     return ok(values.join(resolvedDelimiter));
   }
@@ -120,6 +126,8 @@ const joinFilter = (
   }
   return ok(validatedResult.value.map((item) => item[attr]).join(resolvedDelimiter));
 };
+
+const join = createFilter(['values', 'delim', 'attr'], joinImpl);
 
 const lower = createStringFilter((s: string): string => s.toLowerCase());
 
@@ -144,13 +152,13 @@ const resolveString = (str: unknown): string | null => {
 };
 
 const performReplace = (
-  s: string,
+  text: string,
   { oldStr, newValue, max }: { oldStr: string; newValue: string; max: number }
 ): string => {
   if (oldStr === '') {
-    return s;
+    return text;
   }
-  const segments = s.split(oldStr);
+  const segments = text.split(oldStr);
   if (max === -1 || segments.length - 1 <= max) {
     return segments.join(newValue);
   }
@@ -231,7 +239,7 @@ const truncateImpl = ({
   length,
   killwords,
   end,
-}: TruncateOptions): Result<string, TemplateError> => {
+}: TruncateOptions): Result<string | SafeString, TemplateError> => {
   const originalInput = input;
   const normalized = normalize(input, '');
   const initial = typeof normalized === 'string' ? normalized : String(normalized);
@@ -254,7 +262,7 @@ export {
   escape,
   fallback,
   indent,
-  joinFilter as join,
+  join,
   lower,
   replace,
   title,

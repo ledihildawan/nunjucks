@@ -2,7 +2,7 @@ import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { createSortComparator, err, ok, type Result } from '@nunjucks/lib';
 import { isSafeString } from '@nunjucks/runtime';
-import { isPlainObject, keys, pipe, range, reduce, sum as sumValues } from 'remeda';
+import { isPlainObject, keys, range, sum as sumValues } from 'remeda';
 import {
   createFilter,
   createFilterError,
@@ -87,37 +87,39 @@ const computeSliceParams = (
 interface SingleSliceInput {
   items: unknown[];
   index: number;
-  offset: number;
   sliceLength: number;
   extra: number;
   fillWith: unknown | undefined;
 }
 
+// WHY: the running offset of the original left-fold is fully derivable — each of the
+// first `extra` slices consumes one additional element, so the offset at `index` is
+// exactly min(index, extra). This keeps the slice build declarative and O(n) instead
+// of thread-and-spread (O(n²) in slice count).
 const buildSingleSlice = ({
   items,
   index,
-  offset,
   sliceLength,
   extra,
   fillWith,
-}: SingleSliceInput): { slice: unknown[]; newOffset: number } => {
+}: SingleSliceInput): unknown[] => {
+  const offset = Math.min(index, extra);
   const start = offset + index * sliceLength;
-  const newOffset = index < extra ? offset + 1 : offset;
-  const end = newOffset + (index + 1) * sliceLength;
+  const end = (index < extra ? offset + 1 : offset) + (index + 1) * sliceLength;
   const currSlice = items.slice(start, end);
-  const currentSlice =
-    fillWith !== undefined && index >= extra ? [...currSlice, fillWith] : currSlice;
-  return { slice: currentSlice, newOffset };
+  return fillWith !== undefined && index >= extra ? [...currSlice, fillWith] : currSlice;
 };
 
-// WHY: positional arity is the template-language contract (upstream `slice(n, fill)`
-// syntax) — folding the params into a kwargs object would change template syntax, not
-// just internal code shape.
-export const slice = (
-  values: unknown,
-  slices: number,
-  fillWith?: unknown
-): Result<unknown[][], TemplateError> => {
+// WHY: createFilter-wrapped so BOTH forms bind — positional `arr |> slice(3)` and
+// kwargs `slice(3, fill='x')`. A bare positional function would receive the keywords
+// envelope as the fill value.
+interface SliceFilterOptions {
+  values: unknown;
+  slices: number;
+  fill?: unknown;
+}
+
+const sliceImpl = ({ values, slices, fill }: SliceFilterOptions): Result<unknown[][], TemplateError> => {
   if (!isArray(values)) {
     return err(requireArrayError(values, ERROR_DEFINITIONS.LIST_FILTER));
   }
@@ -132,25 +134,13 @@ export const slice = (
     );
   }
   const { sliceLength, extra } = computeSliceParams(values.length, slices);
-  const { resultSlices } = pipe(
-    range(0, slices),
-    reduce(
-      (acc, i) => {
-        const { slice: currSlice, newOffset } = buildSingleSlice({
-          items: values,
-          index: i,
-          offset: acc.offset,
-          sliceLength,
-          extra,
-          fillWith,
-        });
-        return { resultSlices: [...acc.resultSlices, currSlice], offset: newOffset };
-      },
-      { resultSlices: [] as unknown[][], offset: 0 }
-    )
+  const resultSlices = range(0, slices).map((index) =>
+    buildSingleSlice({ items: values, index, sliceLength, extra, fillWith: fill })
   );
   return ok(resultSlices);
 };
+
+export const slice = createFilter(['values', 'slices', 'fill'], sliceImpl);
 
 interface SumWithAttributeInput {
   items: unknown[];
@@ -200,18 +190,26 @@ const sumWithoutAttribute = (items: unknown[], start: number): Result<number, Te
   return ok(start + sumValues(items));
 };
 
-// WHY: positional arity is the template-language contract (upstream `sum(attr, start)`
-// syntax) — folding the params into a kwargs object would change template syntax, not
-// just internal code shape.
-export const sum = (values: unknown, attr?: string, start = 0): Result<number, TemplateError> => {
+// WHY: createFilter-wrapped so BOTH forms bind — positional `sum(items, 'n', 10)` and
+// kwargs `sum(attr='n')`. A bare positional function would receive the keywords
+// envelope as `attr` and fail with a cryptic attribute error.
+interface SumFilterOptions {
+  values: unknown;
+  attr?: string;
+  start?: number;
+}
+
+const sumImpl = ({ values, attr, start }: SumFilterOptions): Result<number, TemplateError> => {
   if (!isArray(values)) {
     return err(requireArrayError(values, ERROR_DEFINITIONS.SUM_FILTER));
   }
   if (attr) {
-    return sumWithAttribute({ items: values, attr, start });
+    return sumWithAttribute({ items: values, attr, start: start ?? 0 });
   }
-  return sumWithoutAttribute(values, start);
+  return sumWithoutAttribute(values, start ?? 0);
 };
+
+export const sum = createFilter(['values', 'attr', 'start'], sumImpl);
 
 interface SortOptions {
   sortAttr?: string | undefined;
@@ -231,9 +229,8 @@ const sortArray = (values: unknown[], options: SortOptions): Result<unknown[], T
       return err(validatedResult.error);
     }
   }
-  const array = [...values];
   const comparator = createSortComparator({ sortAttr, sortReverse, caseSens });
-  return ok(array.toSorted(comparator));
+  return ok(values.toSorted(comparator));
 };
 
 interface SortOptionsInput {

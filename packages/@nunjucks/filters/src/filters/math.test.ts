@@ -57,6 +57,18 @@ describe('filters/math', () => {
       expect(getOrElse(round(2.5, 0, 'round'), null)).toBe(3);
     });
 
+    test('returns an error for an unknown method string', () => {
+      const result = round(1.1, 0, 'bogus');
+      expect(isOk(result)).toBe(false);
+    });
+
+    test('binds compiler kwargs envelopes (positional names fold into options)', () => {
+      expect(getOrElse(round(1.234, 2), null)).toBe(1.23);
+      expect(getOrElse(round(1.1, 0, 'ceil'), null)).toBe(2);
+      const envelope = { value: 1.234, precision: 2, keywords: true };
+      expect(getOrElse(round(envelope), null)).toBe(1.23);
+    });
+
     test('treats omitted precision as zero', () => {
       expect(getOrElse(round(3.7), null)).toBe(4);
     });

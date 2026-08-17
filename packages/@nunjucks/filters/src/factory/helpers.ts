@@ -63,8 +63,11 @@ const safeHtml = (str: unknown): SafeString => {
   return markSafe(escapeHtml(stringValue));
 };
 
-const preserveSafe = (original: unknown, result: string): string =>
-  copySafeness(original as object, result) as string;
+// WHY: returns string | SafeString — copySafeness hands back a boxed SafeString when
+// the original was safe; the old `as string` lied about that union. Every consumer
+// feeds the result straight into the escape pipeline, which handles both shapes.
+const preserveSafe = (original: unknown, result: string): string | SafeString =>
+  copySafeness(original, result);
 
 const requireArrayError = (value: unknown, errorDef: ErrorDefinitionEntry | undefined) =>
   createFilterError({
@@ -94,7 +97,8 @@ const validateItemsHaveAttr = ({
   errorDef,
 }: ValidateItemsInput): Result<Record<string, unknown>[], TemplateError> => {
   const everyHasAttr = items.every(
-    (item) => item !== null && typeof item === 'object' && attr in item
+    (item) =>
+      item !== null && typeof item === 'object' && Object.hasOwn(item, attr)
   );
   if (!everyHasAttr) {
     return err(
