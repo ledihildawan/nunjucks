@@ -3,6 +3,12 @@ import { nunjucks, PACKAGE_VERSION } from '@nunjucks/core';
 import type { NunjucksConfig } from '@nunjucks/core';
 import { isOk, isPlainObject } from '@nunjucks/lib';
 
+/**
+ * Matches the view-engine callback signature Express passes to `app.engine(ext, fn)`.
+ * `filePath` is the absolute template path resolved by Express's view system, while
+ * `options` is the merged, untrusted locals bag; output and errors flow exclusively
+ * through the Node-style `callback(err, rendered)` rather than a return value.
+ */
 type ExpressEngineFunction = (
   filePath: string,
   options: unknown,
