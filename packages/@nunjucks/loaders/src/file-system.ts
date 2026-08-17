@@ -173,6 +173,25 @@ export interface FileSystemLoader extends Loader, TemplateLoader {
   unwatchAll: () => void;
 }
 
+/**
+ * Creates the filesystem template loader — the engine's primary I/O shell for
+ * resolving template sources from disk.
+ *
+ * Resolution walks `searchPaths` in order (first match wins). Every hit is
+ * re-validated via realpath so symlinks cannot escape the search root, and
+ * resolved sources are memoized per `(mtimeMs, size)` until the file changes.
+ *
+ * @param searchPaths - Directory, or ordered list of directories, to resolve
+ *   template names against. Defaults to `['.']`.
+ * @param options - `watch` (default `false`) attaches an fs watcher per
+ *   resolved file and emits `update` events on change/rename; `memo`
+ *   (default `true`) enables the stat-validated source memo — `false`
+ *   restores the always-verify path.
+ * @returns A loader whose `getSource` resolves to `ok(source)` on hit, `null`
+ *   on miss, or `err(TemplateError)` on filesystem failure. Watcher failures
+ *   never throw — they surface as catalog `TemplateError`s on the loader's
+ *   `error` event channel.
+ */
 export const createFileSystemLoader = (
   searchPaths: string | string[] | undefined,
   options: FileSystemLoaderOptions = {}
