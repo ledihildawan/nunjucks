@@ -28,6 +28,66 @@ describe('createFileSystemLoader', () => {
     expect(loader.pathsToNames).toBeInstanceOf(Map);
   });
 
+  describe('source memo', () => {
+    test('a memo hit returns the same source object without re-reading', async () => {
+      const dir = await makeDir();
+      const file = join(dir, 'memo.njk');
+      await writeFile(file, 'stable content');
+      const loader = createFileSystemLoader(dir);
+      const first = await loader.getSource('memo.njk');
+      const second = await loader.getSource('memo.njk');
+      expect(isOk(first)).toBe(true);
+      expect(isOk(second)).toBe(true);
+      if (isOk(first) && isOk(second)) {
+        // WHY: toBe — the memo must return the memoized object identity
+        expect(second.value).toBe(first.value);
+      }
+    });
+
+    test('rewriting the file (new mtime) busts the memo on the next getSource', async () => {
+      const dir = await makeDir();
+      const file = join(dir, 'mutable.njk');
+      await writeFile(file, 'before');
+      const loader = createFileSystemLoader(dir);
+      const first = await loader.getSource('mutable.njk');
+      // force a distinguishable mtime (filesystems may share timestamps within a tick)
+      await new Promise((resolve) => setTimeout(resolve, 12));
+      await writeFile(file, 'after');
+      const second = await loader.getSource('mutable.njk');
+      expect(isOk(first)).toBe(true);
+      expect(isOk(second)).toBe(true);
+      if (isOk(first) && isOk(second)) {
+        expect(first.value.src).toBe('before');
+        expect(second.value.src).toBe('after');
+      }
+    });
+
+    test('memo:false disables memoization entirely', async () => {
+      const dir = await makeDir();
+      const file = join(dir, 'off.njk');
+      await writeFile(file, 'x');
+      const loader = createFileSystemLoader(dir, { memo: false });
+      const first = await loader.getSource('off.njk');
+      const second = await loader.getSource('off.njk');
+      expect(isOk(first)).toBe(true);
+      expect(isOk(second)).toBe(true);
+      if (isOk(first) && isOk(second)) {
+        expect(second.value).not.toBe(first.value);
+        expect(second.value.src).toBe(first.value.src);
+      }
+    });
+
+    test('deleting a memoized file degrades to a miss (memo dropped, not stale)', async () => {
+      const dir = await makeDir();
+      const file = join(dir, 'gone.njk');
+      await writeFile(file, 'temp');
+      const loader = createFileSystemLoader(dir);
+      expect(isOk(await loader.getSource('gone.njk'))).toBe(true);
+      await rm(file);
+      expect(await loader.getSource('gone.njk')).toBeNull();
+    });
+  });
+
   test('creates loader with single search path', () => {
     const loader = createFileSystemLoader('/tmp/templates');
     expect(loader.searchPaths).toEqual([expect.stringContaining('tmp')]);
