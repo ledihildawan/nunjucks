@@ -1,7 +1,7 @@
 import { toAnsi, toText, toHtml, createFormatterState, buildSourceTrace, parseStackFrame, classifyAndBuildTitle, type SourceTrace } from '@nunjucks/error-renderer';
-import type { ProjectSourceContent } from './create-log-types.ts';
+import type { ProjectSourceContent, SourceFileReader } from './create-log-types.ts';
 import { normalizeLineBase, ERROR_CODES, type LineBase } from '@nunjucks/error-catalog';
-import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, OutputOptions, NormalizedErrorContext, NormalizedWarningContext } from './create-log-types.ts';
+import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, OutputOptions, NormalizedErrorContext, NormalizedWarningContext, ColnoAdjustmentError } from './create-log-types.ts';
 import { resolveMessage, createErrorEnvelope } from './create-log-helpers.ts';
 
 const isTemplateError = (log: TemplateError | TemplateWarning): log is TemplateError =>
@@ -24,7 +24,7 @@ const resolveTraceLineBase = (err: TemplateError, isJsCaller: boolean | undefine
   return normalizeLineBase(err.lineBase);
 };
 
-const adjustColnoForNullValue = (err: TemplateError): number | null | undefined => {
+const adjustColnoForNullValue = (err: ColnoAdjustmentError): number | null | undefined => {
   if (err.code !== ERROR_CODES.NULL_VALUE || !err.sourceContent || err.lineno == null) { return err.colno; }
   const parentMatch = err.message.match(/on (?:null|undefined) '([^']+)'$/u);
   if (!parentMatch?.[1]) { return err.colno; }
@@ -95,11 +95,12 @@ const isTemplateErrorLog = (err: Error | TemplateError): err is TemplateError =>
   (err as TemplateError).templatePath !== undefined || err.name === 'Template render error';
 
 const isProjectSource = (path: string): boolean => {
+  // WHY: backslashes are normalized away first, so the posix check below is exhaustive.
   const normalized = path.replace(/\\/g, '/');
-  return !normalized.includes('/node_modules/') && !normalized.includes('\\node_modules\\');
+  return !normalized.includes('/node_modules/');
 };
 
-const extractSourceFromStack = (stack: string, sourceFileReader: ((location: { path: string; line: number | null; col: number | null }) => ProjectSourceContent | null) | undefined): ProjectSourceContent | null => {
+const extractSourceFromStack = (stack: string, sourceFileReader: SourceFileReader | undefined): ProjectSourceContent | null => {
   if (!sourceFileReader) { return null; }
   const lines = stack.split('\n');
   const projectFrame = lines.map(parseStackFrame).find(frame => frame.path !== null && frame.line !== null && isProjectSource(frame.path));

@@ -1,5 +1,6 @@
 import { pipe } from 'remeda';
-import { DEFAULT_UNDEFINED_MODE } from '@nunjucks/shared';
+import { DEFAULT_UNDEFINED_MODE, UNDEFINED_MODES } from '@nunjucks/shared';
+import type { UndefinedMode } from '@nunjucks/shared';
 import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, RawLogData, LogType, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, ErrorInfo, WarningInfo, OutputOptions } from './create-log-types.ts';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
 import { normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, createErrorEnvelope } from './create-log-helpers.ts';
@@ -40,6 +41,23 @@ function createLog(type: string, fields: CreateLogFields): TemplateError | Templ
 const isTemplateError = (value: unknown): value is TemplateError =>
   isKeyedObject(value) && value[TEMPLATE_ERROR] === true;
 
+// WHY: rawLogData.info crosses the raw-error boundary with arbitrary shape — narrow the
+// warning-specific fields createFromRawData actually consumes instead of asserting the
+// whole WarningInfo contract. The literal-array widening is sound (superset read-only).
+const isUndefinedMode = (value: unknown): value is UndefinedMode =>
+  typeof value === 'string' && (UNDEFINED_MODES as readonly string[]).includes(value);
+
+const isWarningInfo = (value: unknown): value is WarningInfo => {
+  if (!isKeyedObject(value)) {
+    return false;
+  }
+  const { varName, undefinedMode } = value;
+  const varNameValid = varName === undefined || varName === null || typeof varName === 'string';
+  const undefinedModeValid =
+    undefinedMode === undefined || undefinedMode === null || isUndefinedMode(undefinedMode);
+  return varNameValid && undefinedModeValid;
+};
+
 const asTemplateError = (err: Error | TemplateError): TemplateError => {
   if (isTemplateError(err)) { return err; }
   const partialErr = err as Partial<TemplateError>;
@@ -56,14 +74,11 @@ const asTemplateError = (err: Error | TemplateError): TemplateError => {
   });
 };
 
-const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError => {
-  const result = Object.assign(createErrorEnvelope(err.message, err), err);
-  result.templateName = result.templateName ?? (path ?? null);
-  if (includeChain) {
-    result.includeChain = includeChain;
-  }
-  return result;
-};
+const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError =>
+  Object.assign(createErrorEnvelope(err.message, err), err, {
+    templateName: err.templateName ?? (path ?? null),
+    ...(includeChain ? { includeChain } : {}),
+  });
 
 const stripInternals = (path?: string) => (err: TemplateError): TemplateError => {
   const clean = createErrorEnvelope(err.message, err);
@@ -100,7 +115,7 @@ const prettifyError = (options: PrettifyErrorOptions): TemplateError => {
 };
 
 const createFromRawData = (type: LogType, rawLogData: RawLogData): TemplateError | TemplateWarning => {
-  const warningInfo = (rawLogData.info ?? {}) as WarningInfo;
+  const warningInfo: WarningInfo = isWarningInfo(rawLogData.info) ? rawLogData.info : {};
   const baseMetadata = createBaseMetadata({ message: rawLogData.message, rawLogData, info: warningInfo, type });
 
   if (type === 'error') {

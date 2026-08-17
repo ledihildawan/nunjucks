@@ -91,6 +91,17 @@ interface TemplateError extends Error {
   [TEMPLATE_ERROR]?: boolean;
 }
 
+// WHY: colno adjustment also serves mid-stream callers whose errors are normalized plain
+// Errors — catalog fields are optional there, so only the fields the adjustment reads are
+// part of the contract (message arrives via Error).
+interface ColnoAdjustmentError extends Error {
+  code?: string | null;
+  sourceContent?: string;
+  lineno?: number | null;
+  colno?: number | null;
+  lineBase?: LineBase | null;
+}
+
 interface TemplateWarning {
   message: string;
   lineno: number | null;
@@ -167,5 +178,5 @@ interface RawLogData {
 
 type LogType = 'error' | 'warning';
 
-export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, ProjectSourceLocation, ProjectSourceContent, SourceFileReader, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, RawLogData, LogType, BaseContext, NormalizedErrorContext, NormalizedWarningContext };
+export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, ProjectSourceLocation, ProjectSourceContent, SourceFileReader, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, RawLogData, LogType, BaseContext, NormalizedErrorContext, NormalizedWarningContext, ColnoAdjustmentError };
 export { TEMPLATE_ERROR };

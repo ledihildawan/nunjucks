@@ -20,6 +20,22 @@ describe('normalizeErrorMetadata', () => {
     expect(normalizeErrorMetadata(undefined).message).toBe('undefined');
   });
 
+  test('a throwing getter on metadata fields degrades to fallbacks instead of crashing', () => {
+    const hostile = {
+      message: 'boom',
+      get lineno(): number {
+        throw new Error('hostile getter');
+      },
+      get code(): string {
+        throw new Error('hostile getter');
+      },
+    };
+    const meta = normalizeErrorMetadata(hostile, { code: 'FALLBACK' });
+    expect(meta.message).toBe('boom');
+    expect(meta.lineno).toBeNull();
+    expect(meta.code).toBe('FALLBACK');
+  });
+
   test('reads metadata fields off an error-like object', () => {
     const thrown = { message: 'oops', lineno: 4, colno: 2, code: 'X', lineBase: 'one' };
     const meta = normalizeErrorMetadata(thrown);
