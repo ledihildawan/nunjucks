@@ -111,6 +111,10 @@ const parseSwitchDefault = (
   return ok(resultR.value);
 };
 
+/**
+ * Parses `{% switch expr %}` with `case` branches and an optional
+ * `default` arm, consuming the terminating `{% endswitch %}`.
+ */
 export const parseSwitch = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagR = peekToken(parserContext);
   if (isErr(tagR)) {

@@ -8,6 +8,7 @@ import { advanceAfterBlockEnd, fail, peekToken, skipSymbol } from '../cursor.ts'
 import { parsePrimary } from '../expression-parser/index.ts';
 import { parseUntilBlocks } from '../parse-root.ts';
 
+/** Parses `{% block name %}...{% endblock %}`, tolerating a repeated name after `endblock`. */
 export const parseBlock = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagR = peekToken(parserContext);
   if (isErr(tagR)) {

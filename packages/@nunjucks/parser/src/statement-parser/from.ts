@@ -111,6 +111,11 @@ const parseFromImportIteration = (
   return ok({ names: result.value.names, withContext: result.value.withContext, done: false });
 };
 
+/**
+ * Parses `{% from template import a as b, c with context %}`: a
+ * comma-separated name/alias list where underscore-prefixed names are
+ * rejected and a mid-list `with context` marker applies to every name.
+ */
 export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const fromTokR = peekToken(parserContext);
   if (isErr(fromTokR)) {

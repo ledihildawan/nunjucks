@@ -584,6 +584,7 @@ const parseObjectPattern = (
   return ok(loopR.value.node);
 };
 
+/** Parses an array or object destructuring pattern, failing on other tokens. */
 export const parsePattern = (parserContext: ParserContext): Result<Node | null, TemplateError> => {
   const tokR = peekToken(parserContext);
   if (isErr(tokR)) {
@@ -604,6 +605,7 @@ export const parsePattern = (parserContext: ParserContext): Result<Node | null, 
   });
 };
 
+/** Parses a pattern when `[` or `{` is next; returns `null` without consuming otherwise. */
 export const tryParsePattern = (
   parserContext: ParserContext
 ): Result<Node | null, TemplateError> => {

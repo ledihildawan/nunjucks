@@ -8,6 +8,7 @@ import { advanceAfterBlockEnd, fail, peekToken, skipSymbol } from '../cursor.ts'
 import { parseExpression } from '../expression-parser/index.ts';
 import { parseWithContext } from './import-context.ts';
 
+/** Parses `{% import template as target with context %}` into an import node. */
 export const parseImport = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const importTokR = peekToken(parserContext);
   if (isErr(importTokR)) {

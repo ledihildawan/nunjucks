@@ -52,6 +52,10 @@ const parseAnd = (parserContext: ParserContext): Result<Node, TemplateError> =>
     next: parseNot,
   });
 
+/**
+ * Parses `or` / `||` chains, the loosest logical level and the entry point
+ * of the boolean precedence chain.
+ */
 const parseOr = (parserContext: ParserContext): Result<Node, TemplateError> =>
   binaryOp(parserContext, {
     create: or,
@@ -59,6 +63,11 @@ const parseOr = (parserContext: ParserContext): Result<Node, TemplateError> =>
     next: parseNullishCoalesce,
   });
 
+/**
+ * Parses a `? :` ternary onto an already-parsed condition; a consumed `?`
+ * without its closing `:` fails loudly rather than silently returning the
+ * condition.
+ */
 const parseTernary = (parserContext: ParserContext, node: Node): Result<Node, TemplateError> => {
   if (skipValue(parserContext, TOKEN_OPERATOR, '?')) {
     const thenR = parseOr(parserContext);

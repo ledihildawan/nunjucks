@@ -34,6 +34,12 @@ import type { ParserContext } from '../cursor.ts';
 import { fail, peekToken } from '../cursor.ts';
 import { STATEMENT_PARSERS } from './registry.ts';
 
+/**
+ * Dispatches the peeked tag symbol to its statement parser. Returns
+ * `Ok(null)` — without consuming the tag — when it names an enclosing
+ * `breakOn` delimiter; unknown tags fall back to extensions before
+ * failing as `unknown block tag`.
+ */
 export const parseStatement = (
   parserContext: ParserContext,
   breakOn: readonly string[] | null = null

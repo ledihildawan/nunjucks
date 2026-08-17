@@ -52,6 +52,11 @@ const parseForTarget = (parserContext: ParserContext): Result<Node, TemplateErro
   return collectCommaList(result);
 };
 
+/**
+ * Parses `{% for %}`: a destructuring pattern, symbol, or comma list as
+ * the loop target, an iterable expression, and an optional `else` body
+ * used when the iterable is empty.
+ */
 export const parseFor = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const forTokR = peekToken(parserContext);
   if (isErr(forTokR)) {

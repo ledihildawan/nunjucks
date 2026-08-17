@@ -85,6 +85,10 @@ const parseScopeAssignments = (
   return collect();
 };
 
+/**
+ * Parses `{% scope a = 1, b = 2 %}...{% endscope %}`, scoping the listed
+ * assignments to the block body; an empty header is allowed.
+ */
 export const parseScope = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagR = peekToken(parserContext);
   if (isErr(tagR)) {

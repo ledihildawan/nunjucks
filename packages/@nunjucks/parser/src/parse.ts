@@ -12,12 +12,17 @@ import type { ParserContext, ParserExtension, TokenStream } from './cursor.ts';
 import { fail } from './cursor.ts';
 import { parseNodes } from './parse-root.ts';
 
+/**
+ * Parser entry options: lexer delimiters plus optional expression-security
+ * config, autoescape, and parser extensions.
+ */
 export interface ParseOptions extends LexerOptions {
   security?: ExpressionSecurityConfig | null;
   autoescape?: boolean;
   extensions?: readonly ParserExtension[];
 }
 
+/** Creates a fresh `ParserContext` over a token stream with no peeked token. */
 export const createParser = (tokens: TokenStream): ParserContext => {
   return {
     tokens,
@@ -27,6 +32,12 @@ export const createParser = (tokens: TokenStream): ParserContext => {
   };
 };
 
+/**
+ * Parses template source into a root AST node, returning `Err` with a
+ * catalogued parser error for syntax failures instead of throwing;
+ * non-template throws are programmer bugs and deliberately propagate.
+ * When `security` is set, the finished AST is validated before returning.
+ */
 export const parse = (
   src: string,
   options?: ParseOptions

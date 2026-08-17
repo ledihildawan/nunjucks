@@ -14,6 +14,7 @@ import type { ParserContext } from '../../cursor.ts';
 import { expect, peekToken, skip, skipValue } from '../../cursor.ts';
 import { parsePostfix } from './index.ts';
 
+/** Parses a dotted filter name like `tojson` or `default.attr` into a symbol node. */
 export const parseFilterCallName = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tokR = expect(parserContext, TOKEN_SYMBOL);
   if (isErr(tokR)) {
@@ -41,6 +42,7 @@ export const parseFilterCallName = (parserContext: ParserContext): Result<Node, 
   return ok(symbol(loc(tok), nameR.value));
 };
 
+/** Parses a filter's parenthesized argument list when present, otherwise returns `[]`. */
 export const parseFilterCallArgs = (
   parserContext: ParserContext,
   node: Node
@@ -61,6 +63,10 @@ export const parseFilterCallArgs = (
   return ok([]);
 };
 
+/**
+ * Parses `|>` pipe-forward chains, folding each filter call so the value
+ * flows left-to-right; each `Pipe` loc is the LHS start, not the operator.
+ */
 export const parsePipeForward = (
   parserContext: ParserContext,
   node: Node

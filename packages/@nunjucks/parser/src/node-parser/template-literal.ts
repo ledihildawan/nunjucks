@@ -48,6 +48,10 @@ const isSafeTemplateExpression = (expr: string): boolean => {
   return true;
 };
 
+/**
+ * Parses a backtick template literal token into quasi parts, rejecting
+ * interpolations that are anything but simple identifiers.
+ */
 export const parseTemplateLiteral = (
   parserContext: ParserContext
 ): Result<Node | null, TemplateError> => {

@@ -3,6 +3,11 @@ import { isErr, ok, type Result } from '@nunjucks/lib';
 import type { ParserContext } from '../cursor.ts';
 import { fail, peekToken, skipSymbol } from '../cursor.ts';
 
+/**
+ * Consumes the optional `with context` / `without context` suffix on
+ * import statements, failing when `with`/`without` is not followed by
+ * `context`; returns `null` when the suffix is absent.
+ */
 export const parseWithContext = (
   parserContext: ParserContext
 ): Result<boolean | null, TemplateError> => {

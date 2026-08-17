@@ -9,6 +9,11 @@ import { parsePrimaryWithoutPostfix } from '../expression-parser/index.ts';
 import { parseSignature } from '../node-parser/signature.ts';
 import { advanceAfterTags, buildDefaultBody, parseSlottedBody } from './slots.ts';
 
+/**
+ * Parses `{% component Name(args) %}` with a slotted body: unslotted
+ * content and anonymous `{% slot %}` blocks feed the default slot while
+ * named slots become fallback overrides.
+ */
 export const parseComponent = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const compTokR = peekToken(parserContext);
   if (isErr(compTokR)) {

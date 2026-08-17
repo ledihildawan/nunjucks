@@ -77,8 +77,14 @@ const inferFix = (msg: string): string => {
   return find(FIX_PATTERNS, (pattern) => pattern.check(lower))?.fix ?? DEFAULT_FIX;
 };
 
+/** Sentinel tagging `expected colon after dict key` failures for pattern retries. */
 export const EXPECTED_COLON_AFTER_DICT_KEY = 'EXPECTED_COLON_AFTER_DICT_KEY';
 
+/**
+ * Options for building a parser error: location fields default to the
+ * peeked token's position when omitted, and `sentinel` tags the error for
+ * control-flow retries higher in the parser.
+ */
 export interface ParserErrorOptions {
   message: string;
   lineno?: number;
@@ -86,6 +92,11 @@ export interface ParserErrorOptions {
   sentinel?: string;
 }
 
+/**
+ * Builds a catalogued `PARSER_ERROR` for a parse failure, inferring likely
+ * causes and a suggested fix from the message text and resolving the
+ * location from the peeked token when not supplied.
+ */
 export const error = (
   parserContext: ParserContext,
   { message, lineno, colno, sentinel }: ParserErrorOptions
@@ -114,6 +125,7 @@ export const error = (
   return errObj;
 };
 
+/** Returns `Err` of a catalogued parser error, the Result-envelope form of `error`. */
 export const fail = (
   parserContext: ParserContext,
   options: ParserErrorOptions
@@ -127,6 +139,10 @@ interface ErrorAtOptions {
   extra?: Record<string, unknown>;
 }
 
+/**
+ * Returns `Err` of an error defined by an existing catalog entry at an
+ * exact location, stringifying `extra` params for the formatter.
+ */
 export const errorAt = ({
   lineno,
   colno,

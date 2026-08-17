@@ -58,6 +58,11 @@ const prepareAfterComma = (
   });
 };
 
+/**
+ * Handles the comma/terminator bookkeeping before each aggregate item,
+ * producing holes for elided elements (`[a, , b]`) and flagging when the
+ * closing delimiter has been consumed.
+ */
 export const prepareListItem = (
   parserContext: ParserContext,
   hasItems: boolean,

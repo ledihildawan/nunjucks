@@ -175,6 +175,11 @@ const parseOptionalLookup = (
   return ok(node);
 };
 
+/**
+ * Parses the segment after a consumed `?.` operator: a call `?.(...)`,
+ * bracket access `?.[...]`, or short property lookup `?.name`, building
+ * an optional-chain node and carrying over bracket/dot notation marks.
+ */
 export const parseOptionalChain = (
   parserContext: ParserContext,
   tok: OptionalChainOperatorToken,

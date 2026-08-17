@@ -156,6 +156,12 @@ const parseWalrusAssignment = (
   return parseWalrus(parserContext, resultNodeR.value);
 };
 
+/**
+ * Parses assignment suffixes after a parsed target: `:=` walrus and
+ * compound operators like `+=`. Whether the result is a `walrus` or a
+ * `variableDeclaration` depends on the following token — operators,
+ * `)`, and `,` keep it in expression position.
+ */
 const parseWalrus = (parserContext: ParserContext, node: Node): Result<Node, TemplateError> => {
   const tokR = peekToken(parserContext);
   if (isErr(tokR)) {

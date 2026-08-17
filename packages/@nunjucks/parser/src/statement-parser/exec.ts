@@ -7,6 +7,7 @@ import type { ParserContext } from '../cursor.ts';
 import { advanceAfterBlockEnd, fail, peekToken, skipSymbol } from '../cursor.ts';
 import { parseExpression } from '../expression-parser/index.ts';
 
+/** Parses `{% exec expr %}`, evaluating an expression purely for side effects. */
 export const parseExec = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagR = peekToken(parserContext);
   if (isErr(tagR)) {

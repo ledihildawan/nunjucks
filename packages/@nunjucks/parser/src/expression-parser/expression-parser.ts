@@ -38,6 +38,10 @@ const parseTernaryExpression = (parserContext: ParserContext): Result<Node, Temp
   return parseWalrus(parserContext, ternaryR.value);
 };
 
+/**
+ * Entry point of the expression grammar: parses an `or`-level chain, then
+ * inline `if/else` filters, then `? :` ternaries and `:=` walrus bindings.
+ */
 const parseExpression = (parserContext: ParserContext): Result<Node, TemplateError> =>
   parseTernaryExpression(parserContext);
 

@@ -9,6 +9,7 @@ import { parseSignature } from '../../node-parser/signature.ts';
 
 type LeftParenToken = Token & { type: typeof TOKEN_LEFT_PAREN };
 
+/** Parses a parenthesized call signature after `(` and builds a call on `target`. */
 export const parseFunCall = (
   parserContext: ParserContext,
   tok: LeftParenToken,

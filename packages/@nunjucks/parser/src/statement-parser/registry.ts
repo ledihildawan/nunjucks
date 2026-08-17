@@ -24,6 +24,10 @@ type TaggedParser = (
   ...args: unknown[]
 ) => Result<Node, TemplateError>;
 
+/**
+ * Tag-name-to-parser table for every built-in statement; `parseStatement`
+ * looks tags up here before falling back to extensions.
+ */
 const STATEMENT_PARSERS: Record<string, StatementParser | TaggedParser> = {
   if: parseIf,
   for: parseFor,

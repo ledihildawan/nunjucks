@@ -8,6 +8,11 @@ import { advanceAfterBlockEnd, fail, peekToken, skipSymbol } from '../cursor.ts'
 import { parseExpression } from '../expression-parser/index.ts';
 import { advanceAfterTags, buildDefaultBody, parseSlottedBody } from './slots.ts';
 
+/**
+ * Parses `{% render template(args) %}` with a slotted body: a bare name is
+ * wrapped in a call, and explicit plus anonymous slots become the
+ * provided slot list.
+ */
 export const parseRenderBlock = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagR = peekToken(parserContext);
   if (isErr(tagR)) {

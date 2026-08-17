@@ -158,6 +158,12 @@ interface ParseSignatureOptions {
   noParens?: boolean;
 }
 
+/**
+ * Parses a call signature: a parenthesized `(a, b=1, ...)` argument list,
+ * or — with `noParens` — arguments running directly to the block end.
+ * Positional and keyword arguments accumulate into one children node,
+ * with `tolerant` returning `null` when no `(` is present.
+ */
 export const parseSignature = ({
   parserContext,
   tolerant = false,

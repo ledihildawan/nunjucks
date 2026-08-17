@@ -7,6 +7,7 @@ import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
 import { peekToken, skipValue } from '../cursor.ts';
 
+/** Constructs a binary AST node from a source location and operand fields. */
 type BinNodeFn = (loc: Loc, fields: BinaryFields) => Node;
 
 interface BinaryOpOptions {
@@ -15,6 +16,11 @@ interface BinaryOpOptions {
   next: (parserContext: ParserContext) => Result<Node, TemplateError>;
 }
 
+/**
+ * Generic left-associative binary-operator fold: parses the tighter `next`
+ * level once, then repeatedly consumes the operator via `consume` and folds
+ * each right operand into a node built by `create`.
+ */
 const binaryOp = (
   parserContext: ParserContext,
   { create, consume, next }: BinaryOpOptions
@@ -42,6 +48,7 @@ const binaryOp = (
   return fold(firstR.value);
 };
 
+/** Builds a `consume` callback matching a single operator literal, e.g. `+`. */
 const op =
   (operator: string) =>
   (parserContext: ParserContext): boolean =>

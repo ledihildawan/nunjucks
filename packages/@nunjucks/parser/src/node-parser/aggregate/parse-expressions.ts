@@ -100,6 +100,10 @@ const parseDictItem = (
   });
 };
 
+/**
+ * Parses one aggregate element: spread, dict pair, or expression —
+ * wrapping `expr = default` in an `assignmentPattern` where allowed.
+ */
 export const parseAggregateExpression = (
   parserContext: ParserContext,
   dictAggregate: boolean,

@@ -273,6 +273,7 @@ const parseInLoop = (parserContext: ParserContext, node: Node): Result<Node, Tem
   return ok(resultR.value ?? node);
 };
 
+/** Parses an expression, then chains any `in` / `not in` membership tests onto it. */
 const parseIn = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const nodeR = parseBitwiseOr(parserContext);
   if (isErr(nodeR)) {

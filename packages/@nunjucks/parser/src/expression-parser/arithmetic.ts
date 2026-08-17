@@ -23,6 +23,10 @@ const parseMod = (parserContext: ParserContext): Result<Node, TemplateError> =>
 const parsePow = (parserContext: ParserContext): Result<Node, TemplateError> =>
   binaryOp(parserContext, { create: pow, consume: op('**'), next: parseUnary });
 
+/**
+ * Parses `~` string concatenation, the loosest arithmetic level and the
+ * arithmetic chain's entry point (`~` over `..` over `+ -` down to unary).
+ */
 const parseConcat = (parserContext: ParserContext): Result<Node, TemplateError> =>
   binaryOp(parserContext, {
     create: concat,

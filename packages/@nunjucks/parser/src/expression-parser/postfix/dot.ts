@@ -11,6 +11,10 @@ import { markAsDot } from './lookup.ts';
 
 type DotOperatorToken = Token & { type: typeof TOKEN_OPERATOR };
 
+/**
+ * Parses `.name` member access after a consumed dot operator, requiring a
+ * symbol on the right and marking the resulting lookup as dot notation.
+ */
 export const parseDotAccess = (
   parserContext: ParserContext,
   tok: DotOperatorToken,

@@ -120,6 +120,11 @@ const appendDefaultChunk = (defaultParts: Node[], chunk: Node): void => {
   }
 };
 
+/**
+ * Parses a slotted body up to `endTag`: explicit `{% slot name(params) %}`
+ * blocks are split into named and implicit `default` slots while the
+ * surrounding chunks accumulate as default-slot content.
+ */
 export const parseSlottedBody = (
   parserContext: ParserContext,
   endTag: string
@@ -156,6 +161,7 @@ export const parseSlottedBody = (
   return parseLoop();
 };
 
+/** Combines default-slot chunks into one body node, using empty output when there are none. */
 export const buildDefaultBody = (parts: Node[], origin: Loc): Node => {
   if (parts.length === 0) {
     return output(origin, [templateData(origin, '')]);
@@ -170,6 +176,7 @@ export const buildDefaultBody = (parts: Node[], origin: Loc): Node => {
   return nodeList(origin, parts);
 };
 
+/** Consumes the `endTag` symbol and its block end, e.g. `endcomponent %}`. */
 export const advanceAfterTags = (
   parserContext: ParserContext,
   tag: string

@@ -7,6 +7,7 @@ import type { ParserContext } from '../cursor.ts';
 import { advanceAfterBlockEnd, fail, peekToken, skipSymbol } from '../cursor.ts';
 import { parseExpression } from '../expression-parser/index.ts';
 
+/** Parses `{% extends template %}`, declaring the current template's parent. */
 export const parseExtends = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagName = 'extends';
   const tagR = peekToken(parserContext);

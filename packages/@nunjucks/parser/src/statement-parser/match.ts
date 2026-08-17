@@ -124,6 +124,10 @@ const parseMatchCases = (
   return collectCases([]);
 };
 
+/**
+ * Parses `{% match expr %}`: a chain of `when pattern if guard` cases
+ * (patterns may destructure) plus an optional `when _` default arm.
+ */
 export const parseMatch = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagR = peekToken(parserContext);
   if (isErr(tagR)) {

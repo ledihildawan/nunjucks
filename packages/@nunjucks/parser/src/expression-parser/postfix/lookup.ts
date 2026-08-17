@@ -58,6 +58,10 @@ const buildSlice = (
   return ok(sliceNode);
 };
 
+/**
+ * Parses `[...]` subscript access on `target`: a plain index expression or
+ * a `start:stop:step` slice, marked as bracket notation for round-tripping.
+ */
 const parseBracketAccess = (
   parserContext: ParserContext,
   bracketTok: LeftBracketToken,
@@ -97,9 +101,11 @@ const parseBracketAccess = (
   return ok(node);
 };
 
+/** Marks a lookup node as produced by bracket notation, e.g. `a["b"]`. */
 const markAsBracket = (node: Node): void => {
   markBracketNotation(node, true);
 };
+/** Marks a lookup node as produced by dot notation, e.g. `a.b`. */
 const markAsDot = (node: Node): void => {
   markBracketNotation(node, false);
 };

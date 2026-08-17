@@ -8,6 +8,10 @@ import { advanceAfterBlockEnd, fail, peekToken, skipSymbol } from '../cursor.ts'
 import { parseFilterCallArgs, parseFilterCallName } from '../expression-parser/postfix/index.ts';
 import { parseUntilBlocks } from '../parse-root.ts';
 
+/**
+ * Parses `{% filter name(args) %}...{% endfilter %}` by capturing the body
+ * and piping it through the filter as an output node.
+ */
 export const parseFilterStatement = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const filterTokR = peekToken(parserContext);
   if (isErr(filterTokR)) {

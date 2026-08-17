@@ -49,6 +49,10 @@ const parseIfAlternate = (
   }
 };
 
+/**
+ * Parses `{% if %}`/`{% elif %}` branches recursively, including `else`
+ * alternates, and consumes the terminating `{% endif %}`.
+ */
 export const parseIf = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagR = peekToken(parserContext);
   if (isErr(tagR)) {

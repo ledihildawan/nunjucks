@@ -23,6 +23,10 @@ import {
 import { parseExpression } from './expression-parser/index.ts';
 import { parseStatement } from './statement-parser/index.ts';
 
+/**
+ * Parses nodes until one of `blockNames` opens, returning them as a single
+ * node list; the terminating tag itself is left unconsumed for the caller.
+ */
 const parseUntilBlocks = (
   parserContext: ParserContext,
   ...blockNames: string[]
@@ -144,6 +148,12 @@ const handleToken = (
   });
 };
 
+/**
+ * Core node loop: dispatches each token (data, block, variable, comment,
+ * raw) until end of input. When `breakOn` is non-null, an opening tag whose
+ * name is listed stops the loop without consuming it, signalling an
+ * enclosing statement parser.
+ */
 const parseNodes = (
   parserContext: ParserContext,
   breakOn: readonly string[] | null = null

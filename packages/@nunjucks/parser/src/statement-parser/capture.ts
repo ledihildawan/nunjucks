@@ -8,6 +8,7 @@ import type { ParserContext } from '../cursor.ts';
 import { advanceAfterBlockEnd, fail, nextTokenOrNull, peekToken, skipSymbol } from '../cursor.ts';
 import { parseUntilBlocks } from '../parse-root.ts';
 
+/** Parses `{% capture var %}...{% endcapture %}`, storing the rendered body in `var`. */
 export const parseCapture = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagR = peekToken(parserContext);
   if (isErr(tagR)) {

@@ -153,6 +153,11 @@ const parsePrimaryRaw = (parserContext: ParserContext): Result<Node, TemplateErr
   return ok(aggregateNode);
 };
 
+/**
+ * Parses a primary expression — literal, symbol, template literal,
+ * aggregate, or destructuring pattern — then chains any postfix accesses
+ * and calls onto it.
+ */
 const parsePrimary = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const rawR = parsePrimaryRaw(parserContext);
   if (isErr(rawR)) {
@@ -161,6 +166,7 @@ const parsePrimary = (parserContext: ParserContext): Result<Node, TemplateError>
   return parsePostfix(parserContext, rawR.value);
 };
 
+/** Parses a primary expression without postfix chaining, for names where `(` is not a call. */
 const parsePrimaryWithoutPostfix = (parserContext: ParserContext): Result<Node, TemplateError> =>
   parsePrimaryRaw(parserContext);
 
@@ -220,6 +226,10 @@ const parseUnaryWithoutPipes = (parserContext: ParserContext): Result<Node, Temp
   return parsePrimary(parserContext);
 };
 
+/**
+ * Parses a unary expression: optional prefix operators (`-`, `+`, `~`,
+ * `++`, `--`) applied to a primary, followed by `|>` pipe-forward calls.
+ */
 const parseUnary = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const baseR = parseUnaryWithoutPipes(parserContext);
   if (isErr(baseR)) {

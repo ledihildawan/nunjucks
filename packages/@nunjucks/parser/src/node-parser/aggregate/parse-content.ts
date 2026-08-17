@@ -6,6 +6,10 @@ import type { ParserContext } from '../../cursor.ts';
 import { parseAggregateExpression } from './parse-expressions.ts';
 import { prepareListItem } from './parse-list.ts';
 
+/**
+ * Accumulates array/dict aggregate items one per loop turn until the
+ * closing delimiter, mutating a local array to keep large literals O(n).
+ */
 export const parseContent = (
   parserContext: ParserContext,
   initialNode: ChildrenNode,
