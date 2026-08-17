@@ -1,6 +1,6 @@
 import { type ErrorDefinition, firstCapture } from './types.ts';
 
-const DOCS_BASE = 'https://mozilla.github.io/nunjucks/api.html';
+const DOCS_BASE = 'https://github.com/ledihildawan/nunjucks/blob/main/docs/templating.md';
 
 export const TEMPLATE_ERRORS = {
   VALIDATION_ERROR: {

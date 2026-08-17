@@ -35,7 +35,7 @@ const UNDEFINED_VARIABLE = createErrorDefinition({
   fixCode: "{{ {subject} |> default('fallback') }}",
   fixComment:
     'Add a default value with the `default` filter, or pass `{subject}` in the render context',
-  documentationUrl: 'https://mozilla.github.io/nunjucks/templating.html#variables',
+  documentationUrl: 'https://github.com/ledihildawan/nunjucks/blob/main/docs/templating.md',
 });
 
 const UNDEFINED_PROPERTY = {

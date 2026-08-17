@@ -1,6 +1,6 @@
 import { createErrorDefinition } from './factory.ts';
 
-const DOCS_BASE = 'https://mozilla.github.io/nunjucks/templating.html';
+const DOCS_BASE = 'https://github.com/ledihildawan/nunjucks/blob/main/docs/templating.md';
 
 export const PARSER_ERRORS = {
   SYNTAX_ERROR: {

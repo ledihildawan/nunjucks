@@ -12,5 +12,11 @@
     "remeda": "^2.39.0"
   },
   "description": "Error definition catalog and shared error primitives for Nunjucks",
-  "private": true
+  "private": true,
+  "license": "BSD-2-Clause",
+  "keywords": [
+    "nunjucks",
+    "templating",
+    "template"
+  ]
 }

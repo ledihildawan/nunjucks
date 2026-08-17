@@ -32,7 +32,7 @@ const UNDEFINED_FILTER = createErrorDefinition({
   ],
   fixCode: "const njk = nunjucks({ filters: { '{subject}': (value) => value } })",
   fixComment: 'Register the missing filter in the factory config `filters` before rendering',
-  documentationUrl: 'https://mozilla.github.io/nunjucks/templating.html#filters',
+  documentationUrl: 'https://github.com/ledihildawan/nunjucks/blob/main/docs/templating.md',
 });
 
 const UNDEFINED_TEST = createErrorDefinition({

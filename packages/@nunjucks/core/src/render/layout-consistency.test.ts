@@ -59,6 +59,8 @@ describe('error layout consistency', () => {
     const html = formatError(err, { format: 'html', verbosity: 'full', dev: true });
 
     expect(html).toContain('docs-inline');
-    expect(html).toContain('templating.html#variables');
+    // WHY: repo-canonical docs URL (this engine's templating reference), not the
+    // upstream mozilla docs this engine deliberately diverges from.
+    expect(html).toContain('blob/main/docs/templating.md');
   });
 });
