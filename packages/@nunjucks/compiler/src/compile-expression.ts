@@ -92,6 +92,7 @@ const EXPRESSION_TYPES: NodeTypeMatcher[] = [
   'testCall',
 ];
 
+/** Compiles every child of `node` in order against `frame`. */
 export const compileNodeChildren = (
   compiler: Pick<Compiler, 'compile'>,
   node: Node,
@@ -100,6 +101,11 @@ export const compileNodeChildren = (
   forEach(node.children ?? [], (child) => compiler.compile(child, frame));
 };
 
+/**
+ * Asserts `node` is one of `EXPRESSION_TYPES`, then compiles it — statement
+ * nodes reaching an expression slot throw `ASSERT_TYPE_ERROR` instead of
+ * emitting unbalanced fragments.
+ */
 export const compileNodeExpression = (
   compiler: Pick<Compiler, 'assertType' | 'compile'>,
   node: Node,
@@ -119,6 +125,10 @@ const isMatchingType = (typeName: string | undefined, type: NodeTypeMatcher): bo
   return typeName === type.name || typeName === type.name.toLowerCase();
 };
 
+/**
+ * Throws a catalogued `ASSERT_TYPE_ERROR` unless `node` matches one of
+ * `types`; matchers accept node-type names case-insensitively.
+ */
 export const assertNodeType = (node: Node, ...types: NodeTypeMatcher[]): void => {
   const typeName = getNodeTypeName(node) ?? 'unknown';
   const matches = types.some((type) => isMatchingType(typeName, type));

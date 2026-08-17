@@ -13,6 +13,7 @@ const throwCataloguedFail = ({ message }: FailFields): never => {
   throw createLog('error', { def: { message, lineno: null } });
 };
 
+/** Recording double pre-set to the `output` string buffer. */
 export const makeCompileDataCompiler = () => {
   const core = makeRecordingCore();
   return {
@@ -21,6 +22,7 @@ export const makeCompileDataCompiler = () => {
   };
 };
 
+/** Recording double for output emission with toggleable `streamErrorRecovery`. */
 export const makeCompileOutputCompiler = ({
   streamErrorRecovery = false,
 }: {
@@ -44,6 +46,7 @@ export const makeCompileOutputCompiler = ({
   };
 };
 
+/** Recording double whose `compileExpression` emits each node's `marker`. */
 export const makeExecCompiler = () => {
   const core = makeRecordingCore();
   return {
@@ -54,6 +57,7 @@ export const makeExecCompiler = () => {
   };
 };
 
+/** All-purpose recording double with buffer and scoped-syntax stubs. */
 export const makeFullStatementCompiler = () => {
   const core = makeRecordingCore();
   return {
@@ -71,11 +75,13 @@ export const makeFullStatementCompiler = () => {
   };
 };
 
+/** Full-statement double reporting a `"test.html"` template name. */
 export const makeExtendsCompiler = () => ({
   ...makeFullStatementCompiler(),
   getTemplateName: () => '"test.html"',
 });
 
+/** Recording double whose `compileExpression` stringifies template-name nodes. */
 export const makeImportCompiler = () => {
   const core = makeRecordingCore();
   return {
@@ -87,6 +93,7 @@ export const makeImportCompiler = () => {
   };
 };
 
+/** Recording double emitting `COND`/`BODY` markers for if branches. */
 export const makeIfCompiler = () => {
   const core = makeRecordingCore();
   return {
@@ -101,6 +108,7 @@ export const makeIfCompiler = () => {
   };
 };
 
+/** Full-statement double whose `fail` throws catalogued errors. */
 export const makeFailingStatementCompiler = () => {
   const compiler = makeFullStatementCompiler();
   return {
@@ -109,6 +117,7 @@ export const makeFailingStatementCompiler = () => {
   };
 };
 
+/** Full-statement double tracking emitted `func:`/`end` markers. */
 export const makeRootCompiler = () => {
   const compiler = makeFullStatementCompiler();
   return {
@@ -123,6 +132,7 @@ export const makeRootCompiler = () => {
   };
 };
 
+/** Recording double emitting `VAL`/`BODY` markers for scope tests. */
 export const makeScopeCompiler = () => {
   const core = makeRecordingCore();
   return {
@@ -137,6 +147,7 @@ export const makeScopeCompiler = () => {
   };
 };
 
+/** Recording double emitting node markers with scoped-syntax passthrough. */
 export const makeSwitchCompiler = () => {
   const core = makeRecordingCore();
   return {
@@ -148,6 +159,7 @@ export const makeSwitchCompiler = () => {
   };
 };
 
+/** Recording double emitting `V`/`X` markers with catalogued `fail`. */
 export const makeVariableCompiler = () => {
   const core = makeRecordingCore();
   return {
@@ -162,6 +174,7 @@ export const makeVariableCompiler = () => {
   };
 };
 
+/** Recording double tracking the buffer value each `compile` observed. */
 export const makeCaptureCompiler = () => {
   const core = makeRecordingCore();
   const bufferAtCompile: string[] = [];

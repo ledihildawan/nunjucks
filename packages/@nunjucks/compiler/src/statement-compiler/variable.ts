@@ -23,6 +23,10 @@ const hasPatternTarget = (node: VariableDeclNode): boolean => {
   return Boolean(targets) && targets.some((t) => isArrayPattern(t) || isObjectPattern(t));
 };
 
+/**
+ * Compiles `{% set %}` declarations: pattern targets destructure the value
+ * temporary, plain names bind it into the frame with `resolveUp`.
+ */
 const compileVariableDeclaration = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<VariableDeclNode>
@@ -53,6 +57,11 @@ const compileVariableDeclaration = (
   }
 };
 
+/**
+ * Compiles `{% = %}` assignments: named targets first emit a coded
+ * `ReferenceError` guard for undeclared variables, then rebind the value
+ * with `resolveUp`; pattern targets destructure instead.
+ */
 const compileVariableAssignment = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<VariableDeclNode>
@@ -181,6 +190,11 @@ const emitGenericCompoundAssignment = ({
   compiler.emit(';');
 };
 
+/**
+ * Compiles `+=`-style compound assignments (and `//=`/`|>=` variants) to an
+ * IIFE reading the current value, computing the update, and writing it back
+ * to both `frame` and `context`.
+ */
 const compileCompoundAssignment = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<CompoundAssignNode>

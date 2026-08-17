@@ -75,6 +75,12 @@ const compileRenderFunCall = ({
   compiler.emit('] }))');
 };
 
+/**
+ * Compiles `{% render %}` in a pushed frame: provided slots become
+ * gensym'd async functions, the call expression runs through
+ * `runtime.callWrap` (or plain compilation), and the result is awaited and
+ * emitted through `runtime.suppressValue`.
+ */
 export const compileRenderBlock = (
   compiler: Compiler,
   { node, frame: parentFrame }: CompileNodeInput<RenderNode>

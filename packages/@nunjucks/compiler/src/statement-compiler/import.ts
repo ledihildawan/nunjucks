@@ -4,6 +4,7 @@ import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileGetTemplate } from './template-lookup.ts';
 
+/** Compiles `{% import %}`: binds the template's full `getExported()` object to the target. */
 export const compileImport = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<ImportNode>

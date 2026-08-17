@@ -13,6 +13,11 @@ interface SlotFunctionInput {
   slotVar: string;
 }
 
+/**
+ * Emits `let <slotVar> = async (l_p1, ...) => {...}` — params validated as
+ * safe identifiers, body accumulated into a pushed buffer, and the
+ * generator-scope `frame` saved/restored around the awaits.
+ */
 const compileSlotFunction = ({
   compiler,
   params,

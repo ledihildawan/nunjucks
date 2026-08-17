@@ -142,6 +142,11 @@ const emitExtensionCallEnd = ({
   }
 };
 
+/**
+ * Compiles an extension tag call for the no-content-args path: emits
+ * `appendTarget` + `runtime.suppressValue(await ext(...))` in one
+ * expression with autoescape options inline.
+ */
 export const compileCallExtension = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<CallExtensionNode>
@@ -158,6 +163,10 @@ export const compileCallExtension = (
   emitExtensionCallEnd({ compiler, emitAsync, asyncResultId, autoescape });
 };
 
+/**
+ * Compiles the content-args variant: the awaited extension call lands in a
+ * `t_N` temporary, then `suppressValue` emits it with autoescape options.
+ */
 export const compileCallExtensionAsync = (
   compiler: Compiler,
   input: CompileNodeInput<CallExtensionNode>

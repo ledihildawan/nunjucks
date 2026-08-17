@@ -5,6 +5,11 @@ import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileDestructuring } from '../statement-compiler/pattern.ts';
 
+/**
+ * Compiles the ternary form: `(runtime.isTruthy(cond))?body:alternate`,
+ * defaulting a missing alternate to `""` so the expression always yields a
+ * string.
+ */
 export const compileInlineIf = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<IfNode>
@@ -23,6 +28,11 @@ export const compileInlineIf = (
   compiler.emit(')');
 };
 
+/**
+ * Compiles `x := value` to an awaited async IIFE that binds the value to
+ * frame/context — symbol targets assign directly, pattern targets reuse
+ * `compileDestructuring` — and returns the assigned value.
+ */
 export const compileWalrus = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<WalrusNode>

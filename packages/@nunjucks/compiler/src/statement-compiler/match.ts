@@ -6,6 +6,11 @@ import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileDestructuring } from './pattern.ts';
 
+/**
+ * Compiles `{% match %}` as cascading `if (!matched && cond)` arms —
+ * literals compare with `===`, symbols bind (or match-all as `_`), and
+ * array/dict patterns destructure — with an optional trailing default.
+ */
 export const compileMatch = (
   compiler: Compiler,
   { node, frame: parentFrame }: CompileNodeInput<MatchNode>

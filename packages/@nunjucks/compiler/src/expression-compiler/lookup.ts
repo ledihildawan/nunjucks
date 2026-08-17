@@ -90,6 +90,11 @@ const emitMemberLookup = ({ compiler, node, value, frame }: EmitMemberLookupOpti
   compiler.emit(')');
 };
 
+/**
+ * Compiles `a[b]` — slices route to `runtime.slice({ source, start, stop,
+ * step })`, members to `runtime.memberLookup` (with the dotted target name
+ * for diagnostics); the location guard tracks the property position.
+ */
 export const compileLookupVal = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<LookupNode>
@@ -107,6 +112,7 @@ export const compileLookupVal = (
   compiler.emit(')');
 };
 
+/** Compiles `a?.[b]` to `runtime.optionalMemberLookup(target, val)`. */
 export const compileOptionalChain = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<LookupNode>
@@ -121,6 +127,7 @@ export const compileOptionalChain = (
   compiler.emit(')');
 };
 
+/** Compiles `fn?.(...)` to a null-short-circuit around the plain call. */
 export const compileOptionalCall = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<CallNode>

@@ -4,6 +4,11 @@ import { emitLineLocation } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
+/**
+ * Compiles `{% exec %}` to a try/catch around the bare expression,
+ * tagging un-coded errors `EXEC_EXPRESSION_ERROR` and yielding an inline
+ * marker instead of rethrowing when `streamErrorRecovery` is on.
+ */
 export const compileExec = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<ExecNode>

@@ -6,6 +6,11 @@ import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileGetTemplate, getTemplateLocation } from './template-lookup.ts';
 
+/**
+ * Compiles `{% extends %}`: eagerly resolves the parent into
+ * `parentTemplate`, then unions the parent's blocks into the context so the
+ * delegation pass can find every override.
+ */
 export const compileExtends = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<ExtendsNode>
@@ -34,6 +39,11 @@ export const compileExtends = (
   // matching no hole anywhere still errors there (getBlock → UNDEFINED_BLOCK).
 };
 
+/**
+ * Compiles `{% include %}`: guards the template name, awaits
+ * `env.getTemplate` (null-safe under `ignoreMissing`), renders with `only`/
+ * `with` context semantics, and appends the result via `appendTarget`.
+ */
 export const compileInclude = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<IncludeNode>

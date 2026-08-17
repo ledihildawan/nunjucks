@@ -4,6 +4,10 @@ import { assertSafeIdentifier } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
+/**
+ * Compiles `{% scope %}`: emits each assignment into the frame, then runs
+ * the body under scoped syntax inside a pushed frame level.
+ */
 export const compileScope = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<ScopeNode>

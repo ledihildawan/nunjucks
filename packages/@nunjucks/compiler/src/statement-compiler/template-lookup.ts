@@ -15,6 +15,7 @@ const getLocationFromNode = (node: TemplateCarrier): { lineno: number; colno: nu
   };
 };
 
+/** Locates a carrier node's template expression, +1 column for quoted literals. */
 export const getTemplateLocation = (node: TemplateCarrier): { lineno: number; colno: number } =>
   getLocationFromNode(node);
 
@@ -31,6 +32,11 @@ interface CompileGetTemplateInput {
   options: CompileGetTemplateOptions;
 }
 
+/**
+ * Emits `let t_N = await env.getTemplate({ name, eagerCompile,
+ * includeChain, ignoreMissing })` for extends/import/include nodes,
+ * returning the template's compiler id.
+ */
 export const compileGetTemplate = ({
   compiler,
   node,

@@ -119,6 +119,11 @@ const processOutputChild = (compiler: Compiler, child: Node, frame: Frame): void
   compileOutputChild(compiler, child, frame);
 };
 
+/**
+ * Compiles an output node's `{{ }}` children in order, routing static text,
+ * variable-like children, and expressions through `processOutputChild`'s
+ * dedicated suppression/boundary rules.
+ */
 export const compileOutput = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<Node>

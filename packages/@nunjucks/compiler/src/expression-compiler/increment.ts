@@ -44,6 +44,7 @@ const compileIncrementDecrement = (
   }
 };
 
+/** Compiles `++` through the shared increment/decrement mutation IIFE. */
 export const compileIncrement = (
   compiler: Compiler,
   { node }: CompileNodeInput<IncDecNode>
@@ -51,6 +52,7 @@ export const compileIncrement = (
   compileIncrementDecrement(compiler, node, '+');
 };
 
+/** Compiles `--` through the shared increment/decrement mutation IIFE. */
 export const compileDecrement = (
   compiler: Compiler,
   { node }: CompileNodeInput<IncDecNode>

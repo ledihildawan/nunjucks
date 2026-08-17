@@ -3,6 +3,10 @@ import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
+/**
+ * Compiles `{% switch %}` to a JS `switch`, pushing/popping a frame level
+ * per case under scoped syntax; `break` is only emitted for non-empty bodies.
+ */
 export const compileSwitch = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<SwitchNode>

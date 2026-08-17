@@ -9,6 +9,7 @@ import type { CompileNodeInput } from '../node-dispatch.ts';
 // new Function in sloppy mode), letting interleaved renders corrupt each other's
 // values. The async wrapper keeps targets containing `await` (e.g. filter results) legal.
 
+/** Compiles a bare test to an awaited `runtime.runTest(env, name, target)` call. */
 export const compileTest = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<TestNode>
@@ -23,6 +24,10 @@ export const compileTest = (
   compiler.emit(`runtime.runTest(env, ${JSON.stringify(node.name)}, ${targetTmp})); })())`);
 };
 
+/**
+ * Compiles a parameterized test call, staging target and each argument into
+ * `t_N` temporaries before the awaited `runtime.runTest` call.
+ */
 export const compileTestCall = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<TestCallNode>

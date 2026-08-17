@@ -5,6 +5,10 @@ import { emitLocationGuard } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
+/**
+ * Compiles chained comparisons by interleaving each operator with its own
+ * location guard around the operands, closing one paren per comparison.
+ */
 export const compileCompare = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<CompareNode>
@@ -27,6 +31,11 @@ export const compileCompare = (
   compiler.emit(')');
 };
 
+/**
+ * Compiles `is` to an `env.getTest(name, ...).call(context, left, ...args)`
+ * invocation compared against `true`, treating a fun-call right operand's
+ * name and args as the test reference.
+ */
 export const compileIs = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>

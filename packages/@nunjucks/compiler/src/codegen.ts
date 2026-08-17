@@ -3,6 +3,10 @@ import { createLog } from '@nunjucks/error-formatter';
 import { last, pipe, split } from 'remeda';
 import type { Emitter } from './index.ts';
 
+/**
+ * Fields shared by every compiler `fail` call — the human message plus optional
+ * zero-based location and a catalog `errorName`.
+ */
 export interface FailFields {
   message: string;
   lineno?: number;
@@ -14,6 +18,11 @@ interface FailOptions extends FailFields {
   compiler: { templateName: string | null };
 }
 
+/**
+ * Throws the catalogued compile-phase error for `errorName` (defaulting to
+ * `WALK_UNKNOWN_TYPE`), deriving the error subject from the last `:`-separated
+ * part of `message`.
+ */
 export const fail = ({
   compiler,
   message,
@@ -57,6 +66,7 @@ interface AssertIdentifierOptions {
   colno?: number | null;
 }
 
+/** Asserts `name` is a safe JS identifier, throwing a catalogued error otherwise. */
 export const assertSafeIdentifier = (
   name: string,
   { compiler, lineno, colno }: AssertIdentifierOptions
@@ -78,11 +88,13 @@ export const assertSafeIdentifier = (
   });
 };
 
+/** Allocates the next unique `t_N` compiler identifier. */
 export const nextCompilerId = (compiler: { lastId: number }): string => {
   compiler.lastId += 1;
   return `t_${compiler.lastId}`;
 };
 
+/** Emits the `(lineno = N, colno = N, ` prefix that opens a location-guarded expression. */
 export const emitLocationGuard = (
   compiler: Pick<Emitter, 'emit'>,
   lineno: number,
@@ -91,6 +103,7 @@ export const emitLocationGuard = (
   compiler.emit(`(lineno = ${lineno}, colno = ${colno}, `);
 };
 
+/** Emits a standalone `lineno = N; colno = N;` statement line. */
 export const emitLineLocation = (
   compiler: Pick<Emitter, 'emitLine'>,
   lineno: number,
@@ -99,6 +112,10 @@ export const emitLineLocation = (
   compiler.emitLine(`lineno = ${lineno}; colno = ${colno};`);
 };
 
+/**
+ * Pushes the current buffer onto `bufferStack`, emits `let t_N = "";`, and
+ * returns the new buffer id — every push must pair with a `popBuffer`.
+ */
 export const pushBuffer = (
   compiler: Pick<Emitter, 'buffer' | 'bufferStack' | 'emit' | 'getCode'> & { lastId: number }
 ): string => {
@@ -113,6 +130,7 @@ export const pushBuffer = (
 export const appendTarget = (compiler: Pick<Emitter, 'buffer'>): string =>
   compiler.buffer === null ? 'yield ' : `${compiler.buffer} += `;
 
+/** Serializes `templateName` into a JS string literal, or `undefined` when unset. */
 export const getTemplateName = (compiler: { templateName: string | null }): string => {
   if (compiler.templateName === null || compiler.templateName === undefined) {
     return 'undefined';

@@ -20,6 +20,10 @@ const compileUnary = (
   compiler.emit(')');
 };
 
+/**
+ * Compiles `not` to `(!runtime.isTruthy(target))` so miss sentinels stay
+ * falsy; the third closer balances the location guard's opening paren.
+ */
 export const compileNot = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<UnaryOpNode>
@@ -32,11 +36,13 @@ export const compileNot = (
   compiler.emit(')))');
 };
 
+/** Compiles unary `-` as a location-guarded prefix on the operand. */
 export const compileNeg = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<UnaryOpNode>
 ): void => compileUnary(compiler, node, frame, { operator: '-' });
 
+/** Compiles unary `+` as a location-guarded prefix on the operand. */
 export const compilePos = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<UnaryOpNode>

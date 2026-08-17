@@ -3,8 +3,10 @@
 // re-declared locally. Per-variant factories live in test-helpers.ts next to their suites.
 import { createCompiler, type Compiler } from './create-compiler.ts';
 
+/** Casts an externally built compiler object to `Compiler` for test wiring. */
 export const asCompiler = (compiler: unknown): Compiler => compiler as Compiler;
 
+/** Sink collecting everything test doubles emit, plus id/emit helpers sharing it. */
 export interface RecordingCore {
   emitted: string[];
   emit: (source: string) => void;
@@ -32,11 +34,13 @@ export const makeRecordingCore = (): RecordingCore => {
   };
 };
 
+/** Builds a real compiler with `undefinedMode` left to its default. */
 export const makeCodegenCompiler = () =>
   createCompiler({ templateName: 'test', undefinedMode: undefined, source: '' });
 
 // WHY: explicit chainable twin of makeCodegenCompiler — create-compiler normalizes
 // `undefined` to DEFAULT_UNDEFINED_MODE ('chainable'), so both are behavior-identical;
 // this variant keeps the mode visible at call sites that assert chainable codegen.
+/** Builds a compiler whose `undefinedMode` is explicitly `'chainable'`. */
 export const makeChainableCompiler = () =>
   createCompiler({ templateName: 'test', undefinedMode: 'chainable', source: '' });

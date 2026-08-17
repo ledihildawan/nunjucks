@@ -18,8 +18,14 @@ import {
   withCompilerScopedSyntax,
 } from './statement-emitter.ts';
 
+/** Matches a node type by name, case-insensitively, or by its node-builder's `name`. */
 export type NodeTypeMatcher = string | { readonly name: string };
 
+/**
+ * The raw emit surface over `codebuf`: fragments via `emit`, counted lines via
+ * `emitLine`, and nested string buffers through the paired
+ * `pushBuffer`/`popBuffer`.
+ */
 export interface Emitter {
   codebuf: string[];
   buffer: string | null;
@@ -33,6 +39,10 @@ export interface Emitter {
   getCode: () => string;
 }
 
+/**
+ * Scope plumbing around generated functions: opens/closes emitted functions,
+ * tracks `scopeStack` closers, and rebinds `buffer` per function context.
+ */
 export interface ScopeManager {
   scopeStack: string[];
   inBlock: boolean;
@@ -48,6 +58,10 @@ export interface ScopeManager {
   withScopedSyntax: (func: () => void) => void;
 }
 
+/**
+ * The full compiler state machine: code buffer, scope levels, error reporting,
+ * and the recursive `compile` entry that dispatches by node type.
+ */
 export interface Compiler extends Emitter, ScopeManager {
   templateName: string | null;
   lastId: number;
@@ -70,6 +84,10 @@ interface CreateCompilerOptions {
   streamErrorRecovery?: boolean;
 }
 
+/**
+ * Wires the codegen, dispatch, and statement-emitter helpers into one mutable
+ * `Compiler` bound to `source`'s HTML-context tracker.
+ */
 export const createCompiler = ({
   templateName,
   undefinedMode,

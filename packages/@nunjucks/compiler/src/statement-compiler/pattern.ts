@@ -25,6 +25,7 @@ import {
   safeMemberLookup,
 } from './pattern-emitters.ts';
 
+/** Compiler, target frame, and whether bound names also register in the compiler frame. */
 interface DestructuringContext {
   compiler: Compiler;
   frame: Frame;
@@ -261,6 +262,7 @@ const compileObjectPattern = (
   );
 };
 
+/** Recursively destructures `source` through array/object patterns down to symbol bindings. */
 const compileDestructuring = (
   destructuringContext: DestructuringContext,
   pattern: Node,

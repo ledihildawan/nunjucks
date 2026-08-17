@@ -77,6 +77,7 @@ import {
   compileWhen,
 } from './statement-compiler/index.ts';
 
+/** The compiler-facing input passed to every node-compile function. */
 export interface CompileNodeInput<N extends Node = Node> {
   node: N;
   frame: Frame;
@@ -171,6 +172,10 @@ const NODE_COMPILERS: Readonly<Partial<Record<NodeType, CompileFn>>> = {
   [T.RENDER]: withFrame(compileRenderBlock),
 };
 
+/**
+ * Dispatches `input.node` to its registered compile function, failing closed
+ * through `compiler.fail` for types with no registry entry.
+ */
 export const compileDispatch = (compiler: Compiler, input: CompileNodeInput): void => {
   const compile = NODE_COMPILERS[input.node.type];
   if (compile) {

@@ -164,6 +164,12 @@ const compileComponent = (compiler: Compiler, node: ComponentNode): string => {
   return funcId;
 };
 
+/**
+ * Compiles `{% component %}` to a `runtime.makeComponent` closure (args,
+ * kwargs, slot fallbacks, buffered body) and binds its id to the component
+ * name in the frame, or in the context when at top level (exported unless
+ * the name starts with `_`).
+ */
 export const compileComponentPublic = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<ComponentNode>

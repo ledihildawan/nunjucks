@@ -2,6 +2,11 @@ import type { CallNode } from '@nunjucks/nodes';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
+/**
+ * Compiles `|> filter(args)` to an awaited async IIFE calling
+ * `runtime.runFilter`, unwrapping its `r.ok`/`r.error` Result and awaiting
+ * each argument so promise-valued operands resolve before the call.
+ */
 export const compilePipeForward = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<CallNode>

@@ -3,6 +3,11 @@ import { assertSafeIdentifier } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
+/**
+ * Compiles `{% capture %}` to an awaited async IIFE that accumulates its
+ * body into a local `output` buffer (saved and restored around the body),
+ * optionally binding the result to a named frame variable.
+ */
 export const compileCapture = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<CaptureNode>

@@ -3,6 +3,12 @@ import { assertSafeIdentifier, emitLineLocation } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
+/**
+ * Compiles a `{% block %}` reference: generator contexts delegate with
+ * `yield* context.getBlock(...)`, buffered contexts drain it via
+ * `runtime.collectString` — top-level in-place rendering is guarded on
+ * `parentTemplate === null` so extends doesn't emit the block twice.
+ */
 export const compileBlock = (compiler: Compiler, node: BlockNode): void => {
   const nameNode =
     typeof node.name === 'string'
@@ -37,6 +43,10 @@ export const compileBlock = (compiler: Compiler, node: BlockNode): void => {
   }
 };
 
+/**
+ * Compiles `super` to a `context.getSuper({ ..., block: b_<name>, ... })`
+ * lookup whose result is `markSafe`'d and bound into the frame as `id`.
+ */
 export const compileSuper = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<SuperNode>

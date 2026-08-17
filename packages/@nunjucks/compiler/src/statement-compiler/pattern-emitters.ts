@@ -12,6 +12,7 @@ import { loc } from '@nunjucks/shared';
 // deterministic in/out with no compiler/frame state; extracted from pattern.ts so the
 // destructuring orchestrator stays under the file-size cap.
 
+/** Normalizes a pattern-property key to its string name, or `null`. */
 export const patternPropertyKey = (key: unknown): string | null => {
   if (typeof key === 'string') {
     return key;
@@ -22,6 +23,7 @@ export const patternPropertyKey = (key: unknown): string | null => {
   return null;
 };
 
+/** Adapts a dict-shaped node into a true `ObjectPattern` node. */
 export const asObjectPattern = (node: Node): Node | null => {
   if (isObjectPattern(node)) {
     return node;
@@ -33,6 +35,7 @@ export const asObjectPattern = (node: Node): Node | null => {
   return objectPattern(loc(node), children);
 };
 
+/** Adapts an array-shaped node into a true `ArrayPattern` node. */
 export const asArrayPattern = (node: Node): Node | null => {
   if (isArrayPattern(node)) {
     return node;
@@ -44,12 +47,15 @@ export const asArrayPattern = (node: Node): Node | null => {
   return arrayPattern(loc(node), children);
 };
 
+/** Emits a null-tolerant `runtime.optionalMemberLookup` access for `key`. */
 export const safeMemberLookup = (source: string, key: string): string =>
   `runtime.optionalMemberLookup(${source}, ${JSON.stringify(key)})`;
 
+/** Emits an indexed access returning `undefined` for null/non-object sources. */
 export const safeArrayIndex = (source: string, index: number): string =>
   `(Array.isArray(${source}) ? ${source}[${index}] : (${source} != null && typeof ${source} === 'object' ? ${source}[${index}] : undefined))`;
 
+/** Emits a rest slice of an array source, or `undefined` when not array-like. */
 export const arraySlice = (source: string, start: number): string =>
   `(${source} != null && Array.isArray(${source}) ? ${source}.slice(${start}) : undefined)`;
 

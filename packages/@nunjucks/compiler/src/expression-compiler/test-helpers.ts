@@ -13,6 +13,7 @@ const throwCataloguedFail = ({ message }: FailFields): never => {
   throw createLog('error', { def: { message, lineno: null } });
 };
 
+/** Recording double whose `compile` emits each node's `marker` string. */
 export const makeMarkerCompiler = () => {
   const core = makeRecordingCore();
   return {
@@ -23,6 +24,7 @@ export const makeMarkerCompiler = () => {
   };
 };
 
+/** Marker double that also throws catalogued errors from `fail`. */
 export const makeInlineCompiler = () => {
   const compiler = makeMarkerCompiler();
   return {
@@ -31,6 +33,7 @@ export const makeInlineCompiler = () => {
   };
 };
 
+/** Recording double whose `compile` emits each node's `marker`, defaulting to `X`. */
 export const makeIncrementCompiler = () => {
   const core = makeRecordingCore();
   return {
@@ -41,6 +44,7 @@ export const makeIncrementCompiler = () => {
   };
 };
 
+/** Recording double whose `compile` and `compileExpression` both emit `X`. */
 export const makeFunCallCompiler = () => {
   const core = makeRecordingCore();
   return {
@@ -54,6 +58,7 @@ export const makeFunCallCompiler = () => {
   };
 };
 
+/** Recording double that stringifies literal `value` nodes into quoted strings. */
 export const makeLookupCompiler = () => {
   const core = makeRecordingCore();
   const emitNode = (node: { value?: string }) => {
@@ -68,6 +73,7 @@ export const makeLookupCompiler = () => {
   };
 };
 
+/** Recording double with an inert `assertType` accepting any callee name. */
 export const makePipeForwardCompiler = () => {
   const core = makeRecordingCore();
   return {
@@ -79,6 +85,7 @@ export const makePipeForwardCompiler = () => {
   };
 };
 
+/** Recording double for container emitters; `fail` throws catalogued errors. */
 export const makeContainerCompiler = () => {
   const core = makeRecordingCore();
   const emitValue = (node: { marker?: string; value?: string; children?: unknown[] }) => {

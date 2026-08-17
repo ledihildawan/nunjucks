@@ -20,21 +20,25 @@ const binOpEmitter = ({ compiler, node, frame, operator }: BinOpEmitterOptions):
   compiler.emit(')');
 };
 
+/** Compiles `||` as a location-guarded left/right pair via `binOpEmitter`. */
 export const compileOr = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>
 ): void => binOpEmitter({ compiler, node, frame, operator: ' || ' });
 
+/** Compiles `&&` as a location-guarded left/right pair via `binOpEmitter`. */
 export const compileAnd = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>
 ): void => binOpEmitter({ compiler, node, frame, operator: ' && ' });
 
+/** Compiles `+` as a location-guarded left/right pair via `binOpEmitter`. */
 export const compileAdd = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryOpNode>
 ): void => binOpEmitter({ compiler, node, frame, operator: ' + ' });
 
+/** Compiles `~` to ` + "" + `, forcing string concatenation on both operands. */
 export const compileConcat = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>
@@ -46,6 +50,10 @@ export const compileConcat = (
 // classifies as RANGE_EXCEEDED.
 const MAX_RANGE_SPAN = 1_000_000;
 
+/**
+ * Compiles `..` into an awaited async IIFE that validates integer bounds and
+ * the `MAX_RANGE_SPAN` limit before materializing the array.
+ */
 export const compileRange = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<RangeNode>
@@ -63,26 +71,31 @@ export const compileRange = (
   compiler.emit(')');
 };
 
+/** Compiles `-` as a location-guarded left/right pair via `binOpEmitter`. */
 export const compileSub = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryOpNode>
 ): void => binOpEmitter({ compiler, node, frame, operator: ' - ' });
 
+/** Compiles `*` as a location-guarded left/right pair via `binOpEmitter`. */
 export const compileMul = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryOpNode>
 ): void => binOpEmitter({ compiler, node, frame, operator: ' * ' });
 
+/** Compiles `/` as a location-guarded left/right pair via `binOpEmitter`. */
 export const compileDiv = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryOpNode>
 ): void => binOpEmitter({ compiler, node, frame, operator: ' / ' });
 
+/** Compiles `%` as a location-guarded left/right pair via `binOpEmitter`. */
 export const compileMod = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryOpNode>
 ): void => binOpEmitter({ compiler, node, frame, operator: ' % ' });
 
+/** Compiles `??` as a location-guarded left/right pair. */
 export const compileNullishCoalesce = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>
@@ -94,6 +107,7 @@ export const compileNullishCoalesce = (
   compiler.emit(')');
 };
 
+/** Compiles `in` to a `runtime.inOperator({ key, value, lineno, colno })` call. */
 export const compileIn = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>
@@ -108,6 +122,7 @@ export const compileIn = (
   compiler.emit(`, lineno: ${lineno}, colno: ${colno} }))`);
 };
 
+/** Compiles `//` to `Math.floor(left / right)` behind a location guard. */
 export const compileFloorDiv = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryOpNode>
@@ -120,6 +135,7 @@ export const compileFloorDiv = (
   compiler.emit('))');
 };
 
+/** Compiles `**` to `Math.pow(left, right)` behind a location guard. */
 export const compilePow = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryOpNode>

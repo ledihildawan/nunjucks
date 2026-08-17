@@ -267,6 +267,7 @@ const emitForElse = ({ compiler, node, length, frame }: EmitForElseOptions): voi
   }
 };
 
+/** Compiles `{% for %}` over arrays/objects with destructuring and `{% else %}` on empty. */
 export const compileFor = (
   compiler: Compiler,
   { node, frame: parentFrame }: CompileNodeInput<ForNode>

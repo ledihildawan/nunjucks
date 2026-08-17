@@ -2,6 +2,10 @@ import type { IfNode } from '@nunjucks/nodes';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
+/**
+ * Compiles `{% if %}` to `if(runtime.isTruthy(cond)) { ... } else { ... }`,
+ * pushing and popping a frame level per branch under scoped syntax.
+ */
 export const compileIf = (compiler: Compiler, { node, frame }: CompileNodeInput<IfNode>): void => {
   // WHY: runtime.isTruthy folds miss sentinels (callable objects) to falsy so
   // `{% if obj.missing %}` takes the false branch like classic nunjucks.

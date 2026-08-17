@@ -109,6 +109,12 @@ const emitBlockReturnObject = (compiler: Compiler, blocks: BlockNode[]): void =>
   compiler.emitLine('root: root\n};');
 };
 
+/**
+ * Compiles the root template: opens the `root` async generator, compiles all
+ * children in document order (setting `suppressRootOutput` under extends),
+ * emits the `parentTemplate` delegation return, then the `b_<name>` block
+ * functions and the returned block registry.
+ */
 export const compileRoot = (compiler: Compiler, node: ChildrenNode): void => {
   const blocks = findAll(node, 'block').filter(isBlock);
   const { frame } = setupRootFunction(compiler, node);

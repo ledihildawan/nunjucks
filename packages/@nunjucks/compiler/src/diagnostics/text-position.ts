@@ -1,5 +1,6 @@
 import { escapeRegex } from '@nunjucks/lib';
 
+/** Distance from `line` to `preferredLine` (0 when no preference exists). */
 export const lineDistance = (line: number, preferredLine: number | null | undefined): number => {
   if (preferredLine === null || preferredLine === undefined) {
     return 0;
@@ -7,6 +8,7 @@ export const lineDistance = (line: number, preferredLine: number | null | undefi
   return Math.abs(line - preferredLine);
 };
 
+/** Converts a string offset into a zero-based `{ lineOffset, col }` pair. */
 export const positionAtOffset = (
   text: string,
   offset: number
@@ -19,6 +21,7 @@ export const positionAtOffset = (
   };
 };
 
+/** Finds every occurrence of `candidate` in `content`, escaping it as a regex first. */
 export const findAllOccurrences = (content: string, candidate: string): number[] => {
   const escaped = escapeRegex(candidate);
   return [...content.matchAll(new RegExp(escaped, 'g'))].map((match) => match.index ?? 0);

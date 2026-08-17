@@ -56,6 +56,10 @@ const compileImportedName = ({
   }
 };
 
+/**
+ * Compiles `{% from %}` imports: awaits the template's `getExported`, then
+ * binds each name (or `alias`) via `compileImportedName`'s own-property guard.
+ */
 export const compileFromImport = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<FromImportNode>

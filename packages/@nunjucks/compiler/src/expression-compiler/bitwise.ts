@@ -19,27 +19,33 @@ const compileBinaryBitwise = ({ compiler, node, frame, operator }: BinaryBitwise
   compiler.emit(')');
 };
 
+/** Compiles `|` via the shared `compileBinaryBitwise` emitter. */
 export const compileBitwiseOr = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>
 ): void => compileBinaryBitwise({ compiler, node, frame, operator: '|' });
+/** Compiles `&` via the shared `compileBinaryBitwise` emitter. */
 export const compileBitwiseAnd = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>
 ): void => compileBinaryBitwise({ compiler, node, frame, operator: '&' });
+/** Compiles `^` via the shared `compileBinaryBitwise` emitter. */
 export const compileBitwiseXor = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>
 ): void => compileBinaryBitwise({ compiler, node, frame, operator: '^' });
+/** Compiles `<<` via the shared `compileBinaryBitwise` emitter. */
 export const compileBitwiseLShift = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>
 ): void => compileBinaryBitwise({ compiler, node, frame, operator: '<<' });
+/** Compiles `>>` via the shared `compileBinaryBitwise` emitter. */
 export const compileBitwiseRShift = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>
 ): void => compileBinaryBitwise({ compiler, node, frame, operator: '>>' });
 
+/** Compiles `~` as a location-guarded prefix on the operand. */
 export const compileBitwiseNot = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<UnaryNode>

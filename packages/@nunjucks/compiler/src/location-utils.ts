@@ -4,6 +4,11 @@ import type { NodeLocation } from '@nunjucks/shared';
 const hasIntegerLocation = (node: { lineno: unknown; colno: unknown }): boolean =>
   Number.isInteger(node.lineno) && Number.isInteger(node.colno);
 
+/**
+ * Extracts a property's location from `node`, preferring a lookup's `val`
+ * child (plus `colnoOffset` for bracket quoting) so guards point at the
+ * property being accessed.
+ */
 export const extractPropertyLocation = (
   node: Node | null | undefined,
   colnoOffset = 0

@@ -91,6 +91,11 @@ const getCallLocation = (node: CallNode): { lineno: number; colno: number } => {
   };
 };
 
+/**
+ * Compiles a function call to `runtime.callWrap(fn, name, { displayName,
+ * context, args, lineno, colno })`, deriving the call site's location from
+ * the callee's property position.
+ */
 export const compileFunCall = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<CallNode>
