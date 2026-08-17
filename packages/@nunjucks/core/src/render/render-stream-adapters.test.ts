@@ -51,7 +51,9 @@ describe('withStreamTimeout', () => {
   });
 
   test('throws a StreamTimeoutError when a chunk exceeds the deadline', async () => {
-    const stream = fromChunks(['fast', 'slow'], 60);
+    // WHY: 100ms chunk delay vs 20ms deadline — a 5x gap so a slow CI scheduler cannot delay the
+    // deadline timer past the chunk arrival and flip the expected abort into a pass-through.
+    const stream = fromChunks(['fast', 'slow'], 100);
     const first = await stream.next();
     expect(first.value).toBe('fast');
 
@@ -94,7 +96,8 @@ describe('withStreamDeadline', () => {
   test('timeout error carries code=TIMEOUT so FATAL_STREAM_CODES recognizes it', async () => {
     let caught: unknown;
     try {
-      for await (const _chunk of withStreamDeadline(fromChunks(['a', 'b'], 80), 20)) {
+      // WHY: 100ms chunk delay vs 20ms total deadline — a 5x gap keeps the abort outcome stable on slow CI.
+      for await (const _chunk of withStreamDeadline(fromChunks(['a', 'b'], 100), 20)) {
         void _chunk;
       }
     } catch (error) {

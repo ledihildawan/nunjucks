@@ -2,7 +2,8 @@ import { getError } from '@nunjucks/error-catalog';
 import { createLog, normalizeErrorMetadata, prettifyError } from '@nunjucks/error-formatter';
 import { err, isErr, ok, type Result } from '@nunjucks/lib';
 import type { ParseOptions } from '@nunjucks/parser';
-import type { BlockLocation, UndefinedMode } from '@nunjucks/runtime';
+import type { BlockLocation } from '@nunjucks/runtime';
+import type { UndefinedMode } from '@nunjucks/shared';
 import { HOOK_EVENTS, loadCompiledCode } from '@nunjucks/runtime';
 import {
   BLOCK_META_KEY,

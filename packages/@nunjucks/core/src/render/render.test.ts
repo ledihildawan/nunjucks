@@ -1,4 +1,7 @@
 import { describe, expect, test } from 'bun:test';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { isErr, isOk } from '@nunjucks/lib';
 import { render, renderToStream } from './render.ts';
 import { renderTemplate } from './render-test-helper.ts';
@@ -127,9 +130,6 @@ describe('template source security scanning', () => {
   });
 
   test('flags dangerous code in a file-loaded template under strictMode', async () => {
-    const { mkdtemp, writeFile, rm } = await import('node:fs/promises');
-    const { tmpdir } = await import('node:os');
-    const { join } = await import('node:path');
     const dir = await mkdtemp(join(tmpdir(), 'njk-sec-'));
     await writeFile(join(dir, 'evil.njk'), "{{ eval('malicious') }}");
     try {

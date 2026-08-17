@@ -52,7 +52,6 @@ const createTemplateRenderer = ({ getState, compiler, errorHandler }: TemplateRe
     if (renderingTemplates?.has(state.path)) {
       throw createLog('error', {
         def: getError('CIRCULAR_INCLUDE'),
-        params: { path: state.path ?? 'unknown' },
         subject: state.path ?? 'unknown',
         context: { phase: 'render' },
       });
@@ -88,7 +87,10 @@ const createTemplateRenderer = ({ getState, compiler, errorHandler }: TemplateRe
       // WHY: root is now an async generator (Option B) — drain it to a string; ignore the returned context here (this path returns rendered output only).
       const { output: result } = await collectStream(rootGen);
       const warnings = runtime[WARNINGS_CONTEXT_KEY];
-      if (warnings.length > 0 && state.env.opts.dev) {
+      // WHY: root template only — includes render through this same path with a
+      // non-null includeChain; injecting per include emitted one <script> block per
+      // included template instead of a single page-level warnings script.
+      if (warnings.length > 0 && state.env.opts.dev && !state.includeChain) {
         return (
           result +
           // WHY: widening cast — the warnings collector is engine-populated (collected

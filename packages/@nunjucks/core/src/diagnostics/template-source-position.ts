@@ -28,7 +28,7 @@ const templateLocationOffset = ({
   const offset = pipe(
     templateLines,
     slice(0, clampedLine),
-    reduce((sum, l) => sum + l.length + 1, 0)
+    reduce((sum, lineText) => sum + lineText.length + 1, 0)
   );
   return offset + Math.max(0, Math.min(col, templateLines[clampedLine]?.length ?? 0));
 };

@@ -2,25 +2,11 @@ import { describe, expect, test } from 'bun:test';
 import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { createLog, formatError } from '@nunjucks/error-formatter';
-import { isErr } from '@nunjucks/lib';
-import { render } from './render.ts';
+import { renderTemplate as renderTemplateBase } from './render-test-helper.ts';
 
-const renderTemplate = async (
-  template: string,
-  context: Record<string, unknown> = {},
-  config: Record<string, unknown> = {}
-) => {
-  const result = await render(template, {
-    context,
-    autoescape: false,
-    undefined: 'strict',
-    ...config,
-  });
-  if (isErr(result)) {
-    throw result.error;
-  }
-  return result.value;
-};
+// WHY: every test asserts strict-mode error diagnostics, so the strict undefined mode is baked in file-wide.
+const renderTemplate = (template: string, context: Record<string, unknown> = {}) =>
+  renderTemplateBase(template, context, { undefined: 'strict' });
 
 describe('error layout consistency', () => {
   test('all sections use text-label class for consistency', async () => {

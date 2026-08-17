@@ -1,4 +1,4 @@
-﻿import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -40,6 +40,48 @@ describe('extends and blocks', () => {
 
     const result = await renderFile('child.njk', {});
     expect(result).toContain('override');
+  });
+
+  test('nested block renders in place exactly once (parentTemplate scope regression)', async () => {
+    const result = await renderTemplate(
+      'X{% block outer %}O{% block inner %}I{% endblock %}{% endblock %}Y'
+    );
+    expect(result).toBe('XOIY');
+  });
+
+  test('3-level extends resolves ancestor blocks the direct parent omits', async () => {
+    await Promise.all([
+      writeFile(
+        join(tempDir, 'gp.njk'),
+        'G{% block one %}GP1{% endblock %}{% block two %}GP2{% endblock %}{% block footer %}GPF{% endblock %}'
+      ),
+      writeFile(
+        join(tempDir, 'mid.njk'),
+        '{% extends "gp.njk" %}{% block one %}MID1+{{ super() }}{% endblock %}'
+      ),
+      writeFile(
+        join(tempDir, 'leaf.njk'),
+        '{% extends "mid.njk" %}{% block one %}LEAF1+{{ super() }}{% endblock %}{% block footer %}LEAFF{% endblock %}'
+      ),
+    ]);
+
+    const result = await renderFile('leaf.njk', {});
+    expect(result).toBe('GLEAF1+MID1+GP1GP2LEAFF');
+  });
+
+  test('block captured into a buffer renders once under extends', async () => {
+    await Promise.all([
+      writeFile(join(tempDir, 'cap-p.njk'), 'PRE{% block b %}PB{% endblock %}POST'),
+      writeFile(
+        join(tempDir, 'cap-child.njk'),
+        '{% extends "cap-p.njk" %}{% capture keep %}{% block b %}CHILD-B{% endblock %}{% endcapture %}[{{ keep }}]'
+      ),
+    ]);
+
+    const result = await renderFile('cap-child.njk', {});
+    // WHY: the guarded top-level buffer path must NOT capture the block in the child —
+    // the parent's hole is its single render site; the capture stays empty.
+    expect(result).toBe('[]PRECHILD-BPOST');
   });
 
   test('block without extends uses default content', async () => {
@@ -324,47 +366,5 @@ double(5) = {{ double(5) }}, triple(5) = {{ triple(5) }}
     ]);
 
     await expect(renderFile('use-missing.njk', {})).rejects.toThrow();
-  });
-});
-
-describe('switch case default', () => {
-  test('basic switch case', async () => {
-    const result = await renderTemplate(
-      '{% switch x %}{% case 1 %}one{% case 2 %}two{% case 3 %}three{% default %}other{% endswitch %}',
-      { x: 2 }
-    );
-    expect(result).toBe('two');
-  });
-
-  test('switch with default case', async () => {
-    const result = await renderTemplate(
-      '{% switch x %}{% case 1 %}one{% case 2 %}two{% default %}default{% endswitch %}',
-      { x: 99 }
-    );
-    expect(result).toBe('default');
-  });
-
-  test('switch falls through empty cases', async () => {
-    const result = await renderTemplate(
-      '{% switch x %}{% case 1 %}{% case 2 %}first or second{% default %}other{% endswitch %}',
-      { x: 1 }
-    );
-    expect(result).toBe('first or second');
-  });
-
-  test('switch with expression in case', async () => {
-    const result = await renderTemplate(
-      '{% switch x %}{% case 5 + 5 %}ten{% case 20 / 2 %}also ten{% default %}other{% endswitch %}',
-      { x: 10 }
-    );
-    expect(result).toBe('ten');
-  });
-
-  test('switch without matching case returns empty', async () => {
-    const result = await renderTemplate(
-      '{% switch x %}{% case 1 %}one{% case 2 %}two{% endswitch %}',
-      { x: 999 }
-    );
-    expect(result).toBe('');
   });
 });

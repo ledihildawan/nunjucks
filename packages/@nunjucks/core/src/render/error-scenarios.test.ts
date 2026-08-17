@@ -3,24 +3,16 @@ import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { createLog, formatError } from '@nunjucks/error-formatter';
 import { isErr } from '@nunjucks/lib';
+import type { GlobalConfig } from '../config/global.ts';
+import { renderTemplate as renderTemplateBase } from './render-test-helper.ts';
 import { render } from './render.ts';
 
-const renderTemplate = async (
+// WHY: every scenario asserts strict-mode error diagnostics, so the strict undefined mode is baked in file-wide.
+const renderTemplate = (
   template: string,
   context: Record<string, unknown> = {},
-  config: Record<string, unknown> = {}
-) => {
-  const result = await render(template, {
-    context,
-    autoescape: false,
-    undefined: 'strict',
-    ...config,
-  });
-  if (isErr(result)) {
-    throw result.error;
-  }
-  return result.value;
-};
+  config: Partial<GlobalConfig> = {}
+) => renderTemplateBase(template, context, { undefined: 'strict', ...config });
 
 describe('error messages - real scenarios', () => {
   test('Variable "user.something" output', async () => {
@@ -237,7 +229,7 @@ describe('error messages - real scenarios', () => {
   test('NULL_VALUE error with nested access shows clear path', async () => {
     const err = (await renderTemplate('{{ a.b.c }}', { a: null }).catch((e) => e)) as TemplateError;
 
-    expect(err.code).toBeTruthy();
+    expect(err.code).toBe('UNDEFINED_PROPERTY');
     expect(err.message).toBeTruthy();
     expect((err.causes as unknown[]).length).toBeGreaterThan(0);
   });
@@ -254,7 +246,7 @@ describe('error messages - real scenarios', () => {
   test('SYNTAX_ERROR has multiple causes', async () => {
     const err = (await renderTemplate('{{ unclosed', {}).catch((e) => e)) as TemplateError;
 
-    expect(err.code).toBeTruthy();
+    expect(err.code).toBe('PARSER_ERROR');
     expect((err.causes as unknown[]).length).toBeGreaterThanOrEqual(2);
   });
 

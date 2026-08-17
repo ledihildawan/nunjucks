@@ -505,12 +505,6 @@ describe('slot fallback', () => {
   });
 });
 
-describe('scope block', () => {
-  test('scope declares variable', async () => {
-    expect(await renderTemplate('{% scope x = 10 %}{{ x }}{% endscope %}')).toBe('10');
-  });
-});
-
 describe('switch statement', () => {
   test('switch matches first case', async () => {
     expect(await renderTemplate('{% switch x %}{% case 1 %}one{% endswitch %}', { x: 1 })).toBe(

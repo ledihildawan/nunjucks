@@ -1,18 +1,9 @@
 ﻿import { describe, expect, test } from 'bun:test';
-import { isErr } from '@nunjucks/lib';
-import { render } from './render.ts';
+import { renderTemplate as renderTemplateBase } from './render-test-helper.ts';
 
-const renderTemplate = async (template: string, context: Record<string, unknown> = {}) => {
-  const result = await render(template, {
-    context,
-    autoescape: false,
-    undefined: 'strict',
-  });
-  if (isErr(result)) {
-    throw result.error;
-  }
-  return result.value;
-};
+// WHY: every test in this file exercises strict-mode variable semantics, so the strict undefined mode is baked in file-wide.
+const renderTemplate = (template: string, context: Record<string, unknown> = {}) =>
+  renderTemplateBase(template, context, { undefined: 'strict' });
 
 describe('variable expression edge cases', () => {
   test('supports array destructuring walrus targets', async () => {

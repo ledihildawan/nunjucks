@@ -21,6 +21,17 @@ describe('readProjectSource', () => {
     ).toBeNull();
   });
 
+  test('returns null for sources over the 1 MB size cap', async () => {
+    const sourceDir = await mkdtemp(path.join(tmpdir(), 'njk-project-source-'));
+    const sourcePath = path.join(sourceDir, 'oversized.ts');
+    await writeFile(sourcePath, 'x'.repeat(1_000_001));
+    try {
+      expect(readProjectSource({ path: sourcePath, line: 1, col: 1 })).toBeNull();
+    } finally {
+      await rm(sourceDir, { recursive: true, force: true });
+    }
+  });
+
   test('reads real project source content with location metadata', async () => {
     const sourceDir = await mkdtemp(path.join(tmpdir(), 'njk-project-source-'));
     const sourcePath = path.join(sourceDir, 'caller.ts');

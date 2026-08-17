@@ -26,12 +26,15 @@ interface RuntimeContext {
     value: string | symbol,
     parentName: string | null
   ) => unknown;
-  slice: (
-    source: unknown,
-    start: number | null,
-    stop: number | null,
-    step: number | null
-  ) => unknown;
+  // WHY: options-object shape — the compiler emits `runtime.slice({ source, start,
+  // stop, step })` (lookup.ts emitSlice) and the bag member takes SliceOptions; the
+  // positional form previously written here misdocumented the compiler↔runtime seam.
+  slice: (options: {
+    source: unknown;
+    start: number | null;
+    stop: number | null;
+    step: number | null;
+  }) => unknown;
   suppressValue: (value: unknown, options?: SuppressValueOptions) => unknown;
   awaitValue: (value: unknown) => unknown;
   ensureDefined: (value: unknown, options?: EnsureDefinedOptions) => unknown;

@@ -31,9 +31,9 @@ const emptyFold: FoldedPlugins = {
 };
 
 // WHY: drop malformed (null/undefined) extension values at fold time rather than letting them surface as
-// a runtime cast failure during render. Filters/tests/extensions are callable or FilterObject-shaped;
-// globals may be any non-null value. A `null`/`undefined` entry is always a plugin-author bug, so we
-// strip it here — closing the §5 plugin-value boundary gap noted in the audit.
+// a runtime cast failure during render. Filters/tests must be callables (enforced by config validation);
+// extensions are objects; globals may be any non-null value. A `null`/`undefined` entry is always a
+// plugin-author bug, so we strip it here — closing the §5 plugin-value boundary gap noted in the audit.
 const isUsableExtensionValue = (value: unknown): boolean => value !== null && value !== undefined;
 
 const mergeExtensions = (

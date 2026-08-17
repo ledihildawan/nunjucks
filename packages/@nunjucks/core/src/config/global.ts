@@ -1,4 +1,4 @@
-import type { UndefinedMode } from '@nunjucks/runtime';
+import type { UndefinedMode } from '@nunjucks/shared';
 import type { DomPurifyConfig, Environment, SandboxMode } from '@nunjucks/shared';
 import packageJson from '../../package.json';
 

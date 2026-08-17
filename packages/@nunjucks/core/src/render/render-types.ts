@@ -1,7 +1,9 @@
+import type { LineBase } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Result } from '@nunjucks/lib';
 import type { TemplateLoader } from '@nunjucks/loaders';
-import type { Env, SandboxOptions, UndefinedMode } from '@nunjucks/runtime';
+import type { Env, SandboxOptions } from '@nunjucks/runtime';
+import type { UndefinedMode } from '@nunjucks/shared';
 import type { BaseValidationError, ContentType, Environment } from '@nunjucks/shared';
 import type { SandboxMode } from '../config/global.ts';
 import type { CallerLocation } from './caller-file.ts';
@@ -92,12 +94,28 @@ interface RenderOptions extends Partial<import('../config/global.ts').GlobalConf
 // type is needed.
 type RenderStreamResult = Result<AsyncGenerator<string, unknown, unknown>, TemplateError>;
 
+// WHY: mid-stream failures cross the throw boundary as `unknown` and are normalized to a plain
+// Error — catalog location fields exist only when the thrown value was a TemplateError, so the
+// marker/serializer contract is structural with optional location fields.
+interface RenderMarkerError extends Error {
+  code?: string | null;
+  templateName?: string | null;
+  templatePath?: string | null;
+  lineno?: number | null;
+  colno?: number | null;
+  lineBase?: LineBase | null;
+  sourceContent?: string;
+  sourceStartLine?: number;
+  blockedKeys?: readonly string[];
+}
+
 export type {
   CallerLocation,
   CompileResult,
   Environment,
   PreparedTemplate,
   RenderConfig,
+  RenderMarkerError,
   RenderOptions,
   RenderStreamResult,
   RenderValidationError,

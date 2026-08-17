@@ -5,7 +5,7 @@ import { isErr } from '@nunjucks/lib';
 import type { ContentType } from '@nunjucks/shared';
 import { formatErrorMarker } from './render.ts';
 import { coalesceStream, withStreamTimeout } from './render-stream-adapters.ts';
-import type { RenderStreamResult } from './render-types.ts';
+import type { RenderMarkerError, RenderStreamResult } from './render-types.ts';
 
 // WHY: structural sink interface matching Express Response shape — res.status(), res.setHeader(), res.write(), res.end(), res.flushHeaders(). Express res satisfies this directly; Bun/Deno/Web can adapt (flushHeaders is optional — without it, chunks may buffer but still arrive). `off` mirrors EventEmitter.off/removeListener and is used by waitForDrain to detach its one-shot drain listener (anti-leak); Express res provides it natively.
 interface PipeSink {
@@ -59,7 +59,7 @@ const CONTENT_TYPE_MAP: Record<string, string> = {
   text: 'text/plain; charset=utf-8',
 };
 
-const serializeErrorPayload = (error: TemplateError): string =>
+const serializeErrorPayload = (error: RenderMarkerError): string =>
   JSON.stringify({
     error: true,
     code: error.code,
@@ -96,12 +96,12 @@ interface MidStreamErrorInput {
 }
 
 // WHY: mid-stream errors are caught as `unknown` — anything can cross the throw boundary
-// (catalogued TemplateError, plain Error, or a thrown primitive). Normalize before the cast
-// so a non-Error never reaches formatErrorMarker/emitErrorLog with a lying static type.
+// (catalogued TemplateError, plain Error, or a thrown primitive). Normalize so a non-Error
+// never reaches formatErrorMarker/emitErrorLog with a lying static type.
 const toErrorLike = (err: unknown): Error => (err instanceof Error ? err : new Error(String(err)));
 
 const renderMidStreamError = ({ err, contentType, ide, version, dev }: MidStreamErrorInput): string =>
-  formatErrorMarker(toErrorLike(err) as TemplateError, { ide, contentType, version, dev });
+  formatErrorMarker(toErrorLike(err), { ide, contentType, version, dev });
 
 // WHY: shallow-clone a TemplateError with renderContext stripped before it reaches the dev ANSI log. renderContext holds the user's render data (potentially PII/secrets) and the ANSI renderer echoes it verbatim — the original error keeps renderContext for response formatting (where blockedKeys + dev gating apply), but the server log must not leak it. message/stack are non-enumerable on Error so they are set explicitly; all other catalog fields ride through Object.assign.
 const redactForLog = (error: TemplateError): TemplateError => {
@@ -220,49 +220,53 @@ const pipeRenderStream = async (
   const stats = { chunks: 0, bytes: 0 };
   let errorCount = 0;
 
-  if (signal?.aborted) {
-    sink.end();
-    onComplete?.({ ...stats, errors: 0 });
-    return;
-  }
-
-  if (isErr(result)) {
-    errorCount += 1;
-    emitErrorLog({ error: result.error, phase: 'pre-stream', logError, dev, onError });
-    sink.status(500);
-    sink.setHeader('Content-Type', mimeType);
-    sink.write(renderPreStreamError({ err: result.error, contentType, dev, ide }));
-    sink.end();
-    onComplete?.({ ...stats, errors: errorCount });
-    return;
-  }
-
-  sink.setHeader('Content-Type', mimeType);
-  sink.setHeader('X-Accel-Buffering', 'no');
-  sink.setHeader('Cache-Control', 'no-cache, no-transform');
-  sink.flushHeaders?.();
-
-  // WHY: wrapper composition is order-sensitive and cleanup-critical. The chain is (outer→inner): coalesceStream → withStreamTimeout → createRenderStream → executeStream. An external .return() (abort via onAbort below) hits coalesceStream first; for-await-of forwards .return() to withStreamTimeout, whose try/finally clears its timer and best-effort returns createRenderStream, whose try/finally returns executeStream. Every wrapper MUST therefore propagate .return() — that is the cleanup contract that prevents zombie generators. If a wrapper is skipped (timeoutMs=0 or coalesceBytes=0) the chain still terminates at createRenderStream, which owns the authoritative finally.
-  let stream = timeoutMs > 0 ? withStreamTimeout(result.value, timeoutMs) : result.value;
-  stream = coalesceStream(stream, coalesceBytes);
-
+  // WHY: one try/finally owns the whole lifecycle — the early-abort and pre-stream
+  // paths previously skipped onClose (and onComplete when onError itself threw),
+  // leaving the response un-finalized (the exact leak class the mid-stream finally
+  // was added to prevent). sink.end() is idempotent, so double-calls are harmless.
   const onAbort = (): void => {
-    stream.return?.(undefined);
+    streamToPipe?.return?.(undefined);
   };
-  signal?.addEventListener('abort', onAbort, { once: true });
-
+  let streamToPipe: AsyncGenerator<string> | undefined;
   try {
-    await pipeChunks({ stream, sink, signal, onChunk, stats, maxOutputSize });
-    // WHY: always finalize the sink, even on abort — Express res.end() is idempotent on a closed socket, but NOT calling it leaves the response un-finalized (the framework cannot know we are done). The previous `if (!signal?.aborted)` guard caused a client mid-stream disconnect to leak an open response.
-    sink.end();
-  } catch (streamErr: unknown) {
     if (signal?.aborted) {
       sink.end();
-    } else {
+      return;
+    }
+
+    if (isErr(result)) {
       errorCount += 1;
-      emitErrorLog({ error: toErrorLike(streamErr), phase: 'mid-stream', logError, dev, onError });
-      sink.write(renderMidStreamError({ err: streamErr, contentType, ide, version, dev }));
+      emitErrorLog({ error: result.error, phase: 'pre-stream', logError, dev, onError });
+      sink.status(500);
+      sink.setHeader('Content-Type', mimeType);
+      sink.write(renderPreStreamError({ err: result.error, contentType, dev, ide }));
       sink.end();
+      return;
+    }
+
+    sink.setHeader('Content-Type', mimeType);
+    sink.setHeader('X-Accel-Buffering', 'no');
+    sink.setHeader('Cache-Control', 'no-cache, no-transform');
+    sink.flushHeaders?.();
+
+    // WHY: wrapper composition is order-sensitive and cleanup-critical. The chain is (outer→inner): coalesceStream → withStreamTimeout → createRenderStream → executeStream. An external .return() (abort via onAbort below) hits coalesceStream first; for-await-of forwards .return() to withStreamTimeout, whose try/finally clears its timer and best-effort returns createRenderStream, whose try/finally returns executeStream. Every wrapper MUST therefore propagate .return() — that is the cleanup contract that prevents zombie generators. If a wrapper is skipped (timeoutMs=0 or coalesceBytes=0) the chain still terminates at createRenderStream, which owns the authoritative finally.
+    streamToPipe = timeoutMs > 0 ? withStreamTimeout(result.value, timeoutMs) : result.value;
+    streamToPipe = coalesceStream(streamToPipe, coalesceBytes);
+    signal?.addEventListener('abort', onAbort, { once: true });
+
+    try {
+      await pipeChunks({ stream: streamToPipe, sink, signal, onChunk, stats, maxOutputSize });
+      // WHY: always finalize the sink, even on abort — Express res.end() is idempotent on a closed socket, but NOT calling it leaves the response un-finalized (the framework cannot know we are done). The previous `if (!signal?.aborted)` guard caused a client mid-stream disconnect to leak an open response.
+      sink.end();
+    } catch (streamErr: unknown) {
+      if (signal?.aborted) {
+        sink.end();
+      } else {
+        errorCount += 1;
+        emitErrorLog({ error: toErrorLike(streamErr), phase: 'mid-stream', logError, dev, onError });
+        sink.write(renderMidStreamError({ err: streamErr, contentType, ide, version, dev }));
+        sink.end();
+      }
     }
   } finally {
     signal?.removeEventListener('abort', onAbort);

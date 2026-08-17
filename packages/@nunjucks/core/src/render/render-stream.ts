@@ -1,5 +1,6 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { adjustColnoForNullValue } from '@nunjucks/error-formatter';
+import type { LineBase } from '@nunjucks/error-catalog';
 import {
   buildSourceTrace,
   classifyAndBuildTitle,
@@ -19,8 +20,8 @@ import type { ContentType } from '@nunjucks/shared';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
 import { serializeErrorPayload } from './pipe-stream.ts';
 import { buildExecutionEnv } from './render-env.ts';
-import { coerceChunk, withStreamDeadline } from './render-stream-adapters.ts';
-import type { PreparedTemplate } from './render-types.ts';
+import { coerceChunk, createStreamTimeoutError, withStreamDeadline } from './render-stream-adapters.ts';
+import type { PreparedTemplate, RenderMarkerError } from './render-types.ts';
 import type { DisplaySeverity } from './severity-levels.ts';
 import { getSeverity } from './severity-levels.ts';
 
@@ -37,7 +38,7 @@ const createCachedEnrichment = (prepared: PreparedTemplate) => {
     sourceContent: string | null;
     templatePath: string | null;
     sourceStartLine: number;
-    lineBase: string;
+    lineBase: LineBase;
   } | null = null;
 
   return async (sentinel: StreamErrorSentinel): Promise<TemplateError> => {
@@ -67,11 +68,17 @@ const createCachedEnrichment = (prepared: PreparedTemplate) => {
       template: prepared.templateSource,
       renderContext: prepared.context,
     });
+    // WHY: the cache holds the FIRST sentinel's caller-file coordinates (lineBase
+    // 'one' + caller sourceContent); later sentinels resolve template coordinates
+    // ('zero' + template-relative lineno). Merging caller content with template
+    // coordinates misaligns every trace after the first — lineBase must come from
+    // the same cache entry as the sourceContent it will be rendered against.
     return {
       ...enriched,
-      sourceContent: locationCache.sourceContent ?? undefined,
+      sourceContent: locationCache.sourceContent ?? enriched.sourceContent,
       templatePath: locationCache.templatePath ?? enriched.templatePath,
       sourceStartLine: locationCache.sourceStartLine,
+      lineBase: locationCache.lineBase,
     };
   };
 };
@@ -111,7 +118,7 @@ const formatSentinelChunk = async ({
 };
 
 const formatErrorMarker = (
-  error: TemplateError,
+  error: RenderMarkerError,
   options: { ide?: string; contentType?: string; version?: string; dev?: boolean } = {}
 ): string => {
   const { ide = DEFAULT_IDE, contentType = 'html', version, dev } = options;
@@ -171,14 +178,31 @@ const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGe
     context: sandboxedCtx,
     frame,
     env,
-    config: resolvedConfig as ExecuteConfig,
+    config: {
+      ...(resolvedConfig as ExecuteConfig),
+      // WHY: same diagnostics wiring as the non-streaming execute call — logContext +
+      // warnings slot so sentinel/undefined warnings reach this stream's collector.
+      templateName: prepared.templateName,
+      renderContext: sandboxedCtx,
+      warningsCollector,
+    },
   });
   const deadlineMs = resolvedConfig.executionTimeout ?? 0;
   const generator = deadlineMs > 0 ? withStreamDeadline(rootGenerator, deadlineMs) : rootGenerator;
+  // WHY: cooperative deadline — withStreamDeadline's setTimeout can NEVER fire for a
+  // microtask-only chunk chain (macrotask starvation), so a CPU-bound stream ignored
+  // the limit entirely. Mirrors the blocking path's chunk-boundary Date.now() check
+  // (runtime/src/executor.ts); a never-yielding render still cannot be preempted.
+  const deadlineAt = deadlineMs > 0 ? Date.now() + deadlineMs : Number.POSITIVE_INFINITY;
   const enrichSentinel = createCachedEnrichment(prepared);
   try {
+    // WHY: while(true) drain — async time-based stream processing exemption (§3);
+    // exit is the generator's `done` or a thrown sentinel, not a loop condition.
     while (true) {
       const { value, done } = await generator.next();
+      if (Date.now() > deadlineAt) {
+        throw createStreamTimeoutError(deadlineMs, 'deadline');
+      }
       if (done) {
         break;
       }

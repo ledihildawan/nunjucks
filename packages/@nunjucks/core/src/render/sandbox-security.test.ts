@@ -29,6 +29,11 @@ describe('sandbox security - prototype pollution', () => {
     expect(output).toBe('blocked');
   });
 
+  test('top-level constructor stays masked after a frame write rebuilds variables', async () => {
+    const output = await renderTemplate('{{ x := 1 }}{{ constructor ?? "blocked" }}', {});
+    expect(output).toBe('blocked');
+  });
+
   test('nested process reference is blocked in sandbox mode (depth guard)', async () => {
     const err = (await renderTemplate(
       '{{ user.process.env.PATH }}',
@@ -103,18 +108,23 @@ describe('sandbox security - prototype pollution', () => {
 });
 
 describe('sandbox security - code execution patterns', () => {
+  // WHY: assert instanceof + a specific catalog code — a bare toBeDefined passes even
+  // when the render SUCCEEDS (err becomes the rendered string), i.e. the test could
+  // never detect the regression it exists for.
   test('eval is blocked in sandbox mode', async () => {
     const err = (await renderTemplate('{{ eval("1+1") }}', {}, { sandbox: true }).catch(
       (e) => e
     )) as TemplateError;
-    expect(err).toBeDefined();
+    expect(err).toBeInstanceOf(Error);
+    expect(err.code).toBe('NULL_VALUE');
   });
 
   test('Function constructor is blocked', async () => {
     const err = (await renderTemplate('{{ Function("return 1")() }}', {}, { sandbox: true }).catch(
       (e) => e
     )) as TemplateError;
-    expect(err).toBeDefined();
+    expect(err).toBeInstanceOf(Error);
+    expect(err.code).toBe('NULL_VALUE');
   });
 
   test('setTimeout with string code is blocked', async () => {
@@ -123,14 +133,16 @@ describe('sandbox security - code execution patterns', () => {
       { setTimeout: () => 'blocked' },
       { sandbox: true }
     ).catch((e) => e)) as TemplateError;
-    expect(err).toBeDefined();
+    expect(err).toBeInstanceOf(Error);
+    expect(err.code).toBe('SANDBOX_CODE_EXECUTION');
   });
 
   test('import is blocked', async () => {
     const err = (await renderTemplate('{{ import("fs") }}', {}, { sandbox: true }).catch(
       (e) => e
     )) as TemplateError;
-    expect(err).toBeDefined();
+    expect(err).toBeInstanceOf(Error);
+    expect(err.code).toBe('NULL_VALUE');
   });
 });
 
@@ -196,6 +208,24 @@ describe('sandbox security - context validation', () => {
     );
     expect(result).toContain('Ada');
     expect(result).not.toContain('[object Object]');
+  });
+
+  test('an explicit scanContextValues=true is honored even when sandbox is enabled', async () => {
+    const err = (await renderTemplate(
+      '{{ user.name }}',
+      { user: { name: 'Ada', global: process } },
+      { sandbox: true, scanContextValues: true }
+    ).catch((e) => e)) as TemplateError;
+    expect(err.code).toBe('DANGEROUS_CONTEXT_VALUES');
+  });
+
+  test('an explicit scanContextValues=false is honored (scan silently downgraded only when unset)', async () => {
+    const result = await renderTemplate(
+      '{{ user.name }}',
+      { user: { name: 'Ada', global: process } },
+      { sandbox: false, scanContextValues: false }
+    );
+    expect(result).toContain('Ada');
   });
 });
 

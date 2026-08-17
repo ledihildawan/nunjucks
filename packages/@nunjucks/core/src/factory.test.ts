@@ -291,6 +291,31 @@ describe('createNunjucks', () => {
     ).toThrow('blockedContextKeys');
   });
 
+  test('null blockedContextKeys is treated as unset, not a factory crash', () => {
+    expect(() =>
+      createNunjucks({
+        security: { blockedContextKeys: null as unknown as readonly string[] },
+      })
+    ).not.toThrow();
+  });
+
+  test('invalid config: bad streaming contentType is rejected at factory creation', () => {
+    expect(() =>
+      createNunjucks({
+        streaming: { contentType: 'bogus' as unknown as 'html' },
+      })
+    ).toThrow('streamContentType');
+  });
+
+  test('include in an inline template without a loader fails with catalogued FILE_NOT_FOUND', async () => {
+    const engine = createNunjucks({});
+    const result = await engine.render('X{% include "nope.njk" %}Y');
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.code).toBe('FILE_NOT_FOUND');
+    }
+  });
+
   test('valid configs with string globals still create engines (globals are data, not callables)', () => {
     expect(() => createNunjucks({ globals: { appName: 'MyApp' } })).not.toThrow();
   });

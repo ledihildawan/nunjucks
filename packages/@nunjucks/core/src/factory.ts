@@ -43,6 +43,7 @@ const assertValidConfig = (config: NunjucksConfig, merged: FactoryValidationInpu
     maxOutputSize: config.limits?.maxOutputSize,
     streamingCoalesceBytes: config.streaming?.coalesceBytes,
     streamingIdleTimeout: config.streaming?.idleTimeout,
+    streamContentType: config.streaming?.contentType,
     undefined: config.undefined,
     sandboxMode: config.security?.sandboxMode,
     sandboxEnvironment: config.security?.sandboxEnvironment,
@@ -121,6 +122,10 @@ const buildDefaultPipeOptions = (config: NunjucksConfig): PipeRenderStreamOption
   contentType: config.streaming?.contentType ?? 'html',
   ide: config.ide ?? 'vscode',
   version: PACKAGE_VERSION,
+  // WHY: thread the engine's dev mode — without it pipeRenderStream defaults to
+  // production behavior (no ANSI fallback log, minimal error page) even though the
+  // host explicitly asked for dev output.
+  dev: config.dev ?? false,
 });
 
 // WHY: the base factory — closes over shared config (filters, globals, security, limits, loader path, etc.) and

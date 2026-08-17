@@ -157,7 +157,7 @@ const searchPass = ({ reads, searchInput, extractFn }: SearchPassOptions): Calle
   );
 
 const firstNonNotFound = (...outcomes: CallerSearchOutcome[]): CallerSearchOutcome =>
-  outcomes.find((o) => o.status !== 'not-found') ?? INITIAL_SEARCH_OUTCOME;
+  outcomes.find((outcome) => outcome.status !== 'not-found') ?? INITIAL_SEARCH_OUTCOME;
 
 const foldCandidateSearch = (
   reads: readonly CandidateRead[],

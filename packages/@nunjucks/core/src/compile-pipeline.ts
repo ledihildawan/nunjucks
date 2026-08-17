@@ -2,7 +2,7 @@ import { createCompiler } from '@nunjucks/compiler';
 import { err, isErr, ok, type Result } from '@nunjucks/lib';
 import type { ParseOptions, ParserExtension } from '@nunjucks/parser';
 import { parse } from '@nunjucks/parser';
-import type { UndefinedMode } from '@nunjucks/runtime';
+import type { UndefinedMode } from '@nunjucks/shared';
 import { createFrame } from '@nunjucks/runtime';
 import { transform } from '@nunjucks/transformers';
 

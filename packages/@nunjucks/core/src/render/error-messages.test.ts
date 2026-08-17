@@ -145,8 +145,8 @@ describe('error - related links', () => {
       (e) => e
     )) as TemplateError;
     expect(err).toBeDefined();
-    expect(err.code).toBeTruthy();
-    expect(err.documentationUrl).toBeTruthy();
+    expect(err.code).toBe('UNDEFINED_VARIABLE');
+    expect(err.documentationUrl).toMatch(/^https?:\/\//);
   });
 });
 
@@ -176,8 +176,8 @@ describe('error - toJSON serialization', () => {
       json = (err.toJSON as () => Record<string, unknown>)();
     }
     expect(json).toBeTruthy();
-    expect(json?.code).toBeTruthy();
-    expect(json?.message).toBeTruthy();
+    expect(json?.code).toBe('UNDEFINED_VARIABLE');
+    expect(json?.message).toContain('noSuch');
   });
 });
 

@@ -21,13 +21,19 @@ export const findContextKeyPosition = async ({
     const searchRadius = 5;
 
     // WHY: prefer property-key occurrences (keyName followed by ':') over bare name matches. A dangerous path like 'user.global' produces keyName 'global', which also appears inside template expressions '{{ user.global }}'. Requiring the trailing ':' ensures we point at the context definition (e.g. `{ global: process }`) rather than the template expression.
-    const propKeyMatch = findBestMatch({ lines, keyName: `${keyName}:`, searchLine, searchRadius });
+    const propKeyMatch = findBestMatch({
+      lines,
+      keyName: `${keyName}:`,
+      searchLine,
+      searchRadius,
+    });
     if (propKeyMatch) {
       return propKeyMatch;
     }
 
     return findBestMatch({ lines, keyName, searchLine, searchRadius });
   } catch {
+    // WHY: enrichment must never break the render pipeline — an unreadable source degrades to null (no position).
     return null;
   }
 };

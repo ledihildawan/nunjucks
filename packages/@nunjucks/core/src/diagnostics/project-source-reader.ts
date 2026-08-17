@@ -1,5 +1,10 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import type { ProjectSourceContent, ProjectSourceLocation } from '@nunjucks/error-formatter';
+
+// WHY: cap the bytes pulled from disk — the reader is dev-diagnostics only, but a
+// stack-frame path pointing at an oversized artifact (bundle, dump) must not load it
+// wholesale into the error-enrichment pipeline.
+const MAX_PROJECT_SOURCE_BYTES = 1_000_000;
 
 const isProjectSource = (path: string): boolean => {
   const normalized = path.replace(/\\/g, '/');
@@ -11,6 +16,9 @@ export const readProjectSource = (location: ProjectSourceLocation): ProjectSourc
     return null;
   }
   try {
+    if (statSync(location.path).size > MAX_PROJECT_SOURCE_BYTES) {
+      return null;
+    }
     return {
       sourceContent: readFileSync(location.path, 'utf-8'),
       templatePath: location.path,

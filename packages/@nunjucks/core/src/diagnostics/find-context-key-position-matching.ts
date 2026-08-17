@@ -11,11 +11,12 @@ const findBetterMatch = (
   searchLine: number
 ): { best: LinePosition | null; bestDistance: number } => {
   const candidateLine = candidate.line - 1;
-  const candidateCol = candidate.col - 1;
   const distance = Math.abs(candidateLine - searchLine);
   const isCloser = distance < acc.bestDistance;
+  // WHY: `candidate.col < best.col` — both are 1-based; a `<=` would let later
+  // occurrences steal ties from earlier ones on the same line.
   const isSameDistanceButNearer =
-    distance === acc.bestDistance && candidateCol < (acc.best?.col ?? Number.POSITIVE_INFINITY);
+    distance === acc.bestDistance && candidate.col < (acc.best?.col ?? Number.POSITIVE_INFINITY);
   if (isCloser || isSameDistanceButNearer) {
     return { best: candidate, bestDistance: distance };
   }
@@ -40,7 +41,11 @@ const findBestMatch = ({
 
   const findOccurrencesInLine = (lineIndex: number): LinePosition[] => {
     const line = lines[lineIndex] ?? '';
-    const pattern = new RegExp(escapeRegex(keyName), 'g');
+    // WHY: leading \b outside the escaped literal (escapeRegex would neutralize it
+    // if it rode inside keyName) — without the boundary, key 'eval' would also match
+    // inside 'retrieval'. A trailing boundary would break the `${keyName}:` prop-key
+    // pass (':' is not a word char, so \b already holds between name and colon).
+    const pattern = new RegExp(`\\b${escapeRegex(keyName)}`, 'g');
     return [...line.matchAll(pattern)].map((match) => ({
       line: lineIndex + 1,
       col: (match.index ?? 0) + 1,

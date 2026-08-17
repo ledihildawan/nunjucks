@@ -99,6 +99,20 @@ const buildExecutionEnv = (config: RenderConfig): Env =>
       undefined: config.undefined ?? 'default',
     },
     ...createEnvLookups(config),
+    // WHY: an inline render (no views/loader) can still hit {% include %} — without
+    // this fallback the emitted `env.getTemplate(...)` call surfaces a raw TypeError
+    // instead of a catalogued miss. Mirrors template-source.ts createFallbackEnv.
+    getTemplate({ name, ignoreMissing }: GetTemplateOptions) {
+      if (ignoreMissing) {
+        return null;
+      }
+      throw createLog('error', {
+        def: getError('FILE_NOT_FOUND'),
+        params: { path: name },
+        subject: name,
+        context: { phase: 'load' },
+      });
+    },
   };
 
 export { buildExecutionEnv, buildRenderEnv, createEnvLookups };

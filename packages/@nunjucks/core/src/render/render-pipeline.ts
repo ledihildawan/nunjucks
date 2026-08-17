@@ -56,7 +56,10 @@ const resolveTemplateSource = async ({
     return err(loaderError);
   }
   const source = sourceResult.value;
-  if (source.src) {
+  // WHY: config.loaders is a user-supplied JS boundary — narrow the envelope's src at the
+  // edge instead of trusting the TemplateLoaderSource type, so a contract-violating loader
+  // cannot smuggle a non-string into templateSource (which the compiler types as string).
+  if (typeof source.src === 'string') {
     const resolvedPath: string | null = config.templatePath ? null : source.path;
     return ok({
       templateSource: source.src,
@@ -119,8 +122,9 @@ const compileTemplate = ({
 }: CompileTemplateInput): Result<CompileResult, Error> => {
   // WHY: convert config.extensions (name → ext object map) into the ParserExtension[] the parser expects —
   // each value carries `tags` + `parse`; the map key is the lookup name used by env.getExtension at runtime.
-  // Non-conforming values are dropped silently and purely here; misconfigured extensions surface through
-  // factory-time config validation.
+  // Non-conforming values are dropped silently and purely here; a malformed extension
+  // therefore surfaces later as a parse-time "unknown block tag" error, not at factory
+  // creation — keep extension objects well-formed (tags: string[], parse/run callables).
   const parserExtensions = config.extensions
     ? Object.values(config.extensions).filter(isParserExtension)
     : undefined;

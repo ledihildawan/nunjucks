@@ -2,24 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { isErr } from '@nunjucks/lib';
-import { render } from './render.ts';
-
-const renderTemplate = async (
-  template: string,
-  context: Record<string, unknown> = {},
-  config: Record<string, unknown> = {}
-) => {
-  const result = await render(template, {
-    context,
-    autoescape: false,
-    ...config,
-  });
-  if (isErr(result)) {
-    throw result.error;
-  }
-  return result.value;
-};
+import { renderTemplate } from './render-test-helper.ts';
 
 let currentTestSourceCache: {
   filePath: string;

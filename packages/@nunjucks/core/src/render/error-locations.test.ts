@@ -3,20 +3,9 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { formatError } from '@nunjucks/error-formatter';
 import { isErr } from '@nunjucks/lib';
+import type { GlobalConfig } from '../config/global.ts';
 import { renderViaExternalWrapper } from './fixtures/external-wrapper.ts';
-import { render } from './render.ts';
-
-const renderTemplate = async (
-  template: string,
-  context: Record<string, unknown> = {},
-  config: Record<string, unknown> = {}
-) => {
-  const result = await render(template, { context, ...config });
-  if (isErr(result)) {
-    throw result.error;
-  }
-  return result.value;
-};
+import { renderTemplate } from './render-test-helper.ts';
 
 let currentTestSourceCache: {
   filePath: string;
@@ -64,7 +53,7 @@ describe('inline template error location pointing', () => {
 
   test('automatically uses the real caller file for inline template locations', async () => {
     const { filePath, sourceLines: source } = await getCurrentTestSource();
-    const cfg = { dev: true, undefined: 'strict' } as unknown as Partial<Record<string, unknown>>;
+    const cfg: Partial<GlobalConfig> = { dev: true, undefined: 'strict' };
     const err = await renderTemplate(
       '{{ product.name }}',
       { product: { test: 'test' } },
@@ -161,9 +150,7 @@ describe('inline template error location pointing', () => {
   });
 
   test('auto caller detection points reserved filter errors at the filter key', async () => {
-    const cfg = { dev: true, filters: { if: (v: unknown) => v } } as unknown as Partial<
-      Record<string, unknown>
-    >;
+    const cfg: Partial<GlobalConfig> = { dev: true, filters: { if: (v: unknown) => v } };
     const result = await renderTemplate('{{ value }}', { value: 'test' }, cfg);
     expect(result).toBe('test');
   });

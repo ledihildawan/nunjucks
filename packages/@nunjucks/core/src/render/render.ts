@@ -64,8 +64,7 @@ const createInvalidCallableError = (
   });
 
 // WHY: source arrives as unknown (GlobalConfig exposes tests only through its index signature), so the
-// partition narrows non-objects to an empty map — a non-object tests/filters value is config misuse caught
-// by the callable partition when it is an object, and ignored otherwise (matching the previous `|| {}` merge).
+// partition narrows non-objects to an empty map; config misuse surfaces via the callable partition.
 const buildCallableMap = (source: unknown, configKey: string): Result<FilterMap, TemplateError> => {
   const { callableEntries, invalidNames } = partitionCallableEntries(
     isKeyedObject(source) ? Object.entries(source) : []
@@ -98,8 +97,9 @@ const setupRenderConfig = (
       baseSanitize ? baseSanitize(str, config ?? options.dompurify) : undefined;
   }
 
-  const contextStrictExplicitlySet = options.contextStrict !== undefined;
-  const sandboxExplicitlySet = options.sandbox !== undefined;
+  // WHY: explicit scanContextValues wins (§9); downgrade only when sandbox/contextStrict set.
+  const layeredSecurityExplicitlySet =
+    options.contextStrict !== undefined || options.sandbox !== undefined;
   return ok({
     ...defaults,
     ...options,
@@ -107,8 +107,7 @@ const setupRenderConfig = (
     filters,
     tests: testsResult.value,
     globals: { ...defaults.globals, ...(options.globals || {}) },
-    scanContextValues:
-      contextStrictExplicitlySet || sandboxExplicitlySet ? false : defaults.scanContextValues,
+    scanContextValues: options.scanContextValues ?? (layeredSecurityExplicitlySet ? false : defaults.scanContextValues),
   });
 };
 
@@ -134,9 +133,10 @@ const executeCompiledTemplate = async (
 ): Promise<string> => {
   const frame = createFrame();
   const env = config.env ?? buildExecutionEnv(config);
-  // WHY: the execution deadline is enforced cooperatively inside the executor's chunk drain —
-  // a withTimeout wrapper around the outer promise can never fire because the drain is a
-  // microtask-only chain that starves macrotask timers (see runtime/src/executor.ts).
+  // WHY: deadline enforced cooperatively in the executor's chunk drain — the drain is a
+  // microtask-only chain that starves macrotask timers (runtime/src/executor.ts).
+  // Diagnostics (templateName/renderContext/warningsCollector) wire the runtime bag's
+  // logContext + warnings slot — without them dev undefined-warnings hit console.warn.
   return execute({
     code: ctx.code,
     context: ctx.sandboxedCtx,
@@ -145,6 +145,9 @@ const executeCompiledTemplate = async (
     config: {
       ...(config as ExecuteConfig),
       executionTimeoutMs: config.executionTimeout ?? 0,
+      templateName: ctx.templateName ?? undefined,
+      renderContext: ctx.sandboxedCtx,
+      warningsCollector: ctx.warningsCollector,
     },
   });
 };
@@ -157,12 +160,10 @@ const injectWarningsIfNeeded = ({
   result: string;
   warningsCollector: TemplateWarning[];
   dev: boolean | undefined;
-}): string => {
-  if (warningsCollector.length > 0 && dev) {
-    return result + injectWarningsScript(warningsCollector, { dev: true, verbosity: 'medium' });
-  }
-  return result;
-};
+}): string =>
+  warningsCollector.length > 0 && dev
+    ? result + injectWarningsScript(warningsCollector, { dev: true, verbosity: 'medium' })
+    : result;
 
 const prepareRender = async (
   template: string,
@@ -170,7 +171,7 @@ const prepareRender = async (
 ): Promise<Result<PreparedTemplate, TemplateError>> => {
   const baseConfigResult = setupRenderConfig(options);
   if (isErr(baseConfigResult)) {
-    return err(baseConfigResult.error);
+    return baseConfigResult;
   }
   const baseConfig = baseConfigResult.value;
   const callerFrames = baseConfig.callerFrames ?? getCallerFrames();
@@ -182,17 +183,17 @@ const prepareRender = async (
     callerLocation: baseConfig.callerLocation ?? primaryCaller,
   };
 
-  // WHY: the gates below run sequentially ON PURPOSE — each is a fail-fast check over
-  // already-available data, and parallelizing them would surface a less specific error
-  // first; only resolveTemplateSource performs I/O and must not run for invalid input.
+  // WHY: sequential gates ON PURPOSE — fail-fast checks over available data;
+  // parallelizing would surface a less specific error first. Only
+  // resolveTemplateSource performs I/O and must not run for invalid input.
   const renderValidation = await validateRender(template, { config, context });
   if (isErr(renderValidation)) {
-    return err(renderValidation.error);
+    return renderValidation;
   }
 
   const strictResult = await handleContextStrictMode(context, config);
   if (isErr(strictResult)) {
-    return err(strictResult.error);
+    return strictResult;
   }
   const { warningsCollector, context: safeContext } = strictResult.value;
 
@@ -211,7 +212,7 @@ const prepareRender = async (
     context: safeContext,
   });
   if (isErr(sourceValidation)) {
-    return err(sourceValidation.error);
+    return sourceValidation;
   }
 
   const templateName = resolveTemplateName(template, configWithPath);
@@ -284,14 +285,13 @@ const render = async (
   }
   return ok(injectWarningsIfNeeded({ result, warningsCollector, dev: resolvedConfig.dev }));
 };
-
 const renderToStream = async (
   template: string,
   options: RenderOptions = {}
 ): Promise<RenderStreamResult> => {
   const prepared = await prepareRender(template, options);
   if (isErr(prepared)) {
-    return err(prepared.error);
+    return prepared;
   }
   return ok(guardSingleConsumer(createRenderStream(prepared.value)));
 };
