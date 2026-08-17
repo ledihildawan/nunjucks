@@ -194,7 +194,7 @@ const isPrototypeEscapeKey = (key: string): boolean => PROTOTYPE_ESCAPE_KEYS.has
 
 export const BLOCKED_KEYS_LIST: readonly string[] = [...AUTO_BLOCKED_KEYS];
 export const DANGEROUS_GLOBALS_LIST: readonly string[] = [...DANGEROUS_GLOBALS];
-export { isPrototypeEscapeKey, PROTOTYPE_ESCAPE_KEYS };
+export { isPrototypeEscapeKey };
 
 export const OBJECT_INTRINSICS: readonly string[] = [...BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS];
 export const CODE_EXECUTION_KEYS: readonly string[] = [...BLOCKED_KEY_CATEGORIES.CODE_EXECUTION];

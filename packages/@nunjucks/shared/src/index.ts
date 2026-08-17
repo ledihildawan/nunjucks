@@ -2,9 +2,7 @@ export type { Environment } from './blocked-keys.ts';
 export {
   BLOCKED_KEYS_LIST,
   CODE_EXECUTION_KEYS,
-  DANGEROUS_GLOBALS_LIST,
   DANGEROUS_KEY_PATTERN,
-  ENVIRONMENTS,
   ENVIRONMENT_VALUES,
   getBlockedKeyCategory,
   isBlockedKey,
@@ -14,9 +12,11 @@ export {
 } from './blocked-keys.ts';
 export * from './compiled-template.ts';
 export { isDangerousReference } from './dangerous-reference.ts';
-export { isPrototypeEscapeKey, PROTOTYPE_ESCAPE_KEYS } from './blocked-keys.ts';
+export { BUILTIN_FILTER_NAMES } from './filter-names.ts';
+export { BUILTIN_TEST_NAMES } from './test-names.ts';
+export { isPrototypeEscapeKey } from './blocked-keys.ts';
 export type { Loc } from './loc.ts';
-export { LOC_BRAND, loc, ZERO_LOC } from './loc.ts';
+export { loc, ZERO_LOC } from './loc.ts';
 export type {
   ContentType,
   DomPurifyConfig,
