@@ -7,11 +7,11 @@ import {
   type FileSystemLoader,
   type TemplateLoader,
 } from '@nunjucks/loaders';
-import type { ParseOptions, ParserExtension } from '@nunjucks/parser';
 import { createSandboxedContext } from '@nunjucks/runtime';
 import { findContextDangerousValues, scrubDangerousReferences } from '@nunjucks/validators';
-import { compileToCode } from '../compile-pipeline.ts';
+import { compileToCode, resolveParserExtensions } from '../compile-pipeline.ts';
 import { findContextKeyPosition, wrapWithLog } from '../diagnostics/diagnostics.ts';
+import { buildCompileCacheKey } from '../template/template-cache.ts';
 import type { CompileResult, RenderConfig, SandboxOptions } from './render-types.ts';
 
 const TEMPLATE_FILE_EXTENSION_RE = /\.(njk|js|html|htm|twig|ejs|eta)$/i;
@@ -131,34 +131,46 @@ interface CompileTemplateInput {
   templateName: string;
 }
 
-const isParserExtension = (value: unknown): value is ParserExtension =>
-  isKeyedObject(value) && Array.isArray(value.tags) && typeof value.parse === 'function';
-
 const compileTemplate = ({
   templateSource,
   config,
   templateName,
 }: CompileTemplateInput): Result<CompileResult, Error> => {
-  // WHY: convert config.extensions (name → ext object map) into the ParserExtension[] the parser expects —
-  // each value carries `tags` + `parse`; the map key is the lookup name used by env.getExtension at runtime.
-  // Non-conforming values are dropped silently and purely here; a malformed extension
-  // therefore surfaces later as a parse-time "unknown block tag" error, not at factory
-  // creation — keep extension objects well-formed (tags: string[], parse/run callables).
-  const parserExtensions = config.extensions
-    ? Object.values(config.extensions).filter(isParserExtension)
-    : undefined;
-  const parseOpts: ParseOptions = {
-    trimBlocks: config.trimBlocks,
-    lstripBlocks: config.lstripBlocks,
-  };
+  // WHY: compiled-code cache consult — only for loader-resolved templates (a real
+  // templatePath); inline template strings are often dynamic and skip the cache by
+  // design. The key includes the source CONTENT hash, so a hit means byte-identical
+  // source + identical compile inputs; stale output is structurally impossible.
+  const cacheKey =
+    config.compiledCodeCache && config.templatePath
+      ? buildCompileCacheKey({
+          templatePath: config.templatePath,
+          templateName,
+          source: templateSource,
+          config,
+        })
+      : null;
+  if (cacheKey !== null) {
+    const cachedCode = config.compiledCodeCache?.get(cacheKey);
+    if (cachedCode !== undefined) {
+      return ok({ code: cachedCode });
+    }
+  }
   const codeResult = compileToCode({
     source: templateSource,
     templateName,
     undefinedMode: config.undefined,
-    parseOpts,
+    parseOpts: {
+      trimBlocks: config.trimBlocks,
+      lstripBlocks: config.lstripBlocks,
+    },
     streamErrorRecovery: config.streamErrorRecovery ?? false,
-    extensions: parserExtensions,
+    extensions: resolveParserExtensions(config.extensions),
   });
+  // WHY: only successful compiles are cached — a failed parse/compile must retry
+  // cleanly on the next render instead of pinning its error in the LRU.
+  if (!isErr(codeResult) && cacheKey !== null) {
+    config.compiledCodeCache?.set(cacheKey, codeResult.value);
+  }
   return isErr(codeResult) ? codeResult : ok({ code: codeResult.value });
 };
 

@@ -6,6 +6,7 @@ import type { Env, SandboxOptions } from '@nunjucks/runtime';
 import type { UndefinedMode } from '@nunjucks/shared';
 import type { BaseValidationError, ContentType, Environment } from '@nunjucks/shared';
 import type { SandboxMode } from '../config/global.ts';
+import type { CompiledCodeCache } from '../template/template-cache.ts';
 import type { CallerLocation } from './caller-file.ts';
 
 interface RenderValidationError extends BaseValidationError {
@@ -48,6 +49,11 @@ interface RenderConfig {
   callerLocation?: CallerLocation | null;
   callerFrames?: readonly CallerLocation[] | null;
   streamErrorRecovery?: boolean;
+  // WHY: engine-owned compiled-code cache instance (closure-scoped per factory).
+  // Data-only (code strings keyed by full compile-input identity incl. source hash) —
+  // no env/frame identity is ever captured, so cached entries are safe to share
+  // across renders. Null = cache disabled (inline renders never consult it anyway).
+  compiledCodeCache?: CompiledCodeCache | null;
   loader?: TemplateLoader | null;
   customFilters?: Record<string, unknown>;
   customGlobals?: Record<string, unknown>;

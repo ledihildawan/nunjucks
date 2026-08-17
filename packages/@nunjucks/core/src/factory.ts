@@ -17,6 +17,7 @@ import type {
   PerRenderOverrides,
 } from './config/nunjucks-config.ts';
 import { foldPlugins } from './plugin/index.ts';
+import { createTemplateCache } from './template/template-cache.ts';
 import type { PipeRenderStreamOptions, PipeSink } from './render/pipe-stream.ts';
 import { pipeRenderStream as pipeRenderStreamInternal } from './render/pipe-stream.ts';
 import {
@@ -49,6 +50,7 @@ const assertValidConfig = (config: NunjucksConfig, merged: FactoryValidationInpu
     streamingCoalesceBytes: config.streaming?.coalesceBytes,
     streamingIdleTimeout: config.streaming?.idleTimeout,
     streamContentType: config.streaming?.contentType,
+    cacheMaxEntries: config.cache?.maxEntries,
     undefined: config.undefined,
     sandboxMode: config.security?.sandboxMode,
     sandboxEnvironment: config.security?.sandboxEnvironment,
@@ -110,6 +112,13 @@ const buildBaseOptions = (config: NunjucksConfig): RenderOptions => {
     maxOutputSize: config.limits?.maxOutputSize,
     streamErrorRecovery: config.streaming?.errorRecovery,
     streamContentType: config.streaming?.contentType,
+    // WHY: default ON — cache keys carry the source content hash, so enabling it
+    // changes only speed, never output; cache.templates:false restores
+    // always-recompile behavior for hosts that want it.
+    compiledCodeCache:
+      config.cache?.templates === false
+        ? null
+        : createTemplateCache({ maxEntries: config.cache?.maxEntries }),
     filters: mergedFilters,
     globals: mergedGlobals,
     customFilters: mergedFilters,

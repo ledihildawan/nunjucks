@@ -39,6 +39,14 @@ interface StreamingConfig {
   readonly coalesceBytes?: number;
 }
 
+// WHY: compiled-code cache. Keys carry the source CONTENT hash, so a rewritten file
+// lands on a fresh key on the next render — stale output is structurally impossible
+// and no watcher is required. `templates: false` restores always-recompile behavior.
+interface CacheConfig {
+  readonly templates?: boolean;
+  readonly maxEntries?: number;
+}
+
 interface NunjucksConfig {
   readonly dev?: boolean;
   // WHY: multi-root lookup mirrors createFileSystemLoader's searchPaths contract —
@@ -56,6 +64,7 @@ interface NunjucksConfig {
   readonly security?: SecurityConfig;
   readonly limits?: LimitsConfig;
   readonly streaming?: StreamingConfig;
+  readonly cache?: CacheConfig;
   readonly filters?: ExtensionMap;
   readonly globals?: ExtensionMap;
   readonly tests?: ExtensionMap;
@@ -94,6 +103,7 @@ interface NunjucksEngine {
 }
 
 export type {
+  CacheConfig,
   ContentType,
   LimitsConfig,
   NunjucksConfig,

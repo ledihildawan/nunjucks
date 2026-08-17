@@ -28,6 +28,7 @@ interface Config {
   maxTemplateSize?: number;
   maxOutputSize?: number;
   streamingCoalesceBytes?: number;
+  cacheMaxEntries?: number;
   streamingIdleTimeout?: number;
   undefined?: string;
   sandboxMode?: string;
@@ -73,6 +74,7 @@ const validateNumericConfig = (config: Config): ConfigValidationError[] => [
   ...validateNonNegativeNumeric(config.executionTimeout, 'executionTimeout'),
   ...validateNonNegativeNumeric(config.maxTemplateSize, 'maxTemplateSize'),
   ...validateNonNegativeNumeric(config.maxOutputSize, 'maxOutputSize'),
+  ...validateNonNegativeNumeric(config.cacheMaxEntries, 'cacheMaxEntries'),
   ...validateNonNegativeNumeric(config.streamingCoalesceBytes, 'coalesceBytes'),
   ...validateNonNegativeNumeric(config.streamingIdleTimeout, 'idleTimeout'),
 ];

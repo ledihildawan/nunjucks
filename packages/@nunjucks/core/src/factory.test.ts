@@ -348,6 +348,61 @@ describe('createNunjucks', () => {
     expect(isErr(result)).toBe(true);
   });
 
+  describe('compiled-code cache', () => {
+    test('repeated file renders produce identical output and recompile-proof keys', async () => {
+      const viewsDirectory = await mkdtemp(join(tmpdir(), 'njk-cache-'));
+      try {
+        const templatePath = join(viewsDirectory, 'repeat.njk');
+        await writeFile(templatePath, 'Hi {{ name }}');
+        const engine = createNunjucks({ views: viewsDirectory });
+        const first = await engine.render('repeat.njk', { name: 'A' });
+        const second = await engine.render('repeat.njk', { name: 'B' });
+        expect(isOk(first) && first.value).toBe('Hi A');
+        expect(isOk(second) && second.value).toBe('Hi B');
+      } finally {
+        await rm(viewsDirectory, { recursive: true, force: true });
+      }
+    });
+
+    test('rewriting the file is reflected on the next render (source-hash freshness)', async () => {
+      const viewsDirectory = await mkdtemp(join(tmpdir(), 'njk-cache-'));
+      try {
+        const templatePath = join(viewsDirectory, 'mutable.njk');
+        await writeFile(templatePath, 'version one {{ x }}');
+        const engine = createNunjucks({ views: viewsDirectory });
+        const first = await engine.render('mutable.njk', { x: 1 });
+        await writeFile(templatePath, 'version two {{ x }}');
+        const second = await engine.render('mutable.njk', { x: 2 });
+        expect(isOk(first) && first.value).toBe('version one 1');
+        // WHY: the killer freshness property — same path, new content, new key:
+        // no watcher, no restart, no stale output.
+        expect(isOk(second) && second.value).toBe('version two 2');
+      } finally {
+        await rm(viewsDirectory, { recursive: true, force: true });
+      }
+    });
+
+    test('cache.templates:false restores always-recompile behavior', async () => {
+      const viewsDirectory = await mkdtemp(join(tmpdir(), 'njk-cache-'));
+      try {
+        const templatePath = join(viewsDirectory, 'nocache.njk');
+        await writeFile(templatePath, 'plain');
+        const engine = createNunjucks({ views: viewsDirectory, cache: { templates: false } });
+        const first = await engine.render('nocache.njk');
+        await writeFile(templatePath, 'changed');
+        const second = await engine.render('nocache.njk');
+        expect(isOk(first) && first.value).toBe('plain');
+        expect(isOk(second) && second.value).toBe('changed');
+      } finally {
+        await rm(viewsDirectory, { recursive: true, force: true });
+      }
+    });
+
+    test('invalid maxEntries is rejected at factory creation', () => {
+      expect(() => createNunjucks({ cache: { maxEntries: -1 } })).toThrow('cacheMaxEntries');
+    });
+  });
+
   test('valid configs with string globals still create engines (globals are data, not callables)', () => {
     expect(() => createNunjucks({ globals: { appName: 'MyApp' } })).not.toThrow();
   });

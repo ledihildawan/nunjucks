@@ -1,10 +1,24 @@
 import { createCompiler } from '@nunjucks/compiler';
-import { err, isErr, ok, type Result } from '@nunjucks/lib';
+import { err, isErr, isKeyedObject, ok, type Result } from '@nunjucks/lib';
 import type { ParseOptions, ParserExtension } from '@nunjucks/parser';
 import { parse } from '@nunjucks/parser';
 import type { UndefinedMode } from '@nunjucks/shared';
 import { createFrame } from '@nunjucks/runtime';
 import { transform } from '@nunjucks/transformers';
+
+const isParserExtension = (value: unknown): value is ParserExtension =>
+  isKeyedObject(value) && Array.isArray(value.tags) && typeof value.parse === 'function';
+
+// WHY: converts config.extensions (name → ext object map) into the ParserExtension[]
+// the parser expects — each value carries `tags` + `parse`; the map key is the lookup
+// name used by env.getExtension at runtime. Non-conforming values are dropped silently
+// and purely here; a malformed extension therefore surfaces later as a parse-time
+// "unknown block tag" error, not at factory creation — keep extension objects
+// well-formed (tags: string[], parse/run callables).
+const resolveParserExtensions = (
+  extensions: Readonly<Record<string, unknown>> | undefined
+): readonly ParserExtension[] | undefined =>
+  extensions ? Object.values(extensions).filter(isParserExtension) : undefined;
 
 interface CompileToCodeOptions {
   source: string;
@@ -42,4 +56,4 @@ const compileToCode = ({
   }
 };
 
-export { compileToCode };
+export { compileToCode, resolveParserExtensions };
