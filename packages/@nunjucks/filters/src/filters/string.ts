@@ -153,16 +153,16 @@ const resolveString = (str: unknown): string | null => {
 
 const performReplace = (
   text: string,
-  { oldStr, newValue, max }: { oldStr: string; newValue: string; max: number }
+  { oldStr, replacement, max }: { oldStr: string; replacement: string; max: number }
 ): string => {
   if (oldStr === '') {
     return text;
   }
   const segments = text.split(oldStr);
   if (max === -1 || segments.length - 1 <= max) {
-    return segments.join(newValue);
+    return segments.join(replacement);
   }
-  const head = segments.slice(0, max + 1).join(newValue);
+  const head = segments.slice(0, max + 1).join(replacement);
   const tail = segments.slice(max + 1).join(oldStr);
   return head + oldStr + tail;
 };
@@ -176,9 +176,14 @@ const applyReplace = ({
   newValue,
   maxCount,
 }: ReplaceOptions): unknown => {
+  // WHY: an omitted/invalid replacement defaults to deletion (''). It used to reach
+  // Array.join as undefined — coercing the separator to ',' — so `replace("-")` turned
+  // "a-b-c" into "a,b,c": silent data corruption (RegExp branch inserted the literal
+  // string "undefined" instead).
+  const replacement = typeof newValue === 'string' ? newValue : '';
   if (oldValue instanceof RegExp) {
     const resolvedString = resolveString(str);
-    return resolvedString === null ? String(str ?? '') : resolvedString.replace(oldValue, newValue);
+    return resolvedString === null ? String(str ?? '') : resolvedString.replace(oldValue, replacement);
   }
   const max = maxCount ?? -1;
   const oldStr = resolveOldString(oldValue);
@@ -192,20 +197,20 @@ const applyReplace = ({
   if (oldStr === '') {
     return preserveSafe(
       str,
-      newValue + pipe(resolvedInput, split(''), joinRemeda(newValue)) + newValue
+      replacement + pipe(resolvedInput, split(''), joinRemeda(replacement)) + replacement
     );
   }
   const nextIndex = resolvedInput.indexOf(oldStr);
   if (max === 0 || nextIndex === -1) {
     return resolvedInput;
   }
-  return preserveSafe(str, performReplace(resolvedInput, { oldStr, newValue, max }));
+  return preserveSafe(str, performReplace(resolvedInput, { oldStr, replacement, max }));
 };
 
 interface ReplaceOptions {
   str: unknown;
   old: unknown;
-  newValue: string;
+  newValue?: string;
   maxCount?: number;
 }
 

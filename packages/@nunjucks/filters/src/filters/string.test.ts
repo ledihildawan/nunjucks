@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { getOrElse, isErr, isOk } from '@nunjucks/lib';
-import { isSafeString } from '@nunjucks/runtime';
+import { createKeywordArgs, isSafeString } from '@nunjucks/runtime';
 import {
   capitalize,
   // biome-ignore lint/suspicious/noShadowRestrictedNames: `escape` is the public name of this Nunjucks filter; renaming it would break every template that uses it.
@@ -166,7 +166,23 @@ describe('filters/string', () => {
 
     test('respects a maximum replacement count', () => {
       expect(getOrElse(replace('foo foo foo', 'foo', 'x', 2), null)).toBe('x x foo');
-      expect(getOrElse(replace('foo foo foo', 'foo', 'x', 0), null)).toBe('foo foo foo');
+    });
+
+    test('an omitted replacement deletes the needle (no comma coercion)', () => {
+      // WHY: regression — undefined used to reach Array.join(undefined), coercing the
+      // separator to ',' so replace("-") turned "a-b-c" into "a,b,c".
+      expect(getOrElse(replace('a-b-c', '-'), null)).toBe('abc');
+      expect(getOrElse(replace('aaa', 'a'), null)).toBe('');
+      expect(getOrElse(replace('ab', ''), null)).toBe('ab');
+    });
+
+    test('an unknown kwarg for the replacement is rejected, not silently ignored', () => {
+      // `new` is the upstream-style name; the registered kwarg is `newValue`. The
+      // wrapper throws a catalogued UNKNOWN_FILTER_KWARG (runtime-contract throw,
+      // funneled by handleError at the emit boundary).
+      expect(() => replace('a-b', createKeywordArgs({ new: 'x' }))).toThrow(
+        /Unknown keyword argument 'new'/
+      );
     });
 
     test('supports RegExp patterns', () => {
