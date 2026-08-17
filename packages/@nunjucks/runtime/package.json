@@ -14,5 +14,11 @@
     "remeda": "^2.39.0"
   },
   "description": "Runtime for Nunjucks template engine",
-  "private": true
+  "private": true,
+  "license": "BSD-2-Clause",
+  "keywords": [
+    "nunjucks",
+    "templating",
+    "template"
+  ]
 }

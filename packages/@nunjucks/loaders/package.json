@@ -13,5 +13,11 @@
     "remeda": "^2.39.0"
   },
   "description": "Template loaders for Nunjucks",
-  "private": true
+  "private": true,
+  "license": "BSD-2-Clause",
+  "keywords": [
+    "nunjucks",
+    "templating",
+    "template"
+  ]
 }

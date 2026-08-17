@@ -10,5 +10,11 @@
     "remeda": "^2.39.0"
   },
   "description": "Domain-agnostic technical utilities - pure algorithms, I/O wrappers, and data formatters with zero business rules.",
-  "private": true
+  "private": true,
+  "license": "BSD-2-Clause",
+  "keywords": [
+    "nunjucks",
+    "templating",
+    "template"
+  ]
 }

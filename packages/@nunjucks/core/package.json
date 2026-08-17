@@ -27,5 +27,11 @@
     "@nunjucks/nodes": "workspace:*"
   },
   "description": "Public Nunjucks API: template environment, rendering, configuration, and integration entry points",
-  "private": true
+  "private": true,
+  "license": "BSD-2-Clause",
+  "keywords": [
+    "nunjucks",
+    "templating",
+    "template"
+  ]
 }

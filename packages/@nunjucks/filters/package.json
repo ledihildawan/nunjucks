@@ -16,5 +16,11 @@
     "remeda": "^2.39.0"
   },
   "description": "Built-in filters for Nunjucks template engine",
-  "private": true
+  "private": true,
+  "license": "BSD-2-Clause",
+  "keywords": [
+    "nunjucks",
+    "templating",
+    "template"
+  ]
 }

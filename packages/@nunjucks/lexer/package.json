@@ -12,5 +12,11 @@
     "@nunjucks/shared": "workspace:*"
   },
   "description": "Lexer for Nunjucks template engine",
-  "private": true
+  "private": true,
+  "license": "BSD-2-Clause",
+  "keywords": [
+    "nunjucks",
+    "templating",
+    "template"
+  ]
 }

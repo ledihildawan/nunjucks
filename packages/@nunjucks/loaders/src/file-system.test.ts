@@ -36,9 +36,9 @@ describe('createFileSystemLoader', () => {
       const loader = createFileSystemLoader(dir);
       const first = await loader.getSource('memo.njk');
       const second = await loader.getSource('memo.njk');
-      expect(isOk(first)).toBe(true);
-      expect(isOk(second)).toBe(true);
-      if (isOk(first) && isOk(second)) {
+      expect(first !== null && isOk(first)).toBe(true);
+      expect(second !== null && isOk(second)).toBe(true);
+      if (first !== null && second !== null && isOk(first) && isOk(second)) {
         // WHY: toBe — the memo must return the memoized object identity
         expect(second.value).toBe(first.value);
       }
@@ -54,9 +54,9 @@ describe('createFileSystemLoader', () => {
       await new Promise((resolve) => setTimeout(resolve, 12));
       await writeFile(file, 'after');
       const second = await loader.getSource('mutable.njk');
-      expect(isOk(first)).toBe(true);
-      expect(isOk(second)).toBe(true);
-      if (isOk(first) && isOk(second)) {
+      expect(first !== null && isOk(first)).toBe(true);
+      expect(second !== null && isOk(second)).toBe(true);
+      if (first !== null && second !== null && isOk(first) && isOk(second)) {
         expect(first.value.src).toBe('before');
         expect(second.value.src).toBe('after');
       }
@@ -69,9 +69,9 @@ describe('createFileSystemLoader', () => {
       const loader = createFileSystemLoader(dir, { memo: false });
       const first = await loader.getSource('off.njk');
       const second = await loader.getSource('off.njk');
-      expect(isOk(first)).toBe(true);
-      expect(isOk(second)).toBe(true);
-      if (isOk(first) && isOk(second)) {
+      expect(first !== null && isOk(first)).toBe(true);
+      expect(second !== null && isOk(second)).toBe(true);
+      if (first !== null && second !== null && isOk(first) && isOk(second)) {
         expect(second.value).not.toBe(first.value);
         expect(second.value.src).toBe(first.value.src);
       }
@@ -82,7 +82,8 @@ describe('createFileSystemLoader', () => {
       const file = join(dir, 'gone.njk');
       await writeFile(file, 'temp');
       const loader = createFileSystemLoader(dir);
-      expect(isOk(await loader.getSource('gone.njk'))).toBe(true);
+      const first = await loader.getSource('gone.njk');
+      expect(first !== null && isOk(first)).toBe(true);
       await rm(file);
       expect(await loader.getSource('gone.njk')).toBeNull();
     });
