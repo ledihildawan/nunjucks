@@ -13,8 +13,18 @@ const compileRenderSlots = (
   frame: Frame
 ): string => {
   const entries: string[] = [];
+  const seenSlotNames = new Set<string>();
   forEach(slots, (slot) => {
     assertSafeIdentifier(slot.name, { compiler });
+    // WHY: duplicate names in one render collapsed to object-literal last-wins — the
+    // first slot body silently vanished. Fail at compile time with a catalogued error.
+    if (seenSlotNames.has(slot.name)) {
+      compiler.fail({
+        message: `Duplicate slot name "${slot.name}" in render block`,
+        errorName: 'DUPLICATE_SLOT',
+      });
+    }
+    seenSlotNames.add(slot.name);
     // WHY: gensym'd slot var — two {% render %} blocks providing the same slot name
     // must not collide on a shared `let __slot_<name>` declaration at generator scope
     // (duplicate-let is a SyntaxError that killed the whole compiled template).

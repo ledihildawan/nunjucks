@@ -95,7 +95,7 @@ interface ContextState {
   parentContext: Context | null;
 }
 
-// WHY: canonical bare Env — the single source for the 'no env supplied' default shape; core's fallback Env derives from it.
+// WHY: canonical bare Env â€” the single source for the 'no env supplied' default shape; core's fallback Env derives from it.
 const createDefaultEnv = (): Env => ({
   opts: { dev: false, autoescape: true, undefined: 'default' },
   getFilter: () => null,
@@ -121,7 +121,7 @@ const createContextFromState = (state: ContextState): Context => {
     parentContext: state.parentContext,
 
     setParentBlockNames(names: string[] | null): Context {
-      // WHY: UNION, not replace â€” multi-level extends threads ONE context down the
+      // WHY: UNION, not replace Ã¢â‚¬â€ multi-level extends threads ONE context down the
       // delegation chain; each level must preserve earlier levels' names or child
       // blocks inherited from a grandparent the direct parent omits get rejected.
       const merged =
@@ -132,7 +132,7 @@ const createContextFromState = (state: ContextState): Context => {
     },
 
     lookup(name: string): unknown {
-      // WHY: RCE guard â€” `{{ constructor }}` would otherwise resolve through the ctx
+      // WHY: RCE guard Ã¢â‚¬â€ `{{ constructor }}` would otherwise resolve through the ctx
       // object's prototype chain; prototype-escape keys are only visible as own properties
       // (host's explicit choice). Normal variables are always own properties.
       if (isPrototypeEscapeKey(name) && !hasOwn(state.ctx, name)) {
@@ -149,10 +149,10 @@ const createContextFromState = (state: ContextState): Context => {
       if (typeof block !== 'function') {
         return throwBlockNotFunctionError({ name });
       }
-      // WHY: own-blocks-only read â€” an inherited Object.prototype member (e.g.
-      // 'constructor' on a plain {} map) must not fold into the override chain.
-      const existing =
-        isPrototypeEscapeKey(name) && !hasOwn(state.blocks, name) ? undefined : state.blocks[name];
+      // WHY: own-blocks-only read â€” the blocks map is engine-internal (compiler
+      // registers names via computed own keys), so an inherited Object.prototype
+      // member ('constructor', 'toString', â€¦) must never fold into the chain.
+      const existing = hasOwn(state.blocks, name) ? state.blocks[name] : undefined;
       const next = existing
         ? Array.isArray(existing)
           ? [...existing, block]
@@ -178,10 +178,11 @@ const createContextFromState = (state: ContextState): Context => {
 
     getBlock(name: string, lineno: number | null = null, colno: number | null = null): BlockFn {
       context.validateBlocks();
-      // WHY: same RCE guard as lookup â€” a prototype-escape name resolves as an own
-      // block only; inherited Object.prototype members must never surface as blocks.
-      const storedBlock =
-        isPrototypeEscapeKey(name) && !hasOwn(state.blocks, name) ? undefined : state.blocks[name];
+      // WHY: own-blocks-only for EVERY name â€” the blocks map only ever holds own
+      // compiler-registered keys, so an inherited Object.prototype member (including
+      // the harmless trio outside PROTOTYPE_ESCAPE_KEYS, e.g. 'toString') must never
+      // surface as a callable block.
+      const storedBlock = hasOwn(state.blocks, name) ? state.blocks[name] : undefined;
       const location = state.metadata.blockLocations?.[name];
       if (!storedBlock) {
         return throwBlockNotFoundError({ name, location, lineno, colno });
@@ -205,9 +206,8 @@ const createContextFromState = (state: ContextState): Context => {
       lineno = null,
       colno = null,
     }: GetSuperOptions): unknown {
-      // WHY: own-blocks-only for prototype-escape names â€” mirrors getBlock's guard.
-      const blockList =
-        isPrototypeEscapeKey(name) && !hasOwn(state.blocks, name) ? undefined : state.blocks[name];
+      // WHY: own-blocks-only for every name — mirrors getBlock's guard.
+      const blockList = hasOwn(state.blocks, name) ? state.blocks[name] : undefined;
       if (!blockList || !Array.isArray(blockList)) {
         return throwNoSuperBlockError({ name, lineno, colno });
       }
@@ -216,7 +216,7 @@ const createContextFromState = (state: ContextState): Context => {
       if (idx === -1 || !parentBlock) {
         return throwNoSuperBlockError({ name, lineno, colno });
       }
-      // WHY: Option C â€” block functions are async generators; drain the super block into a string so it can be markSafe'd and used as a value. BlockFn is typed `=> unknown` (loose); the runtime guarantee is AsyncGenerator, hence the narrowing cast.
+      // WHY: Option C Ã¢â‚¬â€ block functions are async generators; drain the super block into a string so it can be markSafe'd and used as a value. BlockFn is typed `=> unknown` (loose); the runtime guarantee is AsyncGenerator, hence the narrowing cast.
       return collectString(
         (parentBlock as BlockFn)(envObj, context, frame, runtime) as AsyncGenerator<string, unknown>
       );
@@ -230,7 +230,7 @@ const createContextFromState = (state: ContextState): Context => {
       return Object.fromEntries(
         state.exported.map((name) => [
           name,
-          // WHY: same RCE guard as lookup â€” exported names resolve as own properties only;
+          // WHY: same RCE guard as lookup Ã¢â‚¬â€ exported names resolve as own properties only;
           // prototype-escape keys never leak inherited Object.prototype members.
           isPrototypeEscapeKey(name) && !hasOwn(state.ctx, name) ? undefined : state.ctx[name],
         ])

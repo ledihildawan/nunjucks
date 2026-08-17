@@ -108,6 +108,19 @@ const DUPLICATE_BLOCK = createErrorDefinition({
   fixComment: 'Remove or rename the duplicate block',
 });
 
+const DUPLICATE_SLOT = createErrorDefinition({
+  name: 'DUPLICATE_SLOT',
+  message: 'Slot "{name}" filled more than once in the same render block',
+  category: 'duplicate_slot',
+  causes: [
+    'Two `{% slot {subject} %}` blocks with the same name inside one `{% render %}`',
+    'A copy-paste error left two slot fills with the same name',
+    'The slot was renamed in the component but not in the render block',
+  ],
+  fixCode: '{% render card() %}{% slot header %}...{% endslot %}{% endrender %}',
+  fixComment: 'Remove or rename the duplicate slot fill',
+});
+
 const NO_SUPER_BLOCK = {
   name: 'NO_SUPER_BLOCK',
   message: 'No super block available',
@@ -145,8 +158,7 @@ const RESERVED_KEYWORD = {
 const RESERVED_KEYWORD_CONTEXT = {
   name: 'RESERVED_KEYWORD_CONTEXT',
   message: "Cannot use reserved keyword '{name}' outside of its intended context",
-  pattern:
-    /reserved keyword.*context|cannot use.*reserved keyword/iu,
+  pattern: /reserved keyword.*context|cannot use.*reserved keyword/iu,
   category: 'reserved_keyword_context',
   titleTemplate: RESERVED_KEYWORD_CONTEXT_TITLE,
   causes: [
@@ -161,6 +173,7 @@ const RESERVED_KEYWORD_CONTEXT = {
 
 export {
   DUPLICATE_BLOCK,
+  DUPLICATE_SLOT,
   NO_SUPER_BLOCK,
   RESERVED_KEYWORD,
   RESERVED_KEYWORD_CONTEXT,

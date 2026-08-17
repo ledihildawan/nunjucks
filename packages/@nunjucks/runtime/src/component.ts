@@ -6,7 +6,13 @@ import type { SlotContext } from './slots.ts';
 type KeywordArgs = Record<string, unknown> & { keywords: boolean };
 
 const isKeywordArgsObject = (value: unknown): value is KeywordArgs =>
-  typeof value === 'object' && value !== null && hasOwn(value, 'keywords');
+  // WHY: value check too — the envelope marker is always `keywords: true`, so a plain
+  // positional object that merely HAS a `keywords` property ({keywords: false}) must
+  // not be miscounted as an envelope.
+  typeof value === 'object' &&
+  value !== null &&
+  hasOwn(value, 'keywords') &&
+  value.keywords === true;
 
 interface UnknownKwargErrorInput {
   name: string;
@@ -147,10 +153,7 @@ export const numArgs = (args: unknown[]): number => {
   // check miscounted when a caller appended a second keyword envelope (e.g. {% render %}
   // merges its slots envelope after user kwargs), letting the first envelope bind
   // positionally. getKeywordArgs already merges every keyword object.
-  return args.reduce<number>(
-    (count, arg) => count + (isKeywordArgsObject(arg) ? 0 : 1),
-    0
-  );
+  return args.reduce<number>((count, arg) => count + (isKeywordArgsObject(arg) ? 0 : 1), 0);
 };
 
 export type { ComponentContext };

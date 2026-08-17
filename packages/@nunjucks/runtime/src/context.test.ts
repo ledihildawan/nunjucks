@@ -205,9 +205,18 @@ describe('prototype-escape guards (RCE pins)', () => {
 
   test('getBlock throws UNDEFINED_BLOCK for inherited members instead of returning them', () => {
     const ctx = createContext({ env: fakeEnv });
-    for (const name of escapeNames) {
-      expect(() => ctx.getBlock(name)).toThrow(`Undefined block: ${name}`);
+    for (const name of [...escapeNames, 'toString', 'hasOwnProperty']) {
+      // WHY: 'toString' is outside PROTOTYPE_ESCAPE_KEYS by design for LOOKUP, but
+      // blocks are engine-internal own-only maps — inherited members never surface
+      // as callable blocks regardless of the escape-key set.
+      expect(() => ctx.getBlock(name), name).toThrow(`Undefined block: ${name}`);
     }
+  });
+
+  test('getBlock still returns an own block stored under an inherited-member name', () => {
+    const fn = () => {};
+    const ctx = createContext({ env: fakeEnv }).addBlock('toString', fn);
+    expect(ctx.getBlock('toString')).toBe(fn);
   });
 
   test('getBlock still returns an own block stored under a prototype-escape name', () => {
@@ -219,7 +228,13 @@ describe('prototype-escape guards (RCE pins)', () => {
   test('getSuper throws NO_SUPER_BLOCK for prototype-escape names without an own chain', () => {
     const ctx = createContext({ env: fakeEnv });
     expect(() =>
-      ctx.getSuper({ envObj: fakeEnv, name: 'constructor', block: () => {}, frame: null, runtime: null })
+      ctx.getSuper({
+        envObj: fakeEnv,
+        name: 'constructor',
+        block: () => {},
+        frame: null,
+        runtime: null,
+      })
     ).toThrow('No super block available');
   });
 });

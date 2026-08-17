@@ -24,6 +24,12 @@ describe('numArgs', () => {
     const args = [1, 2, createKeywordArgs({ a: 1 })];
     expect(numArgs(args)).toBe(2);
   });
+
+  test('a positional object with keywords:false is NOT miscounted as an envelope', () => {
+    // WHY: the marker requires keywords === true — a user's plain object carrying a
+    // `keywords` field stays positional.
+    expect(numArgs([{ keywords: false, other: 1 }])).toBe(1);
+  });
 });
 
 describe('getKeywordArgs', () => {

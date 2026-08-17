@@ -358,18 +358,16 @@ describe('miss sentinels behave falsy (classic semantics)', () => {
   // WHY: memberLookup returns a CALLABLE not-found sentinel (so `obj.missing()` yields
   // undefined) — raw JS truthiness would invert every condition on a missing property.
   test('{% if obj.missing %} takes the false branch', async () => {
-    const result = await renderTemplate(
-      '{% if obj.missing %}yes{% else %}no{% endif %}',
-      { obj: {} }
-    );
+    const result = await renderTemplate('{% if obj.missing %}yes{% else %}no{% endif %}', {
+      obj: {},
+    });
     expect(result).toBe('no');
   });
 
   test('{% if nullObj.prop %} takes the false branch', async () => {
-    const result = await renderTemplate(
-      '{% if nullObj.prop %}yes{% else %}no{% endif %}',
-      { nullObj: null }
-    );
+    const result = await renderTemplate('{% if nullObj.prop %}yes{% else %}no{% endif %}', {
+      nullObj: null,
+    });
     expect(result).toBe('no');
   });
 
@@ -450,9 +448,9 @@ describe('whitespace control', () => {
     );
   });
   test('trimBlocks handles CRLF newlines', async () => {
-    expect(
-      await renderTemplate('{% if true %}\r\nx{% endif %}', {}, { trimBlocks: true })
-    ).toBe('x');
+    expect(await renderTemplate('{% if true %}\r\nx{% endif %}', {}, { trimBlocks: true })).toBe(
+      'x'
+    );
   });
   test('trimBlocks does not affect variable tags', async () => {
     expect(await renderTemplate('a{{ "x" }}\nb', {}, { trimBlocks: true })).toBe('ax\nb');
@@ -463,9 +461,9 @@ describe('whitespace control', () => {
     ).toBe('div\nx');
   });
   test('lstripBlocks keeps mid-line whitespace', async () => {
-    expect(
-      await renderTemplate('a {% if true %}x{% endif %}', {}, { lstripBlocks: true })
-    ).toBe('a x');
+    expect(await renderTemplate('a {% if true %}x{% endif %}', {}, { lstripBlocks: true })).toBe(
+      'a x'
+    );
   });
   test('lstripBlocks does not affect variable tags', async () => {
     expect(await renderTemplate('a\n  {{ "x" }}', {}, { lstripBlocks: true })).toBe('a\n  x');
@@ -635,9 +633,9 @@ describe('raw and verbatim blocks', () => {
   });
 
   test('nested raw blocks emit inner tags literally', async () => {
-    expect(
-      await renderTemplate('{% raw %}a{% raw %}b{% endraw %}c{% endraw %}tail')
-    ).toBe('a{% raw %}b{% endraw %}ctail');
+    expect(await renderTemplate('{% raw %}a{% raw %}b{% endraw %}c{% endraw %}tail')).toBe(
+      'a{% raw %}b{% endraw %}ctail'
+    );
   });
 
   test('mismatched end tag stays literal content', async () => {
@@ -799,6 +797,15 @@ describe('named slots', () => {
           '{% render card() %}Default {% slot header %}Title{% endslot %}{% slot footer %}Bottom{% endslot %}{% endrender %}'
       )
     ).toBe('<h>Title</h><b>Default </b><f>Bottom</f>');
+  });
+
+  test('a duplicate slot name in one render block fails with DUPLICATE_SLOT', async () => {
+    const err = (await renderTemplate(
+      '{% component c() %}{{ slot("header") }}{% endcomponent %}' +
+        '{% render c() %}{% slot header %}A{% endslot %}{% slot header %}B{% endslot %}{% endrender %}'
+    ).catch((e) => e)) as { code?: string };
+    // WHY: was silent object-literal last-wins — the first slot body vanished.
+    expect(err.code).toBe('DUPLICATE_SLOT');
   });
 
   test('children as default slot', async () => {
