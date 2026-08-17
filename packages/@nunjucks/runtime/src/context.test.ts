@@ -187,3 +187,39 @@ describe('Context', () => {
     expect(ctx.getExported()).toEqual({});
   });
 });
+
+describe('prototype-escape guards (RCE pins)', () => {
+  const escapeNames = ['__proto__', 'constructor', 'prototype'] as const;
+
+  test('lookup never resolves inherited Object.prototype members', () => {
+    const ctx = createContext({ ctx: {}, env: fakeEnv });
+    for (const name of escapeNames) {
+      expect(ctx.lookup(name)).toBeUndefined();
+    }
+  });
+
+  test('lookup still resolves an own prototype-escape binding (host explicit choice)', () => {
+    const ctx = createContext({ ctx: { constructor: 'host-owned' }, env: fakeEnv });
+    expect(ctx.lookup('constructor')).toBe('host-owned');
+  });
+
+  test('getBlock throws UNDEFINED_BLOCK for inherited members instead of returning them', () => {
+    const ctx = createContext({ env: fakeEnv });
+    for (const name of escapeNames) {
+      expect(() => ctx.getBlock(name)).toThrow(`Undefined block: ${name}`);
+    }
+  });
+
+  test('getBlock still returns an own block stored under a prototype-escape name', () => {
+    const fn = () => {};
+    const ctx = createContext({ env: fakeEnv }).addBlock('constructor', fn);
+    expect(ctx.getBlock('constructor')).toBe(fn);
+  });
+
+  test('getSuper throws NO_SUPER_BLOCK for prototype-escape names without an own chain', () => {
+    const ctx = createContext({ env: fakeEnv });
+    expect(() =>
+      ctx.getSuper({ envObj: fakeEnv, name: 'constructor', block: () => {}, frame: null, runtime: null })
+    ).toThrow('No super block available');
+  });
+});

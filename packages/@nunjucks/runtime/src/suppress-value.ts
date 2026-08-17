@@ -9,7 +9,10 @@ const JSON_SCALAR_RE =
   /^(?:true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')$/u;
 const JSON_CONTAINER_RE = /^[[{]/u;
 const RAW_OR_ESCAPED_LT_RE = /<|&lt;/u;
-const ESCAPED_HTML_ENTITY_RE = /&[quot;<>]/u;
+// WHY: detects already-entity-encoded JSON payloads (escapeHtml output) so script-context
+// values are not double-escaped. Alternation over the entity names — a character class
+// here would only ever match the `&q` prefix of `&quot;` and never see `&lt;`/`&gt;`.
+const ESCAPED_HTML_ENTITY_RE = /&(?:quot|lt|gt|amp)/u;
 const SCRIPT_VALUE_NOT_HANDLED = Symbol('scriptValueNotHandled');
 
 const escapeValue = (value: unknown, context: HtmlContext = 'html'): string => {
@@ -93,7 +96,7 @@ export function suppressValue(
   const { autoescape, lineno, colno, context = 'html' } = options;
   const loc = { lineno, colno };
   if (isThenable(value)) {
-    return value.then((v) => suppressValue.call(this, v, options));
+    return value.then((resolvedValue) => suppressValue.call(this, resolvedValue, options));
   }
 
   if (autoescape && context === 'script' && !isSafeString(value)) {

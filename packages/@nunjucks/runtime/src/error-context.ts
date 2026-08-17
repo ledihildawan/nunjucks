@@ -11,7 +11,13 @@ interface LogContextShape {
 const hasLogContext = (
   runtimeContext: unknown
 ): runtimeContext is { logContext: LogContextShape } =>
-  runtimeContext != null && typeof runtimeContext === 'object' && 'logContext' in runtimeContext;
+  runtimeContext != null &&
+  typeof runtimeContext === 'object' &&
+  'logContext' in runtimeContext &&
+  // WHY: presence alone is not enough — a null logContext would pass an `in` check
+  // and then crash every downstream property read, masking the original error.
+  (runtimeContext as { logContext?: unknown }).logContext != null &&
+  typeof (runtimeContext as { logContext?: unknown }).logContext === 'object';
 
 export const getLogContext = (runtimeContext: unknown): LogContextShape => {
   if (hasLogContext(runtimeContext)) {

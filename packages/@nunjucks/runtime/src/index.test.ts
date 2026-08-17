@@ -37,7 +37,6 @@ describe('@nunjucks/runtime barrel', () => {
 
   test('exports constants', () => {
     expect(runtime.HOOK_EVENTS).toBeDefined();
-    expect(runtime.UNDEFINED_MODES).toBeDefined();
-    expect(runtime.DEFAULT_UNDEFINED_MODE).toBeDefined();
+    expect(runtime.createRenderRuntime).toBeDefined();
   });
 });

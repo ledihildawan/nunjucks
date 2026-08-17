@@ -77,7 +77,7 @@ const resolveComponentArgs = ({
     const extraArgs = componentArgs.slice(argNames.length, argCount);
     const extraKwargs = Object.fromEntries(
       extraArgs
-        .map((value, i) => [kwargNames[i], value] as [string | undefined, unknown])
+        .map((value, index) => [kwargNames[index], value] as [string | undefined, unknown])
         .filter((entry): entry is [string, unknown] => entry[0] !== undefined)
     );
     return [...componentArgs.slice(0, argNames.length), { ...kwargs, ...extraKwargs }];
@@ -87,7 +87,7 @@ const resolveComponentArgs = ({
     const missingNames = argNames.slice(argCount);
     const consumedSet = new Set(missingNames);
     const remainingKwargs = createKeywordArgs(
-      Object.fromEntries(Object.entries(kwargs).filter(([k]) => !consumedSet.has(k)))
+      Object.fromEntries(Object.entries(kwargs).filter(([name]) => !consumedSet.has(name)))
     );
     return [
       ...componentArgs.slice(0, argCount),
@@ -111,20 +111,21 @@ export const getKeywordArgs = (args: unknown[]): Record<string, unknown> => {
   if (kwargObjs.length === 0) {
     return {};
   }
-  return Object.assign({}, ...kwargObjs);
+  // WHY: fromEntries uses define-own semantics — a template-authored '__proto__' key in
+  // kwargs becomes an own property instead of retargeting the merge target's prototype
+  // the way Object.assign's [[Set]] merge would; mirrors context.fork's merge convention.
+  return Object.fromEntries(kwargObjs.flatMap((kwargObj) => Object.entries(kwargObj)));
 };
 
 export const numArgs = (args: unknown[]): number => {
-  const len = args.length;
-  if (len === 0) {
-    return 0;
-  }
-
-  const lastArg = args[len - 1];
-  if (isKeywordArgsObject(lastArg)) {
-    return len - 1;
-  }
-  return len;
+  // WHY: count NON-keyword args anywhere in the list — the previous last-position-only
+  // check miscounted when a caller appended a second keyword envelope (e.g. {% render %}
+  // merges its slots envelope after user kwargs), letting the first envelope bind
+  // positionally. getKeywordArgs already merges every keyword object.
+  return args.reduce<number>(
+    (count, arg) => count + (isKeywordArgsObject(arg) ? 0 : 1),
+    0
+  );
 };
 
 export type { ComponentContext };

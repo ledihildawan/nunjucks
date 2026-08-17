@@ -100,8 +100,12 @@ describe('hasLogContext (module-private — exercised via getLogContext)', () =>
     });
   });
 
-  test('checks key presence only: a present-but-null logContext is still detected', () => {
-    expect(getLogContext({ logContext: null }) == null).toBe(true);
+  test('a present-but-null logContext falls back to the default shape (no downstream crash)', () => {
+    expect(getLogContext({ logContext: null })).toEqual({
+      templateName: null,
+      phase: 'render',
+      renderContext: null,
+    });
   });
 });
 

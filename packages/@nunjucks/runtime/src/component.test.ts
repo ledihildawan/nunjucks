@@ -50,6 +50,17 @@ describe('getKeywordArgs', () => {
       keywords: true,
     });
   });
+
+  test('merges kwargs with define-own semantics — __proto__ stays an own property', () => {
+    // WHY: JSON.parse creates __proto__ as an own property (no [[Set]] side effect),
+    // which is exactly the shape a hostile template-authored kwargs object would present.
+    const malicious = createKeywordArgs(
+      JSON.parse('{"__proto__": {"polluted": true}}') as Record<string, unknown>
+    );
+    const merged = getKeywordArgs([malicious]);
+    expect(Object.hasOwn(merged, '__proto__')).toBe(true);
+    expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
+  });
 });
 
 describe('createComponent', () => {

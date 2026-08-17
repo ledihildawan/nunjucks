@@ -138,6 +138,10 @@ describe('builtin tests', () => {
       expect(T('matches', 'hello', 'a'.repeat(257))).toBe(false);
       expect(T('matches', 'hello', `^${'a'.repeat(256)}`)).toBe(false);
     });
+    test('matches rejects overly long subjects (ReDoS cap)', () => {
+      expect(T('matches', 'a'.repeat(10_001), '^a+$')).toBe(false);
+      expect(T('matches', 'a'.repeat(10_000), '^a+$')).toBe(true);
+    });
   });
 
   describe('container', () => {
@@ -214,5 +218,14 @@ describe('builtin tests', () => {
 
   test('unknown test returns false', () => {
     expect(T('nonexistent', 'x')).toBe(false);
+  });
+
+  // WHY: drift pin — the runtime registry and shared's BUILTIN_TEST_NAMES (consumed by
+  // the lexer for `x is <name>` keyword tokenization) must stay in lockstep; a name
+  // added to one without the other silently breaks either tokenization or execution.
+  test('BUILTIN_TESTS registry matches shared BUILTIN_TEST_NAMES exactly', async () => {
+    const { collectBuiltinTestNames } = await import('./builtin-predicates.ts');
+    const { BUILTIN_TEST_NAMES } = await import('@nunjucks/shared');
+    expect(collectBuiltinTestNames()).toEqual([...BUILTIN_TEST_NAMES].sort());
   });
 });

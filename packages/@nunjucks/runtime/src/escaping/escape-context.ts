@@ -22,8 +22,10 @@ const escapeForContext = (str: string, context: HtmlContext): string => {
       return escapeScriptString(str);
     case 'style':
       return escapeStyle(str);
-    case 'comment':
-      return str.replaceAll('-->', '--&gt;');
+  case 'comment':
+    // WHY: both HTML-spec abrupt-close sequences terminate comments — `-->` and the
+    // legacy `--!>`; escaping only the first leaves the second as a comment breakout.
+    return str.replaceAll('-->', '--&gt;').replaceAll('--!>', '--!&gt;');
     default:
       return escapeHtml(str);
   }
@@ -36,9 +38,15 @@ interface ScriptStyleScan {
 }
 
 const UNCLOSED_OPEN_TAG_RE = /<[a-zA-Z][a-zA-Z0-9]*(?:\s+[^>]*)?$/i;
-// WHY: must NOT consume the opening quote — afterEquals has to start at the delimiter so
-// the quote check below can distinguish quoted from unquoted values.
-const ATTRIBUTE_EQUALS_RE = /[=][\s]*/;
+// WHY: global — the LAST `=` in the open tag governs the pending interpolation, not
+// the first. With `<a class="btn" href={{v}}` the first `=` belongs to `class`;
+// selecting it misclassifies the unquoted `href` value as quoted (XSS breakout:
+// `escapeAttribute` does not encode spaces/`=`), and the reverse shape
+// (`<div class={{v}} title="{{t}}`) percent-encodes a quoted value. The residual
+// edge (an `=` inside an earlier quoted value, e.g. `title="x=y" href={{u}}`)
+// resolves to the wrong `=` only when the interpolation precedes that attribute —
+// and the failure mode is the stricter unquoted escaping, so it fails closed.
+const ATTRIBUTE_EQUALS_RE = /[=][\s]*/g;
 const QUOTE_CHARS = ['"', "'", '`'];
 
 const lastMatch = (re: RegExp, text: string): RegExpExecArray | undefined => {
@@ -61,12 +69,19 @@ const scanScriptStyleContext = (before: string): ScriptStyleScan => {
   const scriptClose = lastMatchStart(/<\/script\s*>/gi, before);
   const styleOpen = lastMatchEnd(/<style[\s>]/gi, before);
   const styleClose = lastMatchStart(/<\/style\s*>/gi, before);
+  const commentOpen = lastMatchEnd(/<!--/g, before);
+  const commentClose = lastMatchStart(/-->/g, before);
 
   if (scriptOpen > scriptClose && scriptOpen > styleOpen && scriptOpen > styleClose) {
     return { context: 'script', lastOpen: scriptOpen, lastClose: scriptClose };
   }
-  if (styleOpen > styleClose && styleOpen >= scriptOpen && styleOpen > scriptClose) {
+  if (styleOpen > scriptClose && styleOpen > styleClose && styleOpen >= scriptOpen) {
     return { context: 'style', lastOpen: styleOpen, lastClose: styleClose };
+  }
+  // WHY: an unclosed `<!--` governs interpolations inside comment bodies — they need
+  // the comment escaper (both abrupt-close sequences) instead of plain escapeHtml.
+  if (commentOpen > commentClose) {
+    return { context: 'comment', lastOpen: commentOpen, lastClose: commentClose };
   }
   return { context: 'html', lastOpen: -1, lastClose: -1 };
 };
@@ -90,7 +105,7 @@ const detectAttributeContext = (
     return 'html';
   }
 
-  const equalsMatch = ATTRIBUTE_EQUALS_RE.exec(openTagContent);
+  const equalsMatch = lastMatch(ATTRIBUTE_EQUALS_RE, openTagContent);
   if (!equalsMatch) {
     return 'html';
   }

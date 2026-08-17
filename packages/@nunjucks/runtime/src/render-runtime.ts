@@ -24,6 +24,10 @@ import { ensureDefined } from './undefined-resolution.ts';
 interface RenderRuntimeOptions {
   templateName?: string;
   renderContext?: unknown;
+  // WHY: the caller (core render pipeline) owns the collector array so it can drain
+  // warnings for dev-mode injection after the render completes; without this the
+  // runtime allocates a private array that no consumer can read.
+  warnings?: unknown[];
 }
 
 // WHY: this object is the compiler-emitted contract surface — every property must be exactly
@@ -62,7 +66,7 @@ const createRenderRuntime = (options?: RenderRuntimeOptions) => ({
   runFilter,
   ...(options
     ? {
-        [WARNINGS_CONTEXT_KEY]: [] as unknown[],
+        [WARNINGS_CONTEXT_KEY]: options.warnings ?? ([] as unknown[]),
         logContext: {
           templateName: options.templateName ?? 'inline',
           phase: 'render' as const,

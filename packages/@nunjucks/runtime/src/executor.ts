@@ -18,6 +18,12 @@ interface ExecuteConfig {
   sandboxMode?: SandboxMode;
   sandboxEnvironment?: Environment;
   executionTimeoutMs?: number;
+  // WHY: diagnostics channel — templateName feeds error enrichment (logContext) and
+  // warningsCollector is the array the runtime pushes undefined-mode warnings onto;
+  // the caller keeps the reference and drains it after the render.
+  templateName?: string;
+  renderContext?: unknown;
+  warningsCollector?: unknown[];
 }
 
 interface ExecuteOptions {
@@ -70,7 +76,13 @@ const collectStringWithDeadline = async (
 };
 
 const buildRuntime = (config: ExecuteConfig): RenderRuntime => {
-  const runtime = createRenderRuntime();
+  // WHY: diagnostics options are always threaded (fields optional) so logContext and
+  // the warnings slot exist even under the sandbox wrapper's spread.
+  const runtime = createRenderRuntime({
+    templateName: config.templateName,
+    renderContext: config.renderContext,
+    warnings: config.warningsCollector,
+  });
 
   if (config.sandbox) {
     const sandboxOptions = buildSandboxOptions(config);
@@ -125,5 +137,5 @@ const executeStream = (options: ExecuteOptions): AsyncGenerator<string, unknown>
   return render(resolvedEnv, ctx, frame, runtime);
 };
 
-export type { ExecuteConfig, ExecuteOptions, SandboxMode };
+export type { ExecuteConfig, ExecuteOptions };
 export { execute, executeStream };

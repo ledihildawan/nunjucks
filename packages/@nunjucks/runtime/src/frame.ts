@@ -1,4 +1,5 @@
-import { isPlainObject } from '@nunjucks/lib';
+import { hasOwn, isPlainObject } from '@nunjucks/lib';
+import { isPrototypeEscapeKey } from '@nunjucks/shared';
 import { reduce } from 'remeda';
 import type { CreateFrameOptions, Frame, FrameSetOptions } from './runtime-contract/frame.ts';
 
@@ -71,9 +72,12 @@ export const createFrame = (options: CreateFrameOptions = {}): Frame => {
     },
 
     set({ name, value, resolveUp = false }: FrameSetOptions): Frame {
+      if (name === '') {
+        return frame;
+      }
       const parts = name.split('.');
       const [firstPart] = parts;
-      if (firstPart === undefined || parts.length === 0) {
+      if (firstPart === undefined) {
         return frame;
       }
 
@@ -103,10 +107,20 @@ export const createFrame = (options: CreateFrameOptions = {}): Frame => {
     },
 
     get(name: string): unknown {
+      // WHY: RCE guard, mirroring context.lookup — the immutable spread writes in
+      // setNestedValueImmutable rebuild `variables` as plain Object.prototype-literals,
+      // so inherited `constructor`/`__proto__`/`prototype` must resolve as own
+      // properties only (the host's explicit choice), never through the chain.
+      if (isPrototypeEscapeKey(name) && !hasOwn(state.variables, name)) {
+        return undefined;
+      }
       return state.variables[name];
     },
 
     lookup(name: string): unknown {
+      if (isPrototypeEscapeKey(name) && !hasOwn(state.variables, name)) {
+        return state.parent?.lookup(name);
+      }
       const value = state.variables[name];
       if (value !== undefined) {
         return value;
@@ -118,7 +132,10 @@ export const createFrame = (options: CreateFrameOptions = {}): Frame => {
       if (forWrite && state.isolateWrites) {
         return;
       }
-      if (state.variables[name] !== undefined) {
+      const hasOwnBinding = isPrototypeEscapeKey(name)
+        ? hasOwn(state.variables, name)
+        : state.variables[name] !== undefined;
+      if (hasOwnBinding) {
         return frame;
       }
       // WHY: forWrite must survive the whole chain — write isolation guards every isolated
@@ -166,7 +183,7 @@ const rebuildChain = ({ root, target, newTargetVariables }: RebuildChainInput): 
     topLevel: target.topLevel,
   });
   return reduce(
-    [...path].reverse(),
+    path.toReversed(),
     (acc, node) =>
       createFrame({
         parent: acc,

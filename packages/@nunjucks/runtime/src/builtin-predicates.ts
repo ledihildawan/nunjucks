@@ -8,7 +8,15 @@ type TestFn = (target: unknown, ...args: unknown[]) => boolean;
 // backtracking (ReDoS) once compiled, so overly long patterns are rejected outright.
 const MAX_MATCHES_PATTERN_LENGTH = 256;
 
+// WHY: a bounded pattern can still backtrack pathologically against an unbounded subject
+// (e.g. `(a+)+$` on a long non-matching string) — oversized subjects are rejected the same
+// way oversized patterns are, instead of stalling the render loop.
+const MAX_MATCHES_TARGET_LENGTH = 10_000;
+
 const matchesPattern = (target: string, pattern: unknown): boolean => {
+  if (target.length > MAX_MATCHES_TARGET_LENGTH) {
+    return false;
+  }
   if (pattern instanceof RegExp) {
     return pattern.test(target);
   }
@@ -108,7 +116,7 @@ const BUILTIN_TESTS: Readonly<Record<string, TestFn>> = {
   sameas: (target, other) => target === other,
   equalto: (target, other) => JSON.stringify(target) === JSON.stringify(other),
   has: (target, key) => isKeyedObject(target) && String(key) in target,
-  hasown: (target, key) => Object.hasOwn(target as object, String(key)),
+  hasown: (target, key) => isKeyedObject(target) && Object.hasOwn(target, String(key)),
   safe: (target) => isSafeString(target),
   escaped: (target) => !isSafeString(target),
 };
@@ -129,4 +137,8 @@ const runTest = (env: unknown, name: string, target: unknown, ...args: unknown[]
   return false;
 };
 
-export { runTest };
+// WHY: module-level export for the co-located drift-pin test only — the registry is
+// not part of the package's public surface (tests import the module directly).
+const collectBuiltinTestNames = (): readonly string[] => Object.keys(BUILTIN_TESTS).sort();
+
+export { runTest, collectBuiltinTestNames };

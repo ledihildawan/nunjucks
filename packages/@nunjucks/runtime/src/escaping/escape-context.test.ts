@@ -31,6 +31,10 @@ describe('escapeForContext', () => {
     expect(escapeForContext('a --> b', 'comment')).toBe('a --&gt; b');
   });
 
+  test('comment context neutralizes the legacy --!> abrupt-close sequence', () => {
+    expect(escapeForContext('a --!> b', 'comment')).toBe('a --!&gt; b');
+  });
+
   test('unquoted-attribute context percent-encodes delimiters (XSS breakout guard)', () => {
     expect(escapeForContext('x onmouseover=alert(1)', 'unquoted-attribute')).toBe(
       'x%20onmouseover%3Dalert(1)'
@@ -82,6 +86,32 @@ describe('createHtmlContextTracker', () => {
     const src = '<div class="{{ USERVAL }}"></div>';
     const tracker = createHtmlContextTracker(src);
     expect(tracker.getContextAt(src.indexOf('USERVAL'))).toBe('attribute');
+  });
+
+  test('multi-attribute tag: unquoted value after an earlier quoted attr is unquoted (last = governs)', () => {
+    // WHY: XSS regression pin — with first-`=` selection this was misread as quoted and
+    // `url = "x onclick=alert(1)"` broke out of the attribute under escapeAttribute.
+    const src = '<a class="btn" href={{ USERVAL }}>';
+    const tracker = createHtmlContextTracker(src);
+    expect(tracker.getContextAt(src.indexOf('USERVAL'))).toBe('unquoted-attribute');
+  });
+
+  test('multi-attribute tag: quoted value after an earlier unquoted attr is quoted', () => {
+    const src = '<div class={{ EARLIER }} title="{{ USERVAL }}">';
+    const tracker = createHtmlContextTracker(src);
+    expect(tracker.getContextAt(src.indexOf('USERVAL'))).toBe('attribute');
+  });
+
+  test('detects comment context inside an unclosed <!-- body', () => {
+    const src = '<div>x</div>\n<!-- USERVAL';
+    const tracker = createHtmlContextTracker(src);
+    expect(tracker.getContextAt(src.indexOf('USERVAL'))).toBe('comment');
+  });
+
+  test('comment context closes at --> and falls back to html', () => {
+    const src = '<!-- c --> USERVAL';
+    const tracker = createHtmlContextTracker(src);
+    expect(tracker.getContextAt(src.indexOf('USERVAL'))).toBe('html');
   });
 
   test('defaults to html context outside tags', () => {

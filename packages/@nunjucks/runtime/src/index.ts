@@ -21,14 +21,10 @@ export {
 export { getLogContext } from './error-context.ts';
 export { createHtmlContextTracker, type HtmlContext } from './escaping/index.ts';
 export { type ExecuteConfig, execute, executeStream } from './executor.ts';
-export type { RunFilterOptions } from './filter-runtime.ts';
 export { runFilter } from './filter-runtime.ts';
 export { createFrame, type Frame, type FrameSetOptions } from './frame.ts';
 export { handleError } from './handle-error.ts';
-export {
-  HOOK_EVENTS,
-  type HookEvent,
-} from './hooks.ts';
+export { HOOK_EVENTS } from './hooks.ts';
 export { contextOrFrameLookup } from './lookups.ts';
 export {
   memberLookup,
@@ -48,9 +44,8 @@ export {
   type ResolvedSandboxOptions,
   type SandboxOptions,
 } from './sandbox/index.ts';
-export { createSlotContext, type SlotContext, type SlotFn } from './slots.ts';
+export { createSlotContext, type SlotContext } from './slots.ts';
 export { isStreamErrorSentinel, type StreamErrorSentinel, streamError } from './stream-error.ts';
-export { FATAL_STREAM_CODES } from './stream-fatal-codes.ts';
 export {
   createStreamTimeoutError,
   isStreamTimeoutError,
@@ -58,10 +53,5 @@ export {
 } from './stream-timeout.ts';
 export type { SuppressValueOptions } from './suppress-value.ts';
 export { suppressValue } from './suppress-value.ts';
-export {
-  DEFAULT_UNDEFINED_MODE,
-  UNDEFINED_MODES,
-  type UndefinedMode,
-} from './undefined.ts';
 export type { EnsureDefinedOptions } from './undefined-resolution.ts';
 export { ensureDefined } from './undefined-resolution.ts';

@@ -1,6 +1,6 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { ErrorDefinitionEntry } from '@nunjucks/error-formatter';
-import type { HandledUndefinedMode, Phase } from '@nunjucks/shared';
+import type { Phase, UndefinedMode } from '@nunjucks/shared';
 import { throwRuntimeError } from './error-context.ts';
 import type { NullAccessResult, PropertyNotFoundResult } from './member-access.ts';
 import { emitUndefinedWarning } from './shell/warning-emitter.ts';
@@ -11,7 +11,9 @@ export interface ResolveUndefinedOptions {
   varName: string | null;
   lineno?: number | null;
   colno?: number | null;
-  mode: HandledUndefinedMode;
+  // WHY: full UndefinedMode — 'default' flows here from user config via emitted code;
+  // only 'strict' (throw) and 'debug' (warn) have behavior, all others fall through.
+  mode: UndefinedMode;
   phase: Phase;
   templateName: string;
 }

@@ -1,5 +1,5 @@
 import { isNonNullish } from '@nunjucks/lib';
-import { DEFAULT_UNDEFINED_MODE, type HandledUndefinedMode } from '@nunjucks/shared';
+import { DEFAULT_UNDEFINED_MODE, type UndefinedMode } from '@nunjucks/shared';
 import { getLogContext } from './error-context.ts';
 import { isNullAccessResult, isPropertyNotFoundResult } from './member-access.ts';
 import {
@@ -13,7 +13,10 @@ export interface EnsureDefinedOptions {
   lineno?: number | null;
   colno?: number | null;
   varName?: string | null;
-  undefinedMode?: HandledUndefinedMode;
+  // WHY: widened to the full UndefinedMode — the compiler threads the user-facing
+  // 'default' mode into this emitted-code channel verbatim; only 'strict' and 'debug'
+  // have resolver behavior, every other value falls through to the undefined string.
+  undefinedMode?: UndefinedMode;
 }
 
 export function ensureDefined(

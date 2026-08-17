@@ -154,4 +154,23 @@ describe('Frame', () => {
     const f = createFrame();
     expect(f.topLevel).toBe(false);
   });
+
+  test('prototype-escape keys never resolve after an immutable set rebuilds variables', () => {
+    let frame = createFrame();
+    frame = frame.set({ name: 'x', value: 1 });
+    expect(frame.get('constructor')).toBeUndefined();
+    expect(frame.get('__proto__')).toBeUndefined();
+    expect(frame.get('prototype')).toBeUndefined();
+    expect(frame.lookup('constructor')).toBeUndefined();
+    expect(frame.lookup('__proto__')).toBeUndefined();
+    expect(frame.resolve('constructor')).toBeUndefined();
+  });
+
+  test('an own prototype-escape binding still resolves (identifier named constructor)', () => {
+    let frame = createFrame();
+    frame = frame.set({ name: 'constructor', value: 42 });
+    expect(frame.get('constructor')).toBe(42);
+    expect(frame.lookup('constructor')).toBe(42);
+    expect(frame.resolve('constructor')).toBe(frame);
+  });
 });
