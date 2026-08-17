@@ -29,12 +29,14 @@ const redactSecretValues = (line: string, blockedKeys: readonly string[] | null)
   );
 };
 
+/** A single line of a source trace: 1-based `number`, redacted `content`, error flag. */
 interface SourceTraceLine {
   number: number;
   content: string;
   isError: boolean;
 }
 
+/** Caret underline for the offending token: 0-based char offsets and the `carets` string. */
 interface SourceTraceCaret {
   line: number;
   charStart: number;
@@ -42,6 +44,11 @@ interface SourceTraceCaret {
   carets: string;
 }
 
+/**
+ * A windowed, redacted view of template source around an error: numbered lines, an
+ * optional caret, and the resolved 1-based display coordinates and path. Empty `lines`
+ * means no source was available or the line fell outside the window.
+ */
 interface SourceTrace {
   lines: SourceTraceLine[];
   caret: SourceTraceCaret | null;
@@ -109,6 +116,12 @@ const windowSourceTrace = (params: {
   return { lines: traceLines, caret, displayLine, displayCol, resolvedPath };
 };
 
+/**
+ * Builds a source trace around the error location: converts coordinates to 1-based,
+ * windows `context` lines around the error, redacts blocked-key values in place, and
+ * computes a caret underline from the display column. Missing source yields empty
+ * `lines` with coordinates preserved.
+ */
 const buildSourceTrace = (input: BuildSourceTraceInput): SourceTrace => {
   const {
     sourceContent = null,

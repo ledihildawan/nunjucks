@@ -63,6 +63,7 @@ interface MediumAnsiInput {
   ide: string;
 }
 
+/** Formats a one-line ANSI summary: message, location, and the first cause/docs hint. */
 const formatMediumAnsi = (message: string, input: MediumAnsiInput): string => {
   const [firstCause] = input.causes;
   const causeHint = firstCause ? stripInlineMarkdown(firstCause) : '';
@@ -95,6 +96,10 @@ interface ExtractAnsiErrorPartsInput {
   colno?: number | null;
 }
 
+/**
+ * Extracts catalog parts plus display-location inputs from an error, preferring explicit
+ * caller coordinates over the error's own fields; missing values degrade to `''`/`null`.
+ */
 const extractAnsiErrorParts = ({
   error,
   templatePath,
@@ -121,6 +126,11 @@ interface FullAnsiInput {
   error: unknown;
 }
 
+/**
+ * Assembles the full ANSI diagnostic: severity-colored header, source trace with caret,
+ * possible causes, suggested fix, sanitized render context, and linkified stack frames.
+ * Empty sections are dropped rather than rendered as blanks.
+ */
 const formatFullAnsi = (message: string, input: FullAnsiInput): string => {
   const { parts, ide, sourceTrace, renderContext, error } = input;
   const { causes, fixCode, fixComment, documentationUrl, severity, path } = parts;

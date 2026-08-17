@@ -81,6 +81,11 @@ const buildErrorDocument = (error: ErrorLike, options: ToHtmlOptions): string =>
   });
 };
 
+/**
+ * Renders an error as a complete HTML document. Production (the default unless `dev` is
+ * true) gets the safe "Rendering Interrupted" page; dev gets the full diagnostic page.
+ * A null error also renders the production body.
+ */
 const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
   const { csp } = options;
   // WHY: safe-by-default derivation (mirrors createFormatterState) — an unspecified

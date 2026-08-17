@@ -4,10 +4,12 @@ import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
 
 export type { ErrorLike };
 
+/** Content-Security-Policy options; the nonce is escaped and threaded onto style/script tags. */
 interface Csp {
   nonce?: string;
 }
 
+/** Inputs for resolving a human-facing title from a classified category and plain message. */
 interface HumanTitleInput {
   category: string;
   undefinedName: string | null;
@@ -15,6 +17,7 @@ interface HumanTitleInput {
   fallback: string;
 }
 
+/** Catalog classification merged with the renderer-specific fields the HTML page displays. */
 interface ClassifiedError {
   category: string;
   undefinedName: string | null;
@@ -26,6 +29,7 @@ interface ClassifiedError {
   severity: ErrorSeverity;
 }
 
+/** Resolved 1-based display coordinates plus the display path and its originating `LineBase`. */
 interface LocationInfo {
   displayLine: number;
   displayCol: number;
@@ -33,6 +37,11 @@ interface LocationInfo {
   lineBaseValue: LineBase;
 }
 
+/**
+ * Options for the HTML error page; production output is safe-by-default — an unspecified
+ * `isProduction` derives to `!(dev ?? false)` so stack, render context, and source
+ * content never ship without an explicit opt-in.
+ */
 interface ToHtmlOptions {
   templatePath?: string;
   lineno?: number | null;

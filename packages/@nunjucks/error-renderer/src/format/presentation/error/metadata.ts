@@ -3,6 +3,7 @@ import type { Phase } from '@nunjucks/shared';
 import { DEFAULT_IDE } from '../ide-links/defaults.ts';
 import type { SourceTrace } from '../source-trace/source-trace.ts';
 
+/** Log metadata normalized for the formatter: location, identity, and context fields. */
 export interface NormalizedLogMetadata {
   lineno: number | null;
   colno: number | null;

@@ -12,6 +12,10 @@ import {
 import { buildErrorDisplay } from './to-html-display.ts';
 import type { ClassifiedError, ErrorLike } from './to-html-types.ts';
 
+/**
+ * Inputs for assembling an error page; caller-provided location and context fields fall
+ * back to the corresponding fields carried on the error object itself.
+ */
 interface ErrorSectionsInput {
   error: ErrorLike;
   templatePath?: string;
@@ -30,6 +34,10 @@ interface ErrorSectionsInput {
   projectRoot?: string;
 }
 
+/**
+ * Computed error-page sections plus the resolved display coordinates, severity, and
+ * location string shared by the full-page and marker renderers.
+ */
 interface ErrorSections {
   header: string;
   body: string;

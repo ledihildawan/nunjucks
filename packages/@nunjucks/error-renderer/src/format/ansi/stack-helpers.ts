@@ -25,9 +25,11 @@ const getSeverityColor = (severity?: string): ((text: string) => string) => {
   return picocolors.red;
 };
 
+/** Formats the severity label, bolded and colored red/yellow/blue by severity. */
 const getSeverityLabel = (severity?: string): ReturnType<typeof picocolors.bold> =>
   picocolors.bold(getSeverityColor(severity)('Error:'));
 
+/** Joins the first cause hint and docs URL into a ` | `-separated suffix, or `''`. */
 const getExtrasPart = (causeHint: string, docHint: string): string => {
   const extras = pipe([causeHint, docHint], filter(Boolean), join(' | '));
   if (!extras) {
@@ -36,6 +38,11 @@ const getExtrasPart = (causeHint: string, docHint: string): string => {
   return `\n${extras}`;
 };
 
+/**
+ * Formats one stack frame for ANSI output, shortening the path and wrapping real file
+ * locations in a terminal hyperlink to the configured IDE; unparseable frames pass
+ * through as raw text.
+ */
 const formatStackLine = (line: string, ide: string): string => {
   const frame = parseStackFrame(line);
   if (!(frame.path && frame.line !== null)) {
@@ -70,6 +77,10 @@ interface FormatLocationStringInput {
   ide: string;
 }
 
+/**
+ * Formats the ` at path:line:col` location suffix, hyperlinking it to the configured
+ * IDE when the path is a real file; an empty path yields an empty string.
+ */
 const formatLocationString = ({ path, location, ide }: FormatLocationStringInput): string => {
   if (!path) {
     return '';

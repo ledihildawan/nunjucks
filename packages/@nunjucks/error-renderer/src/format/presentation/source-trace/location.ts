@@ -11,6 +11,11 @@ interface LocationInput {
   lineBase?: LineBase | null;
 }
 
+/**
+ * Normalizes engine coordinates to 1-based display coordinates: `'zero'`-based input is
+ * shifted up by one (defaulting to line 1, col 1) while `'one'`-based input passes
+ * through unchanged with the same floor.
+ */
 export const toDisplayLocation = ({ lineno, colno, lineBase }: LocationInput): DisplayLocation => {
   const lineBaseValue = normalizeLineBase(lineBase);
   const safeLine = lineno ?? 0;

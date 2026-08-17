@@ -6,6 +6,10 @@ const FILE_PATH_PATTERN =
 const NATIVE_FRAME_RE = /^native$/iu;
 const ANGLE_PREFIX_RE = /^</u;
 
+/**
+ * Checks whether a string looks like a real file path: non-empty, ending in a known
+ * source extension, and not `native` or an internal `<anonymous>`-style frame.
+ */
 const isFilePath = (path?: string | null): boolean =>
   typeof path === 'string' &&
   path.trim() !== '' &&
@@ -32,6 +36,11 @@ type IdeType =
   | 'custom'
   | 'unknown';
 
+/**
+ * Resolves an IDE open-command URL for a path/line/col target. A function `ide` takes
+ * over entirely; JetBrains defers to its landing page, and any unrecognized name falls
+ * back to the `vscode://` scheme.
+ */
 const resolveIdeLink = (ide: string | IdeLinkFn, target: LinkTarget): string => {
   if (typeof ide === 'function') {
     return ide(target.path, target.line, target.col);
@@ -116,6 +125,10 @@ const PYCHARM_ICON =
 const BBEDIT_ICON =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M12 6l-4 4h3v4h2v-4h3z"/></svg>';
 
+/**
+ * Resolves the display label, brand color, and inline SVG icon for an IDE name,
+ * case-insensitively; unknown names fall back to VS Code branding.
+ */
 const getIdeMeta = (ide?: string): { label: string; color: string | null; icon: string } => {
   const normalizedIde = (ide || 'unknown').toLowerCase().trim();
 

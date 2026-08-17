@@ -26,6 +26,11 @@ const formatContextValue = (value: unknown): string => {
   return `:\n${entries.join('\n')}`;
 };
 
+/**
+ * Renders the render-context block for ANSI output. Values pass through the safe-context
+ * normalization (redaction, truncation) first; nested objects expand one level while
+ * scalars and arrays are sanitized in place.
+ */
 const renderContextAnsi = (
   context: Record<string, unknown>,
   blockedKeys?: readonly string[] | null

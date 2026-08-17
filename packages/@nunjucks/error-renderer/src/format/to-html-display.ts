@@ -11,6 +11,7 @@ const UNDEFINED_OUTPUT_RE = /attempted to output '([^']+)'/u;
 // literal copy could drift from classification.
 const RESERVED_KEYWORD_RE = ERROR_DEFINITIONS.RESERVED_KEYWORD.pattern;
 
+/** Renders an escaped badge chip, or `''` when the text is missing or empty. */
 const renderBadge = (variant: string, text?: string | null): string => {
   if (!text) {
     return '';
@@ -28,6 +29,10 @@ const catalogTitle = (name: keyof typeof ERROR_DEFINITIONS, subject?: string): s
   return subject === undefined ? template : template.replaceAll('{name}', subject);
 };
 
+/**
+ * Resolves the human-facing title for a classified error, preferring the catalog's
+ * `titleTemplate` for known categories; unmatched categories fall back to `fallback`.
+ */
 const resolveHumanTitle = ({
   category,
   undefinedName,
@@ -68,6 +73,7 @@ const resolveHumanTitle = ({
   }
 };
 
+/** Classifies an error via the catalog and merges attached parts into a display view. */
 const classifyError = (error: ErrorLike): ClassifiedError => {
   const parts = mergeErrorParts(error);
   const classified = classifyFromError(error);
@@ -105,6 +111,10 @@ const resolveErrorLocation = (error: ErrorLike | null, input: ErrorLocationInput
   };
 };
 
+/**
+ * Classifies an error and derives its human title, extracting the undefined name from
+ * the plain message when the classifier did not provide one.
+ */
 const classifyAndBuildTitle = (error: ErrorLike) => {
   const classified = classifyError(error);
   const plain = toText(error, { verbosity: 'simple' });
@@ -117,6 +127,10 @@ const classifyAndBuildTitle = (error: ErrorLike) => {
   });
 };
 
+/**
+ * Classifies the error and resolves its display path and 1-based coordinates in one pass
+ * for the HTML renderers; JS callers get one-based coordinates via `isJsCaller`.
+ */
 const buildErrorDisplay = (
   error: ErrorLike,
   input: {

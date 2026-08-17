@@ -43,6 +43,10 @@ const readStringOrNull = (value: unknown): string | null =>
 
 const readString = (value: unknown): string => (typeof value === 'string' ? value : '');
 
+/**
+ * Merges catalog classification with error-attached parts: classification values win,
+ * and raw string fields on the error fill any gaps, degraded to `''`/`null` when absent.
+ */
 export const mergeErrorParts = (error: unknown): MergedErrorParts => {
   const fields = readErrorPartFields(error);
   // WHY: classifyFromError expects ErrorWithExtras (a structural shape).

@@ -7,6 +7,10 @@ import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import { shortenPath } from './presentation/source-trace/path-shortener.ts';
 import { parseStackFrame } from './presentation/source-trace/stack-parse.ts';
 
+/**
+ * Options for plain-text rendering; the stack is a dev diagnostic and is omitted unless
+ * `dev` is true or `isProduction` is explicitly false.
+ */
 interface ToTextOptions {
   verbosity?: 'simple' | 'medium' | 'full';
   templatePath?: string;
@@ -124,6 +128,11 @@ const formatStack = (error: unknown): string => {
   return pipe(stack, split('\n'), slice(1), map(formatStackLine), join('\n'));
 };
 
+/**
+ * Renders an error as plain text with no ANSI codes. `'simple'` returns the bare message,
+ * `'medium'` a one-liner with location and first hint, and `'full'` adds causes, suggested
+ * fix, and (outside production) the stack; falsy errors render as `''`.
+ */
 const toText = (error: unknown, options: ToTextOptions = {}): string => {
   if (!error) {
     return '';

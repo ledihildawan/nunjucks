@@ -123,6 +123,12 @@ const buildCarets = (highlightWord: string): string => {
   return '^'.repeat(FALLBACK_CARET_WIDTH);
 };
 
+/**
+ * Computes the caret underline for an error position: expands to the enclosing word
+ * (narrowing dotted paths to the pointed-at segment), falls back to a single `^` on
+ * punctuation and `FALLBACK_CARET_WIDTH` carets when no word is found. Returns `null`
+ * for non-positive columns or empty lines.
+ */
 const calculateCaretPosition = (line: string, displayCol: number): CaretResult | null => {
   if (displayCol <= 0 || !line) {
     return null;

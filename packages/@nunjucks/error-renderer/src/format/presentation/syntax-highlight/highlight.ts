@@ -4,6 +4,10 @@ import picocolors from 'picocolors';
 const LEADING_WHITESPACE_RE = /^\s+/u;
 const PLAIN_RUN_RE = /^[^<{}"'|\s]+/u;
 
+/**
+ * Escapes HTML first, then converts the supported inline markers — `` `code` `` and
+ * `**bold**` — into styled `<code>`/`<strong>` elements.
+ */
 const renderInlineMarkdown = (text: string): string => {
   if (!text) {
     return '';
@@ -92,6 +96,11 @@ const nextHtmlChunk = (rest: string, inTag: boolean): HighlightChunk => {
   return { html: escapeHtml(rest[0] ?? ''), length: 1, inTag };
 };
 
+/**
+ * Highlights HTML with escaped `<span class="syntax-*">` markup. Tag-interior rules
+ * (`keyword`, `variable`) apply only between `{{`/`{%` delimiters and their closers,
+ * and the scan is iterative so multi-megabyte lines cannot overflow the stack.
+ */
 const highlightHtml = (code: string): string => {
   if (!code) {
     return '';
@@ -155,6 +164,10 @@ const nextJsChunk = (rest: string): HighlightChunk => {
   return { html: escapeHtml(rest[0] ?? ''), length: 1, inTag: false };
 };
 
+/**
+ * Highlights JavaScript with the same escaped-span scheme as `highlightHtml` (minus the
+ * tag-interior toggle), via an iterative scan for recursion safety.
+ */
 const highlightJs = (code: string): string => {
   if (!code) {
     return '';
@@ -233,6 +246,11 @@ const nextAnsiChunk = (rest: string, inTag: boolean): AnsiChunk => {
   return { text: rest[0] ?? '', length: 1, inTag };
 };
 
+/**
+ * Highlights template syntax directly to ANSI colors using the same tokenizer as the
+ * HTML path, so terminal and browser output stay visually consistent; unknown token
+ * types pass through uncolored.
+ */
 const highlightAnsi = (code: string): string => {
   if (!code) {
     return '';

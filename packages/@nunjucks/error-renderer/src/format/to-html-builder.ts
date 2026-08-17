@@ -54,6 +54,10 @@ interface ErrorHeaderInput {
   locDisplay: string;
 }
 
+/**
+ * Builds the header block with category badges, escaped title, and the IDE-linked
+ * location line; the location line is omitted at `verbosity: 'simple'`.
+ */
 const buildErrorHeader = ({
   humanTitle,
   category,
@@ -173,6 +177,7 @@ interface ErrorFooterInput {
   displayCol: number;
 }
 
+/** Builds the footer with version and timestamp metadata. */
 const buildErrorFooter = ({
   version,
   timestamp,
@@ -217,6 +222,7 @@ interface ErrorBodyContentInput {
   ide: string;
 }
 
+/** Builds the error body sections, returning `''` unless `verbosity` is `'full'`. */
 const buildErrorBodyContent = ({
   verbosity,
   error,
@@ -246,6 +252,7 @@ interface BuildHtmlWrapperOptions {
   footer: string;
 }
 
+/** Wraps header, body, and footer in the main `<main class="error-wrapper">` shell. */
 const buildHtmlWrapper = ({ header, errorBody, footer }: BuildHtmlWrapperOptions): string => `
 <main class="error-wrapper" aria-labelledby="err-title">
   ${header}

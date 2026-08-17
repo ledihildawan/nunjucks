@@ -278,6 +278,11 @@ const normalizeValue = (value: unknown, context: NormalizeContext): unknown => {
   }
 };
 
+/**
+ * Renders an unknown render context as display-safe data: blocked keys redacted, depth
+ * and entry counts capped, strings truncated against a total budget, cycles collapsed
+ * to `[Circular]`, and hostile getters/traps degraded to placeholders instead of throwing.
+ */
 export const normalizeRenderContext = (
   context: unknown,
   options: Partial<Omit<NormalizeState, 'blockedKeys'>> & {

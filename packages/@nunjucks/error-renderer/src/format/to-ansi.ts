@@ -11,6 +11,10 @@ import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
 export type { AnsiOptions };
 export { toAnsi };
 
+/**
+ * Options for ANSI rendering; `verbosity` defaults to `'full'` and `ide` falls back to
+ * `DEFAULT_IDE` when omitted.
+ */
 interface AnsiOptions {
   verbosity?: 'simple' | 'medium' | 'full';
   templatePath?: string;
@@ -21,6 +25,11 @@ interface AnsiOptions {
   renderContext?: Record<string, unknown>;
 }
 
+/**
+ * Renders an error as a terminal-ready ANSI string. `'simple'` returns the bare message,
+ * `'medium'` a one-liner with location and hints, and `'full'` the complete diagnostic with
+ * source trace, render context, and stack; falsy errors render as `''`.
+ */
 const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   if (!error) {
     return '';

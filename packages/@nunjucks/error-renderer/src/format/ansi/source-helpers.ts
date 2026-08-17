@@ -57,6 +57,11 @@ const formatCaretLine = ({ lineNumWidth, charStart, carets }: FormatCaretLineInp
   return `${prefix}${' '.repeat(charStart)}${picocolors.red(carets)}`;
 };
 
+/**
+ * Formats source-trace lines for ANSI output with aligned line-number gutters, `> `
+ * error markers, and a red caret line directly under the offending token; non-error
+ * lines are dimmed.
+ */
 const formatSourceTrace = (lines: SourceTraceLine[], caret: SourceTraceCaret | null): string[] => {
   if (lines.length === 0) {
     return [];

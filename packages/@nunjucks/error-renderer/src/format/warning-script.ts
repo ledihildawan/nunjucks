@@ -2,6 +2,7 @@ import type { Warning } from '@nunjucks/error-catalog';
 import { basename } from '@nunjucks/lib';
 import { DEFAULT_UNDEFINED_MODE } from '@nunjucks/shared';
 
+/** Options controlling the injected browser warnings script. */
 interface WarningScriptOptions {
   dev?: boolean;
   verbosity?: 'simple' | 'medium' | 'full';
@@ -48,6 +49,11 @@ const formatWarning = (
   return `[WARNING] ${message} (${undefinedMode})${locationStr}${codePart}`;
 };
 
+/**
+ * Builds a `<script>` tag that replays engine warnings through `console.warn`, with the
+ * payload JSON-escaped so it cannot break out of the script context; returns `''` when
+ * there are no warnings.
+ */
 const injectWarningsScript = (
   warnings: Warning[] | null | undefined,
   options: WarningScriptOptions = {}

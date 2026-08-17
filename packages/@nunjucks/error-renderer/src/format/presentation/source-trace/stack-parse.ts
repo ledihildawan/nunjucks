@@ -9,6 +9,10 @@ interface ParsedStackFrame {
   col: number | null;
 }
 
+/**
+ * Parses a single V8 stack frame into its callee, path, and 1-based position;
+ * unparseable frames degrade to a fallback with `null` path and coordinates.
+ */
 export const parseStackFrame = (line: string): ParsedStackFrame => {
   const trimmed = line.trim();
   const pathMatch = trimmed.match(STACK_LOCATION_RE);

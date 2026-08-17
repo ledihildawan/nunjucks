@@ -38,6 +38,11 @@ const safeJson = (value: SerializableContext): string =>
 const isSerializableRecord = (value: unknown): value is Record<string, SerializableContext> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+/**
+ * Renders the render-context section: a JSON payload in a `type="application/json"`
+ * script (with `<`, `>`, `&` escaped) plus the expand/collapse/copy toolbar that the
+ * page script wires to the `ctx-tree`; non-object or empty contexts yield `''`.
+ */
 const renderContextHtml = (ctx: unknown, blockedKeys?: readonly string[] | null): string => {
   if (!ctx || typeof ctx !== 'object') {
     return '';
@@ -171,6 +176,11 @@ interface FormatStackTraceHtmlInput {
   ide?: string;
 }
 
+/**
+ * Renders the stack-trace section as linkified rows: the first `STACK_VISIBLE_COUNT`
+ * frames show and the rest collapse behind a toggle button; in production, internal
+ * engine frames are filtered out entirely. Missing stacks yield `''`.
+ */
 const formatStackTraceHtml = ({
   originalError,
   isProduction = false,
