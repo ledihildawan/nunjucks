@@ -1,11 +1,34 @@
 import { describe, expect, test } from 'bun:test';
 import { suppressValue } from './index.ts';
+import { escapeForContext } from './escaping/index.ts';
 import { createSafeString } from './runtime-contract/safe-string.ts';
 
 describe('suppressValue', () => {
   test('returns empty string for null and undefined', () => {
     expect(suppressValue(null)).toBe('');
     expect(suppressValue(undefined)).toBe('');
+  });
+
+  test('SafeStrings pass through html/script contexts but are escaped in attribute contexts', () => {
+    // WHY: regression — tojson (SafeString) in a delimited/undelimited attribute used
+    // to bypass context escaping, so JSON structural quotes terminated the attribute.
+    const safeJson = '{"note":"x\\" onmouseover=\\"alert(1)"}';
+    const safeString = createSafeString(safeJson);
+    // html/script: the SafeString object itself passes through (toString yields val)
+    expect(String(suppressValue(safeString, { autoescape: true }))).toBe(safeJson);
+    expect(String(suppressValue(safeString, { autoescape: true, context: 'script' }))).toBe(
+      safeJson
+    );
+    // attribute contexts: escaped PRIMITIVE string — quotes can no longer terminate
+    const quoted = suppressValue(safeString, {
+      autoescape: true,
+      context: 'attribute',
+    }) as string;
+    expect(quoted).toBe(escapeForContext(safeJson, 'attribute'));
+    expect(quoted).not.toContain('"note":"x');
+    expect(
+      suppressValue(safeString, { autoescape: true, context: 'unquoted-attribute' })
+    ).toBe(escapeForContext(safeJson, 'unquoted-attribute'));
   });
 
   test('returns value unchanged when autoescape is falsy', () => {

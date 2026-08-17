@@ -112,5 +112,16 @@ export function suppressValue(
     return suppressEscapedValue(this, normalized, { context, ...loc });
   }
 
+  // WHY: SafeString marks content "safe for HTML BODY output", not "safe for this
+  // attribute" — tojson's structural quotes (or |safe markup) inside a delimited or
+  // undelimited attribute value terminate the attribute and open an injection window.
+  // Attribute-escaping a SafeString keeps the output entity-decodable, so
+  // JSON.parse(el.dataset.x) still round-trips. Script context keeps the passthrough
+  // (tojson already escapes < as \u003c for script bodies).
+  const isAttributeContext = context === 'attribute' || context === 'unquoted-attribute';
+  if (autoescape && isSafeString(normalized) && isAttributeContext) {
+    return escapeForContext(String(normalized), context);
+  }
+
   return normalized;
 }
