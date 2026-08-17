@@ -22,7 +22,7 @@ describe('compileBlock', () => {
     expect(emitted[0]).toContain('output += await runtime.collectString(');
   });
 
-  test('delegates via yield* in a generator context', () => {
+  test('delegates via yield* in a generator context, guarded on extends', () => {
     const emitted: string[] = [];
     const ctx = {
       emitLine: (s: string) => {
@@ -32,8 +32,12 @@ describe('compileBlock', () => {
       buffer: null,
     };
     compileBlock(asCompiler(ctx), { name: 'content', lineno: 5, colno: 9 } as never);
-    expect(emitted[0]).toContain('yield*');
-    expect(emitted[0]).toContain('getBlock("content", 5, 9)');
+    // WHY: under {% extends %} the parent renders the block during delegation, so the
+    // in-place yield is wrapped in a parentTemplate guard (prevents double rendering).
+    const joined = emitted.join('');
+    expect(joined).toContain('if(parentTemplate === null)');
+    expect(joined).toContain('yield*');
+    expect(joined).toContain('getBlock("content", 5, 9)');
   });
 
   test('falls back to the node location when name is a string', () => {

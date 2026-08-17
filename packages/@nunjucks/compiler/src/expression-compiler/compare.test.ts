@@ -2,27 +2,13 @@ import { describe, expect, test } from 'bun:test';
 import { createFrame } from '@nunjucks/runtime';
 import { asCompiler } from '../test-helpers.ts';
 import { compileCompare, compileIs } from './compare.ts';
+import { makeMarkerCompiler } from './test-helpers.ts';
 
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    compile: (node: { marker?: string }) => {
-      emitted.push(node.marker as string);
-    },
-  };
-};
 const frame = createFrame();
 
 describe('compileCompare', () => {
   test('emits location guard, expr, then each operator with operand and closing parens', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     const node = {
       expr: { marker: 'EXPR' },
       ops: [
@@ -44,7 +30,7 @@ describe('compileCompare', () => {
   });
 
   test('chains multiple operands with one ")" per op plus a trailing ")"', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     const node = {
       expr: { marker: 'X' },
       ops: [
@@ -64,7 +50,7 @@ describe('compileCompare', () => {
 
 describe('compileIs', () => {
   test('emits env.getTest call wrapping the left operand and closes with "=== true)"', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     const node = {
       left: { marker: 'LEFT' },
       right: { value: 'defined' },

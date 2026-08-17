@@ -4,33 +4,13 @@ import { createFrame } from '@nunjucks/runtime';
 import { loc } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileDecrement, compileIncrement } from './increment.ts';
+import { makeIncrementCompiler } from './test-helpers.ts';
 
 const frame = createFrame();
 
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    compile: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'X');
-    },
-  };
-};
-
 describe('compileIncrement', () => {
   test('postfix reads current, increments, returns original', () => {
-    const c = makeCompiler();
+    const c = makeIncrementCompiler();
     const node = {
       lineno: 1,
       colno: 2,
@@ -45,7 +25,7 @@ describe('compileIncrement', () => {
   });
 
   test('prefix increments then reads', () => {
-    const c = makeCompiler();
+    const c = makeIncrementCompiler();
     const node = {
       lineno: 1,
       colno: 2,
@@ -59,7 +39,7 @@ describe('compileIncrement', () => {
   });
 
   test('non-symbol target throws an invalid-left-hand-side error', () => {
-    const c = makeCompiler();
+    const c = makeIncrementCompiler();
     const node = {
       lineno: 1,
       colno: 2,
@@ -75,7 +55,7 @@ describe('compileIncrement', () => {
 
 describe('compileDecrement', () => {
   test('uses minus operator', () => {
-    const c = makeCompiler();
+    const c = makeIncrementCompiler();
     const node = {
       lineno: 1,
       colno: 2,

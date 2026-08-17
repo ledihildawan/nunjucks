@@ -27,7 +27,10 @@ export const compileExtends = (
   compiler.emitLine(`context = context.addBlock(${blockKey}, parentTemplate.blocks[${blockKey}]);`);
   compiler.emitLine('}');
 
-  compiler.emitLine('context.validateBlocks();');
+  // WHY: NO eager validateBlocks here — a multi-level chain cannot know yet whether a
+  // child block matches a grandparent hole (the direct parent may omit it). Validation
+  // runs at getBlock time against the fully-unioned ancestry names instead; a block
+  // matching no hole anywhere still errors there (getBlock → UNDEFINED_BLOCK).
 };
 
 export const compileInclude = (
@@ -61,11 +64,13 @@ export const compileInclude = (
     if (node.only) {
       compiler.emit(`let ${resultVar} = await ${tmplVar}_template.render({}, frame);`);
     } else if (node.with) {
-      compiler.emit('let __forkedCtx = context.fork();');
+      // WHY: fork(childContext) merges via object spread (define-own semantics), so an own
+      // '__proto__' key in the with-expression cannot retarget the forked context's
+      // prototype the way an Object.assign [[Set]] merge would.
       compiler.emit('let __withData = ');
       compiler.compileExpression(node.with, frame);
       compiler.emitLine(';');
-      compiler.emit('Object.assign(__forkedCtx.ctx, __withData);');
+      compiler.emit('let __forkedCtx = context.fork(__withData);');
       compiler.emit(
         `let ${resultVar} = await ${tmplVar}_template.render(__forkedCtx.getVariables(), frame);`
       );

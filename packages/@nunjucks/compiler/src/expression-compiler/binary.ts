@@ -51,7 +51,9 @@ export const compileRange = (
   { node, frame }: CompileNodeInput<RangeNode>
 ): void => {
   emitLocationGuard(compiler, node.lineno, node.colno);
-  compiler.emit('(() => { let s = ');
+  // WHY: awaited async IIFE — the bound subtrees may contain pipe/test calls whose
+  // emission embeds `await`; a sync IIFE would emit invalid generated JS.
+  compiler.emit('await (async () => { let s = ');
   compiler.compile(node.left, frame);
   compiler.emit('; let e = ');
   compiler.compile(node.right, frame);

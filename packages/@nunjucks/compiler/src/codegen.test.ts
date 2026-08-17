@@ -1,13 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import { emitLineLocation, emitLocationGuard, getTemplateName, nextCompilerId } from './codegen.ts';
-import { createCompiler } from './create-compiler.ts';
-
-const makeCompiler = () =>
-  createCompiler({ templateName: 'test', undefinedMode: undefined, source: '' });
+import { makeCodegenCompiler } from './test-helpers.ts';
 
 describe('nextCompilerId', () => {
   test('returns t_N format and increments', () => {
-    const ctx = makeCompiler();
+    const ctx = makeCodegenCompiler();
     expect(nextCompilerId(ctx)).toBe('t_1');
     expect(nextCompilerId(ctx)).toBe('t_2');
     expect(ctx.lastId).toBe(2);
@@ -16,7 +13,7 @@ describe('nextCompilerId', () => {
 
 describe('emitLocationGuard', () => {
   test('emits comma-operator location guard', () => {
-    const ctx = makeCompiler();
+    const ctx = makeCodegenCompiler();
     emitLocationGuard(ctx, 5, 10);
     expect(ctx.codebuf).toEqual(['(lineno = 5, colno = 10, ']);
   });
@@ -24,7 +21,7 @@ describe('emitLocationGuard', () => {
 
 describe('emitLineLocation', () => {
   test('emits statement-style location', () => {
-    const ctx = makeCompiler();
+    const ctx = makeCodegenCompiler();
     emitLineLocation(ctx, 3, 7);
     expect(ctx.codebuf).toEqual(['lineno = 3; colno = 7;\n']);
     expect(ctx.compiledLine).toBe(1);

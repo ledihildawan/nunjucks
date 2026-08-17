@@ -1,20 +1,14 @@
 import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { IncDecNode } from '@nunjucks/nodes';
 import { isSymbol } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import { emitLocationGuard } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
-interface IncrementDecrementOptions {
-  operator: string;
-}
-
 const compileIncrementDecrement = (
   compiler: Compiler,
   node: IncDecNode,
-  _frame: Frame,
-  { operator }: IncrementDecrementOptions
+  operator: string
 ): void => {
   const target = node.target;
 
@@ -52,14 +46,14 @@ const compileIncrementDecrement = (
 
 export const compileIncrement = (
   compiler: Compiler,
-  { node, frame }: CompileNodeInput<IncDecNode>
+  { node }: CompileNodeInput<IncDecNode>
 ): void => {
-  compileIncrementDecrement(compiler, node, frame, { operator: '+' });
+  compileIncrementDecrement(compiler, node, '+');
 };
 
 export const compileDecrement = (
   compiler: Compiler,
-  { node, frame }: CompileNodeInput<IncDecNode>
+  { node }: CompileNodeInput<IncDecNode>
 ): void => {
-  compileIncrementDecrement(compiler, node, frame, { operator: '-' });
+  compileIncrementDecrement(compiler, node, '-');
 };

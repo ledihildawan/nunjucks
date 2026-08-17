@@ -8,35 +8,9 @@ import {
   compileVariableAssignment,
   compileVariableDeclaration,
 } from './variable.ts';
+import { makeVariableCompiler } from './test-helpers.ts';
 
 const frame = createFrame();
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    compile: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'X');
-    },
-    compileExpression: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'V');
-    },
-    fail: (msg: string, ..._rest: unknown[]) => {
-      throw new Error(msg);
-    },
-  };
-};
 
 const declNode = (name: string, valueMarker: string) => ({
   targets: [symbol(ZERO_LOC, name)],
@@ -45,7 +19,7 @@ const declNode = (name: string, valueMarker: string) => ({
 
 describe('compileVariableDeclaration', () => {
   test('emits frame.set with the value', () => {
-    const c = makeCompiler();
+    const c = makeVariableCompiler();
     compileVariableDeclaration(asCompiler(c), { node: declNode('x', 'V') as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('let t_1 =');
@@ -56,7 +30,7 @@ describe('compileVariableDeclaration', () => {
 
 describe('compileVariableAssignment', () => {
   test('emits a ReferenceError guard for undeclared variables', () => {
-    const c = makeCompiler();
+    const c = makeVariableCompiler();
     compileVariableAssignment(asCompiler(c), { node: declNode('x', 'V') as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('ReferenceError');
@@ -67,7 +41,7 @@ describe('compileVariableAssignment', () => {
 
 describe('compileCompoundAssignment', () => {
   test("'+=' emits the plus operator and frame.set", () => {
-    const c = makeCompiler();
+    const c = makeVariableCompiler();
     const node = {
       targets: [symbol(loc({ lineno: 1, colno: 2 }), 'count')],
       operator: '+=',
@@ -83,7 +57,7 @@ describe('compileCompoundAssignment', () => {
   });
 
   test('//= emits Math.floor division', () => {
-    const c = makeCompiler();
+    const c = makeVariableCompiler();
     const node = {
       targets: [symbol(loc({ lineno: 1, colno: 2 }), 'n')],
       operator: '//=',

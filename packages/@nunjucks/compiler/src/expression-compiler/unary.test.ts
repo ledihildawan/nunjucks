@@ -2,19 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { createFrame } from '@nunjucks/runtime';
 import { asCompiler } from '../test-helpers.ts';
 import { compileNeg, compileNot, compilePos } from './unary.ts';
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    compile: (node: { marker?: string }) => {
-      emitted.push(node.marker as string);
-    },
-  };
-};
+import { makeMarkerCompiler } from './test-helpers.ts';
 
 const makeUnary = (marker: string) => ({
   lineno: 5,
@@ -26,20 +14,20 @@ const frame = createFrame();
 
 describe('unary emitters', () => {
   test('compileNot wraps target with !', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     compileNot(asCompiler(c), { node: makeUnary('X') as never, frame });
     expect(c.emitted).toEqual(['(lineno = 5, colno = 9, ', '(!runtime.isTruthy(', 'X', ')))']);
   });
 
   test('compileNeg wraps target with minus', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     compileNeg(asCompiler(c), { node: makeUnary('X') as never, frame });
     expect(c.emitted).toContain('-');
     expect(c.emitted.join('')).toBe('(lineno = 5, colno = 9, -X)');
   });
 
   test('compilePos wraps target with plus', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     compilePos(asCompiler(c), { node: makeUnary('X') as never, frame });
     expect(c.emitted.join('')).toBe('(lineno = 5, colno = 9, +X)');
   });

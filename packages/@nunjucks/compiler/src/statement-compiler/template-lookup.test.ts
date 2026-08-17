@@ -12,32 +12,7 @@ import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import type { Compiler } from '../index.ts';
 import { compileGetTemplate, getTemplateLocation } from './template-lookup.ts';
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    compile: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'X');
-    },
-    compileExpression: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'E');
-    },
-    streamErrorRecovery: false,
-    getTemplateName: () => '"test.html"',
-  };
-};
+import { makeExtendsCompiler } from './test-helpers.ts';
 
 describe('getTemplateLocation', () => {
   test('extracts location from extends node', () => {
@@ -85,7 +60,7 @@ describe('getTemplateLocation', () => {
 
 describe('compileGetTemplate', () => {
   test('emits env.getTemplate call', () => {
-    const compiler = makeCompiler();
+    const compiler = makeExtendsCompiler();
     const frame = createFrame();
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
     compileGetTemplate({
@@ -99,7 +74,7 @@ describe('compileGetTemplate', () => {
   });
 
   test('returns nextCompilerId variable name', () => {
-    const compiler = makeCompiler();
+    const compiler = makeExtendsCompiler();
     const frame = createFrame();
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
     const result = compileGetTemplate({
@@ -112,7 +87,7 @@ describe('compileGetTemplate', () => {
   });
 
   test('passes eagerCompile and ignoreMissing options', () => {
-    const compiler = makeCompiler();
+    const compiler = makeExtendsCompiler();
     const frame = createFrame();
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
     compileGetTemplate({

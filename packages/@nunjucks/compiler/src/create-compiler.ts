@@ -1,12 +1,9 @@
 import type { Node } from '@nunjucks/nodes';
-import type { Frame, UndefinedMode } from '@nunjucks/runtime';
-import {
-  createHtmlContextTracker,
-  DEFAULT_UNDEFINED_MODE,
-  type HtmlContext,
-} from '@nunjucks/runtime';
+import type { Frame } from '@nunjucks/runtime';
+import { createHtmlContextTracker, type HtmlContext } from '@nunjucks/runtime';
+import { DEFAULT_UNDEFINED_MODE, type UndefinedMode } from '@nunjucks/shared';
 import { forEach } from 'remeda';
-import { fail, getTemplateName, nextCompilerId, pushBuffer } from './codegen.ts';
+import { fail, getTemplateName, nextCompilerId, pushBuffer, type FailFields } from './codegen.ts';
 import {
   assertNodeType,
   compileNodeChildren,
@@ -51,7 +48,7 @@ export interface Compiler extends Emitter, ScopeManager {
   templateName: string | null;
   lastId: number;
   streamErrorRecovery: boolean;
-  fail: (msg: string, lineno?: number, colno?: number) => void;
+  fail: (options: FailFields) => void;
   nextCompilerId: () => string;
   getTemplateName: () => string;
   emitStreamCatch: (lineno: number, colno: number, defaultAssignment?: string) => void;
@@ -89,8 +86,8 @@ export const createCompiler = ({
     undefinedMode: undefinedMode ?? DEFAULT_UNDEFINED_MODE,
     compiledLine: 0,
 
-    fail(msg, lineno, colno) {
-      fail({ compiler, msg, lineno, colno });
+    fail(options) {
+      fail({ ...options, compiler });
     },
     pushBuffer() {
       return pushBuffer(compiler);
@@ -145,7 +142,7 @@ export const createCompiler = ({
       assertNodeType(node, ...types);
     },
     compile(node, frame) {
-      return compileDispatch(compiler, node, frame);
+      return compileDispatch(compiler, { node, frame });
     },
     getCode() {
       return compiler.codebuf.join('');

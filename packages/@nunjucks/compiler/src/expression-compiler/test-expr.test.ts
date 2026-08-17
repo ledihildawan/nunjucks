@@ -2,30 +2,13 @@ import { describe, expect, test } from 'bun:test';
 import { createFrame } from '@nunjucks/runtime';
 import { asCompiler } from '../test-helpers.ts';
 import { compileTest, compileTestCall } from './test-expr.ts';
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    compile: (node: { marker?: string }) => {
-      emitted.push(node.marker as string);
-    },
-  };
-};
+import { makeMarkerCompiler } from './test-helpers.ts';
 
 const frame = createFrame();
 
 describe('compileTest', () => {
   test('declares the target temporary with let and binds the test result via runtime.runTest', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     compileTest(asCompiler(c), {
       node: {
         lineno: 3,
@@ -47,7 +30,7 @@ describe('compileTest', () => {
 
 describe('compileTestCall', () => {
   test('declares target and arg temporaries with let inside an async IIFE', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     compileTestCall(asCompiler(c), {
       node: {
         target: { marker: 'X' },
@@ -70,7 +53,7 @@ describe('compileTestCall', () => {
   });
 
   test('skips null args', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     compileTestCall(asCompiler(c), {
       node: {
         target: { marker: 'X' },

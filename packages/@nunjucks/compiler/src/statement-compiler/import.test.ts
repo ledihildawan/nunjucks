@@ -4,30 +4,9 @@ import { createFrame } from '@nunjucks/runtime';
 import { loc } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileImport } from './import.ts';
+import { makeImportCompiler } from './test-helpers.ts';
 
 const templateLoc = loc({ lineno: 2, colno: 5 });
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    getTemplateName: () => '"parent"',
-    compileExpression: (node: { value?: unknown }) => {
-      emitted.push(String(node.value ?? 'TPL'));
-    },
-  };
-};
 
 const buildImportNode = (withContext: boolean) =>
   importNode(templateLoc, {
@@ -38,7 +17,7 @@ const buildImportNode = (withContext: boolean) =>
 
 describe('compileImport', () => {
   test('emits the getTemplate lookup then getExported with no context args when withContext is false', () => {
-    const c = makeCompiler();
+    const c = makeImportCompiler();
     compileImport(asCompiler(c), { node: buildImportNode(false), frame: createFrame() });
     const joined = c.emitted.join('');
     expect(joined).toContain('lineno = 2; colno = 6;');
@@ -56,7 +35,7 @@ describe('compileImport', () => {
     ];
     withContextCases.forEach(({ withContext, exportedCall }) => {
       test(`emits "${exportedCall}" when withContext is ${String(withContext)}`, () => {
-        const c = makeCompiler();
+        const c = makeImportCompiler();
         compileImport(asCompiler(c), { node: buildImportNode(withContext), frame: createFrame() });
         expect(c.emitted.join('')).toContain(exportedCall);
       });
@@ -85,7 +64,7 @@ describe('compileImport', () => {
     ];
     frameCases.forEach(({ label, hasParent, expected, forbidden }) => {
       test(label, () => {
-        const c = makeCompiler();
+        const c = makeImportCompiler();
         const frame = hasParent ? createFrame({ parent: createFrame() }) : createFrame();
         compileImport(asCompiler(c), { node: buildImportNode(false), frame });
         const joined = c.emitted.join('');

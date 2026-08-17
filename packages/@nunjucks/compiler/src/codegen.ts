@@ -3,22 +3,25 @@ import { createLog } from '@nunjucks/error-formatter';
 import { last, pipe, split } from 'remeda';
 import type { Emitter } from './index.ts';
 
-interface FailOptions {
-  compiler: { templateName: string | null };
-  msg: string;
+export interface FailFields {
+  message: string;
   lineno?: number;
   colno?: number;
   errorName?: string;
 }
 
+interface FailOptions extends FailFields {
+  compiler: { templateName: string | null };
+}
+
 export const fail = ({
   compiler,
-  msg,
+  message,
   lineno,
   colno,
   errorName = 'WALK_UNKNOWN_TYPE',
 }: FailOptions): never => {
-  const lastPart = pipe(msg, split(':'), last());
+  const lastPart = pipe(message, split(':'), last());
   const subject = (lastPart ?? 'compile').trim();
   const errorDef =
     ERROR_DEFINITIONS[errorName as keyof typeof ERROR_DEFINITIONS] ??
@@ -26,7 +29,7 @@ export const fail = ({
 
   throw createLog('error', {
     def: errorDef,
-    params: { type: subject, detail: msg },
+    params: { type: subject, detail: message },
     subject,
     context: {
       lineno,

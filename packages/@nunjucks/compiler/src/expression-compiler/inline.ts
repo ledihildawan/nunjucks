@@ -27,12 +27,15 @@ export const compileWalrus = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<WalrusNode>
 ): void => {
+  // WHY: awaited async IIFE — the wrapped value subtree may contain pipe/test calls
+  // whose emission embeds `await`; a sync IIFE would emit `await` inside a non-async
+  // arrow and produce an invalid generated function (mirrors variable.ts/compile-capture).
   if (isSymbol(node.target)) {
     const target = node.target;
     assertSafeIdentifier(target.value, { compiler, lineno: node.lineno, colno: node.colno });
     const valueId = compiler.nextCompilerId();
     emitLocationGuard(compiler, node.lineno, node.colno);
-    compiler.emit('(() => {');
+    compiler.emit('await (async () => {');
     compiler.emit(`let ${valueId} = `);
     compiler.compile(node.value, frame);
     compiler.emit(';');
@@ -45,7 +48,7 @@ export const compileWalrus = (
     const target = node.target;
     const valueId = compiler.nextCompilerId();
     emitLocationGuard(compiler, node.lineno, node.colno);
-    compiler.emit('(() => {');
+    compiler.emit('await (async () => {');
     compiler.emit(`let ${valueId} = `);
     compiler.compile(node.value, frame);
     compiler.emit(';');
@@ -53,10 +56,10 @@ export const compileWalrus = (
     compiler.emit(`return ${valueId};`);
     compiler.emit('})())');
   } else {
-    compiler.fail(
-      'Walrus target must be a symbol or destructuring pattern',
-      node.lineno,
-      node.colno
-    );
+    compiler.fail({
+      message: 'Walrus target must be a symbol or destructuring pattern',
+      lineno: node.lineno,
+      colno: node.colno,
+    });
   }
 };

@@ -14,7 +14,7 @@ const blockName = (block: BlockNode): string | undefined => {
   if (typeof name === 'string') {
     return name;
   }
-  return name?.value as string | undefined;
+  return name ? String(name.value) : undefined;
 };
 
 const getBlockLocation = (block: BlockNode): NodeLocation => ({
@@ -30,31 +30,22 @@ const setupRootFunction = (compiler: Compiler, node: Node): { frame: Frame } => 
   return { frame };
 };
 
-const compileNonBlockChildren = (compiler: Compiler, node: Node, frame: Frame): void => {
-  const nonBlockChildren = node.children?.filter((child) => !isBlock(child)) ?? [];
-  forEach(nonBlockChildren, (child) => {
+// WHY: ALL direct children compile in document order — blocks are NOT hoisted out of
+// the body. compileBlock renders each in place via context.getBlock (which resolves
+// the extends-override chain), so `A{% block b %}B{% endblock %}C` renders "ABC" and
+// nested blocks render exactly once. The previous filter-then-re-yield pass scrambled
+// document order and double-rendered nested blocks.
+const compileRootChildren = (compiler: Compiler, node: Node, frame: Frame): void => {
+  forEach(node.children ?? [], (child) => {
     compiler.compile(child, frame);
   });
 };
 
-const emitParentTemplateBlockHandling = (compiler: Compiler, blocks: BlockNode[]): void => {
+const emitParentTemplateDelegation = (compiler: Compiler): void => {
   compiler.emitLine('if(parentTemplate) {');
   // WHY: parentTemplate.rootRenderFunc is itself an async generator — delegate so its chunks stream straight through, and propagate its returned context as this root's return value.
   compiler.emitLine('  return yield* parentTemplate.rootRenderFunc(env, context, frame, runtime);');
   compiler.emitLine('}');
-  forEach(blocks, (block) => {
-    const name = blockName(block);
-    if (!name) {
-      return;
-    }
-    const { lineno, colno } = getBlockLocation(block);
-    assertSafeIdentifier(name, { compiler, lineno, colno });
-    compiler.emitLine(`lineno = ${lineno}; colno = ${colno};`);
-    // WHY: Option C — blocks are async generators; delegate so their chunks stream directly into the root output.
-    compiler.emitLine(
-      `yield* (await context.getBlock(${JSON.stringify(name)}, ${lineno}, ${colno}))(env, context, frame, runtime);`
-    );
-  });
   compiler.emitLine('return context;');
   compiler.emitFuncEnd(true);
 };
@@ -122,9 +113,9 @@ export const compileRoot = (compiler: Compiler, node: ChildrenNode): void => {
   const blocks = findAll(node, 'block').filter(isBlock);
   const { frame } = setupRootFunction(compiler, node);
 
-  compileNonBlockChildren(compiler, node, frame);
+  compileRootChildren(compiler, node, frame);
 
-  emitParentTemplateBlockHandling(compiler, blocks);
+  emitParentTemplateDelegation(compiler);
 
   compiler.inBlock = true;
 

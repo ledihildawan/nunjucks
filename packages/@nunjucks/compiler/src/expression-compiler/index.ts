@@ -42,7 +42,6 @@ export {
   compileLookupVal,
   compileOptionalCall,
   compileOptionalChain,
-  compileSlice,
 } from './lookup.ts';
 export { compilePipeForward } from './pipe-forward.ts';
 export { compileTest, compileTestCall } from './test-expr.ts';

@@ -40,7 +40,6 @@ import {
   compilePos,
   compilePow,
   compileRange,
-  compileSlice,
   compileSpread,
   compileSub,
   compileSymbol,
@@ -95,7 +94,9 @@ const withFrame =
   (compiler, input) =>
     compile(compiler, { node: input.node as N, frame: input.frame });
 
-const NODE_COMPILERS: Partial<Record<NodeType, CompileFn>> = {
+// WHY: the T-key → compiler correlation is an internal table invariant TS cannot
+// enforce generically; the noFrame/withFrame casts restore the per-entry node type.
+const NODE_COMPILERS: Readonly<Partial<Record<NodeType, CompileFn>>> = {
   [T.LITERAL]: noFrame(compileLiteral),
   [T.SYMBOL]: withFrame<SymbolNode>(compileSymbol),
   [T.GROUP]: withFrame(compileGroup),
@@ -109,7 +110,9 @@ const NODE_COMPILERS: Partial<Record<NodeType, CompileFn>> = {
   [T.LOOKUP_VAL]: withFrame(compileLookupVal),
   [T.OPTIONAL_CHAIN]: withFrame(compileOptionalChain),
   [T.OPTIONAL_CALL]: withFrame(compileOptionalCall),
-  [T.SLICE]: withFrame(compileSlice),
+  // WHY: T.SLICE deliberately has no entry — a standalone SliceNode has no source
+  // operand (the parser only produces slices as a LookupNode.val, compiled there);
+  // hand-built standalone slices fail closed through the unknown-type path below.
   [T.COMPARE]: withFrame(compileCompare),
   [T.IS]: withFrame(compileIs),
   [T.TEST]: withFrame(compileTest),
@@ -168,11 +171,15 @@ const NODE_COMPILERS: Partial<Record<NodeType, CompileFn>> = {
   [T.RENDER]: withFrame(compileRenderBlock),
 };
 
-export const compileDispatch = (compiler: Compiler, node: Node, frame: Frame): void => {
-  const compile = NODE_COMPILERS[node.type];
+export const compileDispatch = (compiler: Compiler, input: CompileNodeInput): void => {
+  const compile = NODE_COMPILERS[input.node.type];
   if (compile) {
-    compile(compiler, { node, frame });
+    compile(compiler, input);
     return;
   }
-  compiler.fail(`compile: Cannot compile node: ${node.type}`, node.lineno, node.colno);
+  compiler.fail({
+    message: `compile: Cannot compile node: ${input.node.type}`,
+    lineno: input.node.lineno,
+    colno: input.node.colno,
+  });
 };

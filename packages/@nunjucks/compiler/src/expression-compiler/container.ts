@@ -52,18 +52,18 @@ const compileGroup = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<ChildrenNode>
 ): void => {
-  compileAggregate(compiler, node, frame, { startChar: '(', endChar: ')' });
+  compileAggregate(compiler, { node, frame, options: { startChar: '(', endChar: ')' } });
 };
 
 const compileArray = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<ChildrenNode>
 ): void => {
-  compileAggregate(compiler, node, frame, { startChar: '[', endChar: ']' });
+  compileAggregate(compiler, { node, frame, options: { startChar: '[', endChar: ']' } });
 };
 
 const compileDict = (compiler: Compiler, { node, frame }: CompileNodeInput<ChildrenNode>): void => {
-  compileAggregate(compiler, node, frame, { startChar: '{', endChar: '}' });
+  compileAggregate(compiler, { node, frame, options: { startChar: '{', endChar: '}' } });
 };
 
 const compileNodeList = (
@@ -83,15 +83,23 @@ const compilePair = (compiler: Compiler, { node, frame }: CompileNodeInput<PairN
     !isSymbol(rawKey) &&
     !(isLiteral(rawKey) && typeof rawKey.value === 'string')
   ) {
-    compiler.fail(
-      'compilePair: Dict keys must be strings or names',
-      typeof rawKey !== 'string' ? rawKey.lineno : node.lineno,
-      typeof rawKey !== 'string' ? rawKey.colno : node.colno
-    );
+    compiler.fail({
+      message: 'compilePair: Dict keys must be strings or names',
+      lineno: typeof rawKey !== 'string' ? rawKey.lineno : node.lineno,
+      colno: typeof rawKey !== 'string' ? rawKey.colno : node.colno,
+    });
   }
 
   const keyNode = typeof key === 'string' ? literal(loc(node), key) : key;
-  compiler.compile(keyNode, frame);
+  // WHY: a plain "__proto__" string key in an object literal redirects the dict's
+  // prototype (ES [[SetPrototypeOf]] semantics) instead of defining an own property —
+  // emit it computed so it always becomes an own property, matching the runtime's
+  // own-property-only lookup contract.
+  if (isLiteral(keyNode) && keyNode.value === '__proto__') {
+    compiler.emit('["__proto__"]');
+  } else {
+    compiler.compile(keyNode, frame);
+  }
   compiler.emit(': ');
   compiler.compileExpression(value, frame);
 };
@@ -145,11 +153,15 @@ interface CompileAggregateOptions {
   endChar?: string;
 }
 
+interface CompileAggregateInput {
+  node: ChildrenNode | CallNode | readonly Node[];
+  frame: Frame;
+  options?: CompileAggregateOptions;
+}
+
 const compileAggregate = (
   compiler: Compiler,
-  node: ChildrenNode | CallNode | readonly Node[],
-  frame: Frame,
-  options?: CompileAggregateOptions
+  { node, frame, options }: CompileAggregateInput
 ): void => {
   const { startChar, endChar } = options ?? {};
   if (startChar) {

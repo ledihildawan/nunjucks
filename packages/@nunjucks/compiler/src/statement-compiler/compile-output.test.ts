@@ -4,43 +4,19 @@ import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileOutput } from './compile-output.ts';
+import { makeCompileOutputCompiler } from './test-helpers.ts';
 
 const frame = createFrame();
 
-const makeCompiler = ({ streamErrorRecovery = false }: { streamErrorRecovery?: boolean } = {}) => {
-  const emitted: string[] = [];
-  const streamCatches: string[] = [];
-  return {
-    emitted,
-    streamCatches,
-    buffer: 'output',
-    streamErrorRecovery,
-    undefinedMode: null,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    compile: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'CHILD');
-    },
-    getHtmlContext: (lineno: number, colno: number) => `ctx:${lineno}:${colno}`,
-    emitStreamCatch: (lineno: number, colno: number) => {
-      streamCatches.push(`catch(${lineno},${colno})`);
-    },
-  };
-};
-
 describe('compileOutput', () => {
   test('emits a JSON-stringified append for static template data', () => {
-    const c = makeCompiler();
+    const c = makeCompileOutputCompiler();
     compileOutput(asCompiler(c), { node: output(ZERO_LOC, [templateData(ZERO_LOC, 'hi')]), frame });
     expect(c.emitted.join('')).toBe('output += "hi";\n');
   });
 
   test('wraps expression children in suppressValue(awaitValue(ensureDefined(...)))', () => {
-    const c = makeCompiler();
+    const c = makeCompileOutputCompiler();
     compileOutput(asCompiler(c), { node: output(ZERO_LOC, [symbol(ZERO_LOC, 'x')]), frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('lineno = 0; colno = 0; output += runtime.suppressValue(');
@@ -54,7 +30,7 @@ describe('compileOutput', () => {
   });
 
   test('opens a per-expression try and emits a stream catch when streamErrorRecovery is on', () => {
-    const c = makeCompiler({ streamErrorRecovery: true });
+    const c = makeCompileOutputCompiler({ streamErrorRecovery: true });
     compileOutput(asCompiler(c), { node: output(ZERO_LOC, [symbol(ZERO_LOC, 'x')]), frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('lineno = 0; colno = 0; try { output += runtime.suppressValue(');

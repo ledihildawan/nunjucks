@@ -111,6 +111,6 @@ describe('createCompiler', () => {
       undefinedMode: undefined,
       source: '{{ 1 + 2 }}',
     });
-    expect(() => c.fail('test error')).toThrow();
+    expect(() => c.fail({ message: 'test error' })).toThrow();
   });
 });

@@ -13,36 +13,10 @@ import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileDestructuring } from './pattern.ts';
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    compile: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'X');
-    },
-    compileExpression: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'E');
-    },
-    fail: (msg: string) => {
-      throw new Error(msg);
-    },
-  };
-};
+import { makeFailingStatementCompiler } from './test-helpers.ts';
 
 const destructure = (pattern: Node, source: string, registerFrame = true) => {
-  const compiler = makeCompiler();
+  const compiler = makeFailingStatementCompiler();
   const frame = createFrame();
   compileDestructuring({ compiler: asCompiler(compiler), frame, registerFrame }, pattern, source);
   return compiler.emitted.join('');

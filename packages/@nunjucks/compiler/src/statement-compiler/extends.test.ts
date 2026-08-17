@@ -4,39 +4,11 @@ import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import type { Compiler } from '../index.ts';
 import { compileExtends, compileInclude } from './extends.ts';
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    compile: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'X');
-    },
-    compileExpression: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'E');
-    },
-    streamErrorRecovery: false,
-    pushBuffer: () => 'buf_1',
-    popBuffer: () => {},
-    withScopedSyntax: (fn: () => void) => fn(),
-    getTemplateName: () => '"test.html"',
-  };
-};
+import { makeExtendsCompiler } from './test-helpers.ts';
 
 describe('compileExtends', () => {
   test('emits parentTemplate assignment and block handling', () => {
-    const compiler = makeCompiler();
+    const compiler = makeExtendsCompiler();
     const frame = createFrame();
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
     compileExtends(compiler as unknown as Compiler, { node, frame });
@@ -50,7 +22,7 @@ describe('compileExtends', () => {
 
 describe('compileInclude', () => {
   test('emits template load and render call', () => {
-    const compiler = makeCompiler();
+    const compiler = makeExtendsCompiler();
     const frame = createFrame();
     const node = include(ZERO_LOC, {
       template: literal(ZERO_LOC, 'partial.html'),
@@ -63,7 +35,7 @@ describe('compileInclude', () => {
   });
 
   test('with only flag emits empty context render', () => {
-    const compiler = makeCompiler();
+    const compiler = makeExtendsCompiler();
     const frame = createFrame();
     const node = include(ZERO_LOC, {
       template: literal(ZERO_LOC, 'partial.html'),
@@ -76,7 +48,7 @@ describe('compileInclude', () => {
   });
 
   test('with with flag emits forked context', () => {
-    const compiler = makeCompiler();
+    const compiler = makeExtendsCompiler();
     const frame = createFrame();
     const node = include(ZERO_LOC, {
       template: literal(ZERO_LOC, 'partial.html'),
@@ -85,6 +57,9 @@ describe('compileInclude', () => {
     (node as unknown as { with: ReturnType<typeof symbol> }).with = symbol(ZERO_LOC, 'data');
     compileInclude(compiler as unknown as Compiler, { node, frame });
     const out = compiler.emitted.join('');
-    expect(out).toContain('context.fork()');
+    // WHY: fork(__withData) — the with-expression flows through fork's spread merge
+    // (own-key define semantics) instead of a prototype-unsafe Object.assign.
+    expect(out).toContain('context.fork(__withData)');
+    expect(out).not.toContain('Object.assign');
   });
 });

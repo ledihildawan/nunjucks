@@ -4,28 +4,13 @@ import { createFrame } from '@nunjucks/runtime';
 import { loc } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileFunCall } from './fun-call.ts';
+import { makeFunCallCompiler } from './test-helpers.ts';
 
 const frame = createFrame();
 
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    compile: () => {
-      emitted.push('X');
-    },
-    compileExpression: () => {
-      emitted.push('X');
-    },
-  };
-};
-
 describe('compileFunCall', () => {
   test('symbol callee emits runtime.callWrap with display name', () => {
-    const c = makeCompiler();
+    const c = makeFunCallCompiler();
     const node = funCall(loc({ lineno: 5, colno: 9 }), {
       name: symbol(loc({ lineno: 5, colno: 9 }), 'greet'),
       args: [literal(loc({ lineno: 5, colno: 9 }), 'World')],
@@ -39,7 +24,7 @@ describe('compileFunCall', () => {
   });
 
   test('literal callee uses its value as display name', () => {
-    const c = makeCompiler();
+    const c = makeFunCallCompiler();
     const node = funCall(loc({ lineno: 1, colno: 1 }), {
       name: literal(loc({ lineno: 1, colno: 1 }), 'fn'),
       args: [],

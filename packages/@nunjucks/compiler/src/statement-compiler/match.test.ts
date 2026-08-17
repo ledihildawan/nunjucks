@@ -4,39 +4,13 @@ import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileMatch, compileWhen } from './match.ts';
+import { makeFailingStatementCompiler } from './test-helpers.ts';
 
 const frame = createFrame();
 
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    compile: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'X');
-    },
-    compileExpression: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'E');
-    },
-    fail: (msg: string) => {
-      throw new Error(msg);
-    },
-  };
-};
-
 describe('compileMatch', () => {
   test('literal pattern emits strict equality', () => {
-    const c = makeCompiler();
+    const c = makeFailingStatementCompiler();
     const node = match(ZERO_LOC, {
       expr: symbol(ZERO_LOC, 'v'),
       cases: [
@@ -55,7 +29,7 @@ describe('compileMatch', () => {
   });
 
   test('symbol pattern binds the target (unless wildcard _)', () => {
-    const c = makeCompiler();
+    const c = makeFailingStatementCompiler();
     const node = match(ZERO_LOC, {
       expr: symbol(ZERO_LOC, 'v'),
       cases: [
@@ -71,7 +45,7 @@ describe('compileMatch', () => {
   });
 
   test('emits default fallback when not matched', () => {
-    const c = makeCompiler();
+    const c = makeFailingStatementCompiler();
     const node = match(ZERO_LOC, {
       expr: symbol(ZERO_LOC, 'v'),
       cases: [],
@@ -84,7 +58,7 @@ describe('compileMatch', () => {
 
 describe('compileWhen', () => {
   test('fails because WhenNode should be handled by compileMatch', () => {
-    const c = makeCompiler();
+    const c = makeFailingStatementCompiler();
     expect(() => compileWhen(asCompiler(c), { node: {} as never, frame })).toThrow(/WhenNode/);
   });
 });

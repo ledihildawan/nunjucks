@@ -4,39 +4,13 @@ import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileCapture } from './compile-capture.ts';
+import { makeCaptureCompiler } from './test-helpers.ts';
 
 const frame = createFrame();
 
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  const bufferAtCompile: string[] = [];
-  let buffer = 'main';
-  return {
-    emitted,
-    bufferAtCompile,
-    get buffer() {
-      return buffer;
-    },
-    set buffer(nextBuffer: string) {
-      buffer = nextBuffer;
-    },
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    compile: (node: { marker?: string }) => {
-      bufferAtCompile.push(buffer);
-      emitted.push(node.marker ?? 'BODY');
-    },
-    withScopedSyntax: (fn: () => void) => fn(),
-  };
-};
-
 describe('compileCapture', () => {
   test('named capture wraps the body in frame.set + an awaited async IIFE', () => {
-    const c = makeCompiler();
+    const c = makeCaptureCompiler();
     const namedCapture = capture(ZERO_LOC, {
       name: 'captured',
       body: output(ZERO_LOC, [templateData(ZERO_LOC, 'x')]),
@@ -50,7 +24,7 @@ describe('compileCapture', () => {
   });
 
   test('anonymous capture emits a bare async IIFE with no frame.set wrap', () => {
-    const c = makeCompiler();
+    const c = makeCaptureCompiler();
     const anonymousCapture = capture(ZERO_LOC, {
       body: output(ZERO_LOC, [templateData(ZERO_LOC, 'x')]),
     });
@@ -78,7 +52,7 @@ describe('compileCapture', () => {
     ];
     bufferCases.forEach(({ label, name, terminator }) => {
       test(label, () => {
-        const c = makeCompiler();
+        const c = makeCaptureCompiler();
         const captureNode = capture(ZERO_LOC, { name, body: output(ZERO_LOC, []) });
         compileCapture(asCompiler(c), { node: captureNode, frame });
         expect(c.bufferAtCompile[0]).toBe('output');

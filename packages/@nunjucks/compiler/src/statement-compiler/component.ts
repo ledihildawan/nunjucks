@@ -1,5 +1,5 @@
-import type { ChildrenNode, ComponentNode, Node, PairNode, SlotBlock } from '@nunjucks/nodes';
-import { isDict, isKeywordArgs } from '@nunjucks/nodes';
+import type { ChildrenNode, ComponentNode, Node, SlotBlock } from '@nunjucks/nodes';
+import { isDict, isKeywordArgs, isPair } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { createFrame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
@@ -20,13 +20,16 @@ const extractComponentArgs = (
   // so they are validated as identifiers at the codegen boundary exactly like slot params.
   forEach(args, (argument) => {
     compiler.assertType(argument, 'symbol');
-    assertSafeIdentifier(argument.value as string, { compiler });
+    assertSafeIdentifier(String(argument.value), { compiler });
   });
   return { args, kwargs };
 };
 
 const pairKey = (pair: Node): string => {
-  const key = (pair as PairNode).key;
+  if (!isPair(pair)) {
+    return '';
+  }
+  const key = pair.key;
   if (typeof key === 'string') {
     return key;
   }
@@ -37,9 +40,9 @@ const buildComponentArgNames = (
   args: readonly Node[],
   kwargs: ChildrenNode | null
 ): { argNames: string[]; kwargNames: string[]; realNames: string[] } => {
-  const argNames = args.map((n) => JSON.stringify(n.value as string));
-  const kwargNames = (kwargs?.children ?? []).map((n) => JSON.stringify(pairKey(n)));
-  const realNames = [...args.map((n) => `l_${n.value as string}`), 'kwargs'];
+  const argNames = args.map((arg) => JSON.stringify(String(arg.value)));
+  const kwargNames = (kwargs?.children ?? []).map((pair) => JSON.stringify(pairKey(pair)));
+  const realNames = [...args.map((arg) => `l_${String(arg.value)}`), 'kwargs'];
   return { argNames, kwargNames, realNames };
 };
 
@@ -54,7 +57,7 @@ const emitComponentArgBindings = (
   { args, kwargs, frame }: EmitComponentArgBindingsInput
 ): void => {
   forEach(args, (argument) => {
-    const argValue = argument.value as string;
+    const argValue = String(argument.value);
     compiler.emitLine(
       `frame = frame.set({ name: ${JSON.stringify(argValue)}, value: l_${argValue} });`
     );
@@ -62,8 +65,11 @@ const emitComponentArgBindings = (
   });
 
   if (kwargs) {
-    const positionalNames = new Set(args.map((n) => n.value as string));
+    const positionalNames = new Set(args.map((arg) => String(arg.value)));
     forEach(kwargs.children, (pair) => {
+      if (!isPair(pair)) {
+        return;
+      }
       const name = pairKey(pair);
       const isPositional = positionalNames.has(name);
       compiler.emit(`frame = frame.set({ name: ${JSON.stringify(name)}, value: `);
@@ -72,7 +78,7 @@ const emitComponentArgBindings = (
       if (isPositional) {
         compiler.emit(`(l_${name} !== undefined ? l_${name} : `);
       }
-      compiler.compileExpression((pair as PairNode).value, frame);
+      compiler.compileExpression(pair.value, frame);
       if (isPositional) {
         compiler.emit(')');
       }
@@ -106,7 +112,7 @@ const emitComponentContext = (
 ): string => {
   const componentContextId = `__component_${compiler.nextCompilerId()}`;
   const propEntries = args
-    .map((arg) => `${JSON.stringify(arg.value as string)}: l_${arg.value as string}`)
+    .map((arg) => `${JSON.stringify(String(arg.value))}: l_${String(arg.value)}`)
     .join(', ');
   const propsCode = propEntries === '' ? '{ ...__props }' : `{ ${propEntries}, ...__props }`;
   compiler.emitLines(

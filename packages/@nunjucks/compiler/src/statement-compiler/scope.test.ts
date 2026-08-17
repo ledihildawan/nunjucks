@@ -4,37 +4,13 @@ import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileScope } from './scope.ts';
+import { makeScopeCompiler } from './test-helpers.ts';
 
 const frame = createFrame();
 
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    compile: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'BODY');
-    },
-    compileExpression: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'VAL');
-    },
-    withScopedSyntax: (fn: () => void) => fn(),
-  };
-};
-
 describe('compileScope', () => {
   test('pushes a frame, binds assignments, compiles body, pops frame', () => {
-    const c = makeCompiler();
+    const c = makeScopeCompiler();
     compileScope(asCompiler(c), {
       node: {
         assignments: [pair(ZERO_LOC, { key: 'x', val: literal(ZERO_LOC, 1) })],
@@ -49,7 +25,7 @@ describe('compileScope', () => {
   });
 
   test('compiles without assignments', () => {
-    const c = makeCompiler();
+    const c = makeScopeCompiler();
     compileScope(asCompiler(c), {
       node: {
         assignments: [],

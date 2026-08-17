@@ -10,6 +10,7 @@ import {
   compileRange,
   compileSub,
 } from './binary.ts';
+import { makeMarkerCompiler } from './test-helpers.ts';
 
 interface FakeNode {
   marker: string;
@@ -18,19 +19,6 @@ interface FakeNode {
   left: Node | FakeNode;
   right: Node | FakeNode;
 }
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    compile: (node: Node | FakeNode) => {
-      emitted.push((node as FakeNode).marker);
-    },
-  };
-};
 
 const makeNode = (leftMarker: string, rightMarker: string): FakeNode => ({
   marker: 'ignored',
@@ -44,38 +32,38 @@ const frame = createFrame();
 
 describe('binary emitters', () => {
   test('compileAdd emits location guard, operands joined by " + "', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     compileAdd(asCompiler(c), { node: makeNode('L', 'R') as never, frame });
     expect(c.emitted).toEqual(['(lineno = 5, colno = 9, ', 'L', ' + ', 'R', ')']);
   });
 
   test('compileSub emits the subtraction operator', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     compileSub(asCompiler(c), { node: makeNode('a', 'b') as never, frame });
     expect(c.emitted).toContain(' - ');
     expect(c.emitted[c.emitted.length - 1]).toBe(')');
   });
 
   test('compileMul emits the multiplication operator', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     compileMul(asCompiler(c), { node: makeNode('a', 'b') as never, frame });
     expect(c.emitted).toContain(' * ');
   });
 
   test('compileOr emits the logical-or operator', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     compileOr(asCompiler(c), { node: makeNode('x', 'y') as never, frame });
     expect(c.emitted).toContain(' || ');
   });
 
   test('compileAnd emits the logical-and operator', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     compileAnd(asCompiler(c), { node: makeNode('x', 'y') as never, frame });
     expect(c.emitted).toContain(' && ');
   });
 
   test('every binary emission starts with the location guard and ends with ")"', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     compileAdd(asCompiler(c), { node: makeNode('L', 'R') as never, frame });
     expect(c.emitted[0]).toBe('(lineno = 5, colno = 9, ');
     expect(c.emitted[c.emitted.length - 1]).toBe(')');
@@ -85,7 +73,7 @@ describe('binary emitters', () => {
 
 describe('compileRange', () => {
   test('guards integer bounds and span before the materialization loop', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     compileRange(asCompiler(c), {
       node: { ...makeNode('S', 'E'), lineno: 2, colno: 6 } as never,
       frame,

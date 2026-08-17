@@ -6,6 +6,12 @@ import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileAggregate } from './container.ts';
 
+// WHY: a standalone SliceNode has no source operand — the parser only ever produces
+// slices as a LookupNode's `val`, where compileLookupVal/emitSlice wires the target
+// in. There is deliberately NO dispatch entry for T.SLICE: a hand-built standalone
+// slice fails closed through the dispatch's unknown-type path instead of silently
+// compiling rotated operands.
+
 const locationFor = (
   node: Node | undefined,
   fallback: Node
@@ -124,33 +130,6 @@ export const compileOptionalCall = (
   compiler.emit(') == null ? undefined : ');
   compiler.compileExpression(node.name, frame);
   compiler.emit('(');
-  compileAggregate(compiler, node, frame, { startChar: '', endChar: ')' });
+  compileAggregate(compiler, { node, frame, options: { startChar: '', endChar: ')' } });
   compiler.emit(')');
-};
-
-export const compileSlice = (
-  compiler: Compiler,
-  { node, frame }: CompileNodeInput<SliceNode>
-): void => {
-  const nodeLoc = locationFor(node, node);
-  emitLocationGuard(compiler, nodeLoc.lineno, nodeLoc.colno);
-  compiler.emit('runtime.slice({ source: (');
-  if (node.start) {
-    compiler.compileExpression(node.start, frame);
-  } else {
-    compiler.emit('null');
-  }
-  compiler.emit('), start: ');
-  if (node.stop) {
-    compiler.compileExpression(node.stop, frame);
-  } else {
-    compiler.emit('null');
-  }
-  compiler.emit(', stop: ');
-  if (node.step) {
-    compiler.compileExpression(node.step, frame);
-  } else {
-    compiler.emit('null');
-  }
-  compiler.emit(', step: null })');
 };

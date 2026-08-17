@@ -82,5 +82,9 @@ export const compileMatch = (
 
 // WHY: WhenNode is compiled inline by compileMatch and must never reach the dispatcher directly; this stub is a defensive guard that fails loudly if dispatch routing is broken.
 export const compileWhen = (compiler: Compiler, _input: CompileNodeInput<WhenNode>): void => {
-  compiler.fail('when: WhenNode should be compiled by compileMatch, not dispatched directly', 0, 0);
+  compiler.fail({
+    message: 'when: WhenNode should be compiled by compileMatch, not dispatched directly',
+    lineno: 0,
+    colno: 0,
+  });
 };

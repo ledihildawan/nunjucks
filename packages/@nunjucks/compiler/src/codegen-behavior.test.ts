@@ -29,16 +29,16 @@ import {
 } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
-import { createCompiler } from './create-compiler.ts';
+import { makeChainableCompiler } from './test-helpers.ts';
 
 const compileNode = (node: Node): string => {
-  const c = createCompiler({ templateName: 'test', undefinedMode: 'chainable', source: '' });
+  const c = makeChainableCompiler();
   c.compile(node, createFrame());
   return c.getCode();
 };
 
 const compileRoot = (children: Node[]): string => {
-  const c = createCompiler({ templateName: 'test', undefinedMode: 'chainable', source: '' });
+  const c = makeChainableCompiler();
   c.compile(root(ZERO_LOC, children), createFrame());
   return c.getCode();
 };

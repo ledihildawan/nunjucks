@@ -6,7 +6,7 @@ import { extractPropertyLocation } from '../location-utils.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileAggregate } from './container.ts';
 
-const bracketFlag = (n: Node): boolean | undefined => n[BracketNotation];
+const bracketFlag = (node: Node): boolean | undefined => node[BracketNotation];
 
 interface BuildSuffixInput {
   value: Node;
@@ -108,8 +108,12 @@ export const compileFunCall = (
     `, ${JSON.stringify(funcName)}, { displayName: ${JSON.stringify(displayName)}, context, args: `
   );
 
-  compileAggregate(compiler, node.args, frame, {
-    startChar: '[',
-    endChar: `], lineno: ${lineno}, colno: ${colno} }))`,
+  compileAggregate(compiler, {
+    node: node.args,
+    frame,
+    options: {
+      startChar: '[',
+      endChar: `], lineno: ${lineno}, colno: ${colno} }))`,
+    },
   });
 };

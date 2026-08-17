@@ -11,10 +11,10 @@ import { compileGetTemplate } from './template-lookup.ts';
 const extractNameAlias = (nameNode: Node): { name: string; alias: string } => {
   if (isPair(nameNode)) {
     const key = nameNode.key;
-    const name = typeof key === 'string' ? key : (key.value as string);
-    return { name, alias: nameNode.value.value as string };
+    const name = typeof key === 'string' ? key : String(key.value);
+    return { name, alias: String(nameNode.value.value) };
   }
-  const name = nameNode.value as string;
+  const name = String(nameNode.value);
   return { name, alias: name };
 };
 

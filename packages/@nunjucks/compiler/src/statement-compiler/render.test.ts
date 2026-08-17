@@ -5,38 +5,11 @@ import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import type { Compiler } from '../index.ts';
 import { compileRenderBlock } from './render.ts';
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    compile: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'X');
-    },
-    compileExpression: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'E');
-    },
-    streamErrorRecovery: false,
-    pushBuffer: () => 'buf_1',
-    popBuffer: () => {},
-    withScopedSyntax: (fn: () => void) => fn(),
-  };
-};
+import { makeFullStatementCompiler } from './test-helpers.ts';
 
 describe('compileRenderBlock', () => {
   test('emits frame push and pop', () => {
-    const compiler = makeCompiler();
+    const compiler = makeFullStatementCompiler();
     const frame = createFrame();
     const node = renderNode(ZERO_LOC, {
       callExpr: funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'render'), args: [] }),
@@ -49,7 +22,7 @@ describe('compileRenderBlock', () => {
   });
 
   test('emits runtime.suppressValue and runtime.awaitValue', () => {
-    const compiler = makeCompiler();
+    const compiler = makeFullStatementCompiler();
     const frame = createFrame();
     const node = renderNode(ZERO_LOC, {
       callExpr: funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'render'), args: [] }),
@@ -62,7 +35,7 @@ describe('compileRenderBlock', () => {
   });
 
   test('emits slot functions when provided', () => {
-    const compiler = makeCompiler();
+    const compiler = makeFullStatementCompiler();
     const frame = createFrame();
     const slot: SlotBlock = { name: 'header', params: [], body: symbol(ZERO_LOC, 'slot_body') };
     const node = renderNode(ZERO_LOC, {

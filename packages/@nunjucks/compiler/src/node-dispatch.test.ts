@@ -12,10 +12,10 @@ import {
 } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
-import { createCompiler } from './create-compiler.ts';
+import { makeChainableCompiler } from './test-helpers.ts';
 
 const compile = (node: Node): string => {
-  const c = createCompiler({ templateName: 'test', undefinedMode: 'chainable', source: '' });
+  const c = makeChainableCompiler();
   c.compile(node, createFrame());
   return c.getCode();
 };
@@ -68,7 +68,7 @@ describe('node-dispatch: statement nodes', () => {
 
 describe('node-dispatch: compileDispatch via createCompiler', () => {
   test('dispatches unknown node type to fail', () => {
-    const c = createCompiler({ templateName: 'test', undefinedMode: 'chainable', source: '' });
+    const c = makeChainableCompiler();
     const fakeNode = { type: 'nonexistent', lineno: 0, colno: 0 } as unknown as Node;
     expect(() => c.compile(fakeNode, createFrame())).toThrow();
   });

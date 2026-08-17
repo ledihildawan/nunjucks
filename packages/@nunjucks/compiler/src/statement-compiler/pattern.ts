@@ -1,7 +1,5 @@
-// biome-ignore lint/style/noExcessiveLinesPerFile: formatter-expanded imports and destructuring helpers push past the cap
 import type { Node, PairNode, RestPatternNode } from '@nunjucks/nodes';
 import {
-  arrayPattern,
   isArray,
   isArrayPattern,
   isAssignmentPattern,
@@ -12,41 +10,26 @@ import {
   isPatternProperty,
   isRestPattern,
   isSymbol,
-  objectPattern,
 } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
-import { loc } from '@nunjucks/shared';
 import { forEach, reduce } from 'remeda';
 import { assertSafeIdentifier } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
+import {
+  arraySlice,
+  asArrayPattern,
+  asObjectPattern,
+  objectRest,
+  patternPropertyKey,
+  safeArrayIndex,
+  safeMemberLookup,
+} from './pattern-emitters.ts';
 
 interface DestructuringContext {
   compiler: Compiler;
   frame: Frame;
   registerFrame: boolean;
 }
-
-const patternPropertyKey = (key: unknown): string | null => {
-  if (typeof key === 'string') {
-    return key;
-  }
-  if (isSymbol(key)) {
-    return key.value;
-  }
-  return null;
-};
-
-const safeMemberLookup = (source: string, key: string): string =>
-  `runtime.optionalMemberLookup(${source}, ${JSON.stringify(key)})`;
-
-const safeArrayIndex = (source: string, index: number): string =>
-  `(Array.isArray(${source}) ? ${source}[${index}] : (${source} != null && typeof ${source} === 'object' ? ${source}[${index}] : undefined))`;
-
-const arraySlice = (source: string, start: number): string =>
-  `(${source} != null && Array.isArray(${source}) ? ${source}.slice(${start}) : undefined)`;
-
-const objectRest = (source: string, restId: string): string =>
-  `(() => { const ${restId} = {}; if (${source} != null && typeof ${source} === 'object') { for (const __k in ${source}) { ${restId}[__k] = ${source}[__k]; } } return ${restId}; })()`;
 
 const compileAssignToFrame = (
   { compiler, frame, registerFrame }: DestructuringContext,
@@ -89,28 +72,6 @@ const emitDefaultBinding = (
   return defaultId;
 };
 
-const asObjectPattern = (node: Node): Node | null => {
-  if (isObjectPattern(node)) {
-    return node;
-  }
-  const { children } = node;
-  if (!children) {
-    return null;
-  }
-  return objectPattern(loc(node), children);
-};
-
-const asArrayPattern = (node: Node): Node | null => {
-  if (isArrayPattern(node)) {
-    return node;
-  }
-  const { children } = node;
-  if (!children) {
-    return null;
-  }
-  return arrayPattern(loc(node), children);
-};
-
 const compileArrayPattern = (
   destructuringContext: DestructuringContext,
   pattern: Node,
@@ -126,41 +87,48 @@ const compileArrayPattern = (
       if (state.done) {
         return state;
       }
-      const result = handleArrayPatternChild(destructuringContext, child, source, state.index);
+      const result = handleArrayPatternChild({ destructuringContext, child, source, index: state.index });
       return { index: result.newIndex, done: result.shouldBreak };
     },
     { index: 0, done: false }
   );
 };
 
-const handleArrayPatternChild = (
-  destructuringContext: DestructuringContext,
-  child: Node,
-  source: string,
-  i: number
-): { newIndex: number; shouldBreak: boolean } => {
+interface ArrayPatternChildInput {
+  destructuringContext: DestructuringContext;
+  child: Node;
+  source: string;
+  index: number;
+}
+
+const handleArrayPatternChild = ({
+  destructuringContext,
+  child,
+  source,
+  index,
+}: ArrayPatternChildInput): { newIndex: number; shouldBreak: boolean } => {
   if (isHole(child)) {
-    return { newIndex: i + 1, shouldBreak: false };
+    return { newIndex: index + 1, shouldBreak: false };
   }
   if (isRestPattern(child)) {
-    const restSource = arraySlice(source, i);
+    const restSource = arraySlice(source, index);
     compileDestructuring(destructuringContext, child.target, restSource);
-    return { newIndex: i, shouldBreak: true };
+    return { newIndex: index, shouldBreak: true };
   }
-  const indexedSource = safeArrayIndex(source, i);
+  const indexedSource = safeArrayIndex(source, index);
   if (isAssignmentPattern(child)) {
     const defaultId = emitDefaultBinding(destructuringContext, indexedSource, child.value);
     compileDestructuring(destructuringContext, child.target, defaultId);
   } else if (isObjectPattern(child) || isDict(child)) {
     const nestedPattern = asObjectPattern(child);
     if (!nestedPattern) {
-      return { newIndex: i + 1, shouldBreak: false };
+      return { newIndex: index + 1, shouldBreak: false };
     }
     compileDestructuring(destructuringContext, nestedPattern, indexedSource);
   } else {
     compileDestructuring(destructuringContext, child, indexedSource);
   }
-  return { newIndex: i + 1, shouldBreak: false };
+  return { newIndex: index + 1, shouldBreak: false };
 };
 
 const handlePatternPropertyValue = (
@@ -233,7 +201,7 @@ const handlePairAssignmentWithDefault = (
     const valNode = child.value;
     const defaultId = emitDefaultBinding(destructuringContext, propSource, valNode.value);
     const target = valNode.target;
-    compileAssignToFrame(destructuringContext, target.value as string, defaultId);
+    compileAssignToFrame(destructuringContext, String(target.value), defaultId);
     return true;
   }
   return false;

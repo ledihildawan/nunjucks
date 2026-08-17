@@ -4,38 +4,11 @@ import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import type { Compiler } from '../index.ts';
 import { compileCallExtension, compileCallExtensionAsync } from './extension.ts';
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    compile: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'X');
-    },
-    compileExpression: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'E');
-    },
-    streamErrorRecovery: false,
-    pushBuffer: () => 'buf_1',
-    popBuffer: () => {},
-    withScopedSyntax: (fn: () => void) => fn(),
-  };
-};
+import { makeFullStatementCompiler } from './test-helpers.ts';
 
 describe('compileCallExtension', () => {
   test('emits extension call with context', () => {
-    const compiler = makeCompiler();
+    const compiler = makeFullStatementCompiler();
     const frame = createFrame();
     const node = callExtension(ZERO_LOC, {
       ext: { extensionName: 'myExt' },
@@ -50,7 +23,7 @@ describe('compileCallExtension', () => {
   });
 
   test('with args emits argument compilation', () => {
-    const compiler = makeCompiler();
+    const compiler = makeFullStatementCompiler();
     const frame = createFrame();
     const node = callExtension(ZERO_LOC, {
       ext: { extensionName: 'myExt' },
@@ -63,7 +36,7 @@ describe('compileCallExtension', () => {
   });
 
   test('with contentArgs emits async function wrapper', () => {
-    const compiler = makeCompiler();
+    const compiler = makeFullStatementCompiler();
     const frame = createFrame();
     const node = callExtension(ZERO_LOC, {
       ext: { extensionName: 'myExt' },
@@ -76,7 +49,7 @@ describe('compileCallExtension', () => {
   });
 
   test('autoescape defaults to true when not boolean', () => {
-    const compiler = makeCompiler();
+    const compiler = makeFullStatementCompiler();
     const frame = createFrame();
     const node = callExtension(ZERO_LOC, {
       ext: {},
@@ -90,7 +63,7 @@ describe('compileCallExtension', () => {
 
 describe('compileCallExtensionAsync', () => {
   test('delegates to compileCallExtension with async flag', () => {
-    const compiler = makeCompiler();
+    const compiler = makeFullStatementCompiler();
     const frame = createFrame();
     const node = callExtension(ZERO_LOC, {
       ext: { extensionName: 'myExt' },

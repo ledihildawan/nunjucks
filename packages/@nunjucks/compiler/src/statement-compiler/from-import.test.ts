@@ -4,30 +4,9 @@ import { createFrame } from '@nunjucks/runtime';
 import { loc } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileFromImport } from './from-import.ts';
+import { makeImportCompiler } from './test-helpers.ts';
 
 const templateLoc = loc({ lineno: 1, colno: 4 });
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    getTemplateName: () => '"parent"',
-    compileExpression: (node: { value?: unknown }) => {
-      emitted.push(String(node.value ?? 'TPL'));
-    },
-  };
-};
 
 const buildFromImportNode = (names: ReturnType<typeof nodeList>, withContext = false) =>
   fromImportNode(templateLoc, {
@@ -38,7 +17,7 @@ const buildFromImportNode = (names: ReturnType<typeof nodeList>, withContext = f
 
 describe('compileFromImport', () => {
   test('emits the getTemplate lookup then the getExported header for the module', () => {
-    const c = makeCompiler();
+    const c = makeImportCompiler();
     compileFromImport(asCompiler(c), {
       node: buildFromImportNode(nodeList(templateLoc, [symbol(templateLoc, 'foo')])),
       frame: createFrame(),
@@ -52,7 +31,7 @@ describe('compileFromImport', () => {
   });
 
   test('passes context.getVariables(), frame to getExported when withContext is true', () => {
-    const c = makeCompiler();
+    const c = makeImportCompiler();
     compileFromImport(asCompiler(c), {
       node: buildFromImportNode(nodeList(templateLoc, [symbol(templateLoc, 'foo')]), true),
       frame: createFrame(),
@@ -92,7 +71,7 @@ describe('compileFromImport', () => {
     ];
     nameCases.forEach(({ label, names, importedName, alias }) => {
       test(label, () => {
-        const c = makeCompiler();
+        const c = makeImportCompiler();
         compileFromImport(asCompiler(c), {
           node: buildFromImportNode(names),
           frame: createFrame(),
@@ -111,7 +90,7 @@ describe('compileFromImport', () => {
   });
 
   test('emits an Object.hasOwn guard plus a missing-import throw for every imported name', () => {
-    const c = makeCompiler();
+    const c = makeImportCompiler();
     compileFromImport(asCompiler(c), {
       node: buildFromImportNode(
         nodeList(templateLoc, [symbol(templateLoc, 'foo'), symbol(templateLoc, 'bar')])
@@ -132,7 +111,7 @@ describe('compileFromImport', () => {
   });
 
   test('writes through frame.set when the frame has a parent', () => {
-    const c = makeCompiler();
+    const c = makeImportCompiler();
     compileFromImport(asCompiler(c), {
       node: buildFromImportNode(nodeList(templateLoc, [symbol(templateLoc, 'foo')])),
       frame: createFrame({ parent: createFrame() }),

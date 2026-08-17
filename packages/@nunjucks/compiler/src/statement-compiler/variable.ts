@@ -13,7 +13,7 @@ const getTargetName = (target: Node | undefined): string | null => {
     return null;
   }
   if (isSymbol(target) || typeof target?.value === 'string') {
-    return target.value as string;
+    return String(target.value);
   }
   return null;
 };
@@ -149,7 +149,7 @@ const emitFilterAssignment = ({
   valueId,
 }: FilterAssignInput): void => {
   const valueNode = node.value;
-  const filterName = valueNode.type === 'symbol' ? (valueNode.value as string) : null;
+  const filterName = valueNode.type === 'symbol' ? String(valueNode.value) : null;
   if (filterName) {
     compiler.emit(
       `let ${valueId} = await (async () => { const r = await runtime.runFilter({ env, name: ${JSON.stringify(filterName)}, lineno: ${node.lineno ?? 0}, colno: ${node.colno ?? 0}, context, args: [${currentId}] }); if (!r.ok) { throw r.error; } return r.value; })();`
@@ -170,7 +170,11 @@ const emitGenericCompoundAssignment = ({
 }: CompoundAssignEmitInput): void => {
   const compoundOp = getCompoundOpJs(node.operator);
   if (compoundOp === null) {
-    compiler.fail(`Unsupported compound operator: ${node.operator}`, node.lineno, node.colno);
+    compiler.fail({
+      message: `Unsupported compound operator: ${node.operator}`,
+      lineno: node.lineno,
+      colno: node.colno,
+    });
   }
   compiler.emit(`let ${valueId} = ${currentId} ${compoundOp} `);
   compiler.compileExpression(node.value, frame);
@@ -184,7 +188,11 @@ const compileCompoundAssignment = (
   const targets = node.targets;
   const name = getTargetName(targets[0]);
   if (name === null) {
-    compiler.fail('Compound assignment requires a named target', node.lineno, node.colno);
+    compiler.fail({
+      message: 'Compound assignment requires a named target',
+      lineno: node.lineno,
+      colno: node.colno,
+    });
     return;
   }
 

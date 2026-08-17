@@ -5,37 +5,10 @@ import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import type { Compiler } from '../index.ts';
 import { compileFor } from './for.ts';
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    compile: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'X');
-    },
-    compileExpression: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'E');
-    },
-    streamErrorRecovery: false,
-    pushBuffer: () => 'buf_1',
-    popBuffer: () => {},
-    withScopedSyntax: (fn: () => void) => fn(),
-  };
-};
+import { makeFullStatementCompiler } from './test-helpers.ts';
 
 const compile = (node: ForNode) => {
-  const compiler = makeCompiler();
+  const compiler = makeFullStatementCompiler();
   const frame = createFrame();
   compileFor(compiler as unknown as Compiler, { node, frame });
   return compiler.emitted.join('');

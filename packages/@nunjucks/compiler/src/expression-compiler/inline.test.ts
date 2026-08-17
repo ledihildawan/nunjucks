@@ -4,36 +4,13 @@ import { createFrame } from '@nunjucks/runtime';
 import { loc } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileInlineIf, compileWalrus } from './inline.ts';
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    compile: (node: { marker?: string }) => {
-      emitted.push(node.marker as string);
-    },
-    fail: (msg: string) => {
-      throw new Error(msg);
-    },
-  };
-};
+import { makeInlineCompiler } from './test-helpers.ts';
 
 const frame = createFrame();
 
 describe('compileInlineIf', () => {
   test('emits cond ? body : alternate', () => {
-    const c = makeCompiler();
+    const c = makeInlineCompiler();
     compileInlineIf(asCompiler(c), {
       node: {
         cond: { marker: 'C' },
@@ -46,7 +23,7 @@ describe('compileInlineIf', () => {
   });
 
   test('emits "" when alternate is null', () => {
-    const c = makeCompiler();
+    const c = makeInlineCompiler();
     compileInlineIf(asCompiler(c), {
       node: {
         cond: { marker: 'C' },
@@ -61,7 +38,7 @@ describe('compileInlineIf', () => {
 
 describe('compileWalrus', () => {
   test('symbol target emits a scoped frame.set and returns the value', () => {
-    const c = makeCompiler();
+    const c = makeInlineCompiler();
     compileWalrus(asCompiler(c), {
       node: {
         lineno: 2,
@@ -78,7 +55,7 @@ describe('compileWalrus', () => {
   });
 
   test('non-symbol non-pattern target fails', () => {
-    const c = makeCompiler();
+    const c = makeInlineCompiler();
     expect(() =>
       compileWalrus(asCompiler(c), {
         node: {

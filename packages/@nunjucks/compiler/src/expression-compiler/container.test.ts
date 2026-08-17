@@ -14,49 +14,23 @@ import {
   compileSymbol,
   compileTemplateLiteral,
 } from './container.ts';
+import { makeContainerCompiler } from './test-helpers.ts';
 
 const frame = createFrame();
 
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  const emitValue = (node: { marker?: string; value?: string; children?: unknown[] }) => {
-    if (typeof node.marker === 'string') {
-      emitted.push(node.marker);
-      return;
-    }
-    if (typeof node.value === 'string') {
-      emitted.push(`"${node.value}"`);
-      return;
-    }
-    emitted.push(String(node.value));
-  };
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    compile: emitValue,
-    compileExpression: emitValue,
-    compileChildren: emitValue,
-    fail: (msg: string) => {
-      throw new Error(msg);
-    },
-  };
-};
-
 describe('compileLiteral', () => {
   test('string literal is quoted and escaped', () => {
-    const c = makeCompiler();
+    const c = makeContainerCompiler();
     compileLiteral(asCompiler(c), { value: 'a"b', lineno: 0, colno: 0 });
     expect(c.emitted).toEqual(['"a\\"b"']);
   });
   test('null literal emits null', () => {
-    const c = makeCompiler();
+    const c = makeContainerCompiler();
     compileLiteral(asCompiler(c), { value: null, lineno: 0, colno: 0 });
     expect(c.emitted).toEqual(['null']);
   });
   test('number literal emits the number', () => {
-    const c = makeCompiler();
+    const c = makeContainerCompiler();
     compileLiteral(asCompiler(c), { value: 42, lineno: 0, colno: 0 });
     expect(c.emitted).toEqual(['42']);
   });
@@ -64,14 +38,14 @@ describe('compileLiteral', () => {
 
 describe('compileSymbol', () => {
   test('emits frame.lookup result when present', () => {
-    const c = makeCompiler();
+    const c = makeContainerCompiler();
     let frameWith = createFrame();
     frameWith = frameWith.set({ name: 'x', value: 't_99' });
     compileSymbol(asCompiler(c), { node: symbol(ZERO_LOC, 'x'), frame: frameWith });
     expect(c.emitted).toEqual(['t_99']);
   });
   test('emits contextOrFrameLookup when frame.lookup returns null', () => {
-    const c = makeCompiler();
+    const c = makeContainerCompiler();
     compileSymbol(asCompiler(c), { node: symbol(ZERO_LOC, 'x'), frame });
     expect(c.emitted).toEqual(['runtime.contextOrFrameLookup(context, frame, "x")']);
   });
@@ -79,7 +53,7 @@ describe('compileSymbol', () => {
 
 describe('compilePair', () => {
   test('string key emits literal key', () => {
-    const c = makeCompiler();
+    const c = makeContainerCompiler();
     compilePair(asCompiler(c), {
       node: pair(loc({ lineno: 1, colno: 1 }), {
         key: symbol(loc({ lineno: 1, colno: 1 }), 'a'),
@@ -90,7 +64,7 @@ describe('compilePair', () => {
     expect(c.emitted.join('')).toBe('"a": V');
   });
   test('non-string non-symbol key fails', () => {
-    const c = makeCompiler();
+    const c = makeContainerCompiler();
     expect(() =>
       compilePair(asCompiler(c), {
         node: pair(loc({ lineno: 1, colno: 1 }), {
@@ -107,7 +81,7 @@ describe('compilePair', () => {
 
 describe('compileKeywordArgs', () => {
   test('wraps a dict in runtime.makeKeywordArgs', () => {
-    const c = makeCompiler();
+    const c = makeContainerCompiler();
     compileKeywordArgs(asCompiler(c), { node: keywordArgs(ZERO_LOC), frame });
     expect(c.emitted.join('')).toBe('runtime.makeKeywordArgs({})');
   });
@@ -115,7 +89,7 @@ describe('compileKeywordArgs', () => {
 
 describe('compileSpread', () => {
   test('emits ... before argument', () => {
-    const c = makeCompiler();
+    const c = makeContainerCompiler();
     compileSpread(asCompiler(c), {
       node: spread(loc({ lineno: 1, colno: 1 }), {
         argument: symbol(loc({ lineno: 1, colno: 1 }), 'xs'),
@@ -128,7 +102,7 @@ describe('compileSpread', () => {
 
 describe('compileTemplateLiteral', () => {
   test('emits a JS template literal mixing quasis and symbols', () => {
-    const c = makeCompiler();
+    const c = makeContainerCompiler();
     const node = templateLiteral(ZERO_LOC, [
       { type: 'template', value: 'hi ' },
       { type: 'expression', node: symbol(ZERO_LOC, 'name') },
@@ -142,7 +116,7 @@ describe('compileTemplateLiteral', () => {
 
 describe('aggregate containers', () => {
   test('array emits comma-separated children in brackets', () => {
-    const c = makeCompiler();
+    const c = makeContainerCompiler();
     compileArray(asCompiler(c), {
       node: { children: [{ marker: 'a' }, { marker: 'b' }] } as never,
       frame,
@@ -151,13 +125,13 @@ describe('aggregate containers', () => {
   });
 
   test('group emits parenthesized children', () => {
-    const c = makeCompiler();
+    const c = makeContainerCompiler();
     compileGroup(asCompiler(c), { node: { children: [{ marker: 'a' }] } as never, frame });
     expect(c.emitted.join('')).toBe('(a)');
   });
 
   test('dict emits braced children', () => {
-    const c = makeCompiler();
+    const c = makeContainerCompiler();
     compileDict(asCompiler(c), { node: { children: [{ marker: 'a' }] } as never, frame });
     expect(c.emitted.join('')).toBe('{a}');
   });

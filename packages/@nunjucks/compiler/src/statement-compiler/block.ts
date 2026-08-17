@@ -12,8 +12,24 @@ export const compileBlock = (compiler: Compiler, node: BlockNode): void => {
   assertSafeIdentifier(name, { compiler, lineno: node.lineno, colno: node.colno });
   // WHY: Option C — block functions are async generators. In a generator context (buffer === null) delegate with yield* so the block's chunks stream through; in a string-accumulating context (capture/slot buffer) drain the block into a string via runtime.collectString.
   const blockInvoke = `(await context.getBlock(${JSON.stringify(name)}, ${node.lineno}, ${node.colno}))(env, context, frame, runtime)`;
+  // WHY: only TOP-LEVEL blocks (compiled in root scope) reference parentTemplate for the
+  // extends guard — `let parentTemplate` lives in root's scope, and block bodies compiled
+  // inside b_* functions (compiler.inBlock) would hit a ReferenceError on it. Nested
+  // blocks are part of their parent block's body and always render in place.
+  const guard = !compiler.inBlock;
   if (compiler.buffer === null) {
-    compiler.emitLine(`yield* ${blockInvoke};`);
+    if (guard) {
+      // WHY: under {% extends %} the PARENT renders the (overridden) top-level block
+      // during its delegation pass — rendering it in place here as well would emit it
+      // twice, so the in-place yield is guarded on the absence of a parent template.
+      compiler.emitLine('if(parentTemplate === null) {');
+      compiler.emitLine(`  yield* ${blockInvoke};`);
+      compiler.emitLine('}');
+    } else {
+      compiler.emitLine(`yield* ${blockInvoke};`);
+    }
+  } else if (guard) {
+    compiler.emitLine(`if(parentTemplate === null) { ${compiler.buffer} += await runtime.collectString(${blockInvoke}); }`);
   } else {
     compiler.emitLine(`${compiler.buffer} += await runtime.collectString(${blockInvoke});`);
   }

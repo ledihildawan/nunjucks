@@ -60,9 +60,9 @@ const emitExtensionArgs = ({
     return;
   }
   if (!isNodeList(args)) {
-    compiler.fail(
-      'compileCallExtension: arguments must be a NodeList, ' + 'use `parser.parseSignature`'
-    );
+    compiler.fail({
+      message: 'compileCallExtension: arguments must be a NodeList, use `parser.parseSignature`',
+    });
   }
   if (!args.children) {
     return;

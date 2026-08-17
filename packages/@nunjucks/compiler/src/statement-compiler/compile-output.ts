@@ -49,7 +49,11 @@ const compileOutputChild = (compiler: Compiler, child: Node, frame: Frame): void
   const isOptional = isOptionalChain(child) || isOptionalCall(child);
   const childLoc = loc(extractPropertyLocation(child));
   const { lineno, colno } = childLoc;
-  const useEnsureDefined = !isOptional || compiler.undefinedMode === 'debug';
+  // WHY: pipes are deliberately OUTSIDE the strict-undefined boundary — a filter's
+  // contract owns its input (e.g. `fallback` exists precisely to absorb undefined),
+  // and by the time a filter returns, a miss has been normalized to a valid value.
+  // Strict + pipe composes via `{{ a.b }}` without the filter, or `|> fallback(...)`.
+  const useEnsureDefined = !isPipeType && (!isOptional || compiler.undefinedMode === 'debug');
   const htmlContext = compiler.getHtmlContext(lineno, colno);
 
   // WHY: when streamErrorRecovery is enabled, each output expression gets its own try/catch so a failing {{ expr }} yields an inline error marker (via runtime.streamError) instead of terminating the entire async generator. Static text and subsequent expressions continue to stream.

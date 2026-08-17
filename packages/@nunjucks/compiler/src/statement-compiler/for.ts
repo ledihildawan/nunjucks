@@ -58,9 +58,10 @@ const emitLoopBody = ({ compiler, node, frame, index, length }: LoopBodyInput): 
   });
 };
 
-const isArrayBinding = (n: Node): boolean => isArray(n) || isArrayPattern(n) || isObjectPattern(n);
+const isArrayBinding = (node: Node): boolean =>
+  isArray(node) || isArrayPattern(node) || isObjectPattern(node);
 
-const isFlatArrayBinding = (n: Node): boolean => isArray(n);
+const isFlatArrayBinding = (node: Node): boolean => isArray(node);
 
 interface SetupForLoopInput {
   compiler: Compiler;
@@ -111,7 +112,7 @@ const compileFlatArrayBinding = ({
       if (!child) {
         return;
       }
-      const childValue = child.value as string;
+      const childValue = String(child.value);
       assertSafeIdentifier(childValue, { compiler });
       const elementId = compiler.nextCompilerId();
       compiler.emitLine(`let ${elementId} = ${itemId}[${elementIndex}];`);
@@ -139,8 +140,8 @@ const compileFlatObjectBinding = ({
   if (!key || !value) {
     return;
   }
-  const keyName = key.value as string;
-  const valueName = value.value as string;
+  const keyName = String(key.value);
+  const valueName = String(value.value);
   assertSafeIdentifier(keyName, { compiler });
   assertSafeIdentifier(valueName, { compiler });
   const keyId = compiler.nextCompilerId();
@@ -235,7 +236,7 @@ const compileSimpleBinding = ({
   node,
 }: LoopContext): void => {
   const valueId = compiler.nextCompilerId();
-  const nameValue = nameNode.value as string;
+  const nameValue = String(nameNode.value);
   assertSafeIdentifier(nameValue, { compiler });
   frame.set({ name: nameValue, value: valueId });
 

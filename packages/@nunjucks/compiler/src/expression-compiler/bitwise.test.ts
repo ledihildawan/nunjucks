@@ -12,19 +12,7 @@ import {
   compileBitwiseRShift,
   compileBitwiseXor,
 } from './bitwise.ts';
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    compile: (node: { marker?: string }) => {
-      emitted.push(node.marker as string);
-    },
-  };
-};
+import { makeMarkerCompiler } from './test-helpers.ts';
 
 const makeBinary = (l: string, r: string) => ({
   lineno: 5,
@@ -53,14 +41,14 @@ describe('binary bitwise emitters', () => {
   const frame = createFrame();
   for (const { name, operator, emit } of cases) {
     test(`${name} emits ' ${operator} ' between operands`, () => {
-      const c = makeCompiler();
+      const c = makeMarkerCompiler();
       emit(asCompiler(c), { node: makeBinary('L', 'R') as never, frame });
       expect(c.emitted.join('')).toBe(`(lineno = 5, colno = 9, L ${operator} R)`);
     });
   }
 
   test('compileBitwiseNot emits ~ before target', () => {
-    const c = makeCompiler();
+    const c = makeMarkerCompiler();
     compileBitwiseNot(asCompiler(c), { node: makeUnary('X') as never, frame });
     expect(c.emitted.join('')).toBe('(lineno = 6, colno = 3, ~X)');
   });

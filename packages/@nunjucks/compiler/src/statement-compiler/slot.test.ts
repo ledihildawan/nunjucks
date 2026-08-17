@@ -4,38 +4,11 @@ import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import type { Compiler } from '../index.ts';
 import { compileSlotFunction } from './slot.ts';
-
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  let id = 0;
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    nextCompilerId: () => {
-      id += 1;
-      return `t_${id}`;
-    },
-    compile: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'X');
-    },
-    compileExpression: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'E');
-    },
-    streamErrorRecovery: false,
-    pushBuffer: () => 'buf_1',
-    popBuffer: () => {},
-    withScopedSyntax: (fn: () => void) => fn(),
-  };
-};
+import { makeFullStatementCompiler } from './test-helpers.ts';
 
 describe('compileSlotFunction', () => {
   test('emits slot variable as async function', () => {
-    const compiler = makeCompiler();
+    const compiler = makeFullStatementCompiler();
     const parentFrame = createFrame();
     compileSlotFunction({
       compiler: compiler as unknown as Compiler,
@@ -50,7 +23,7 @@ describe('compileSlotFunction', () => {
   });
 
   test('emits slot frame creation', () => {
-    const compiler = makeCompiler();
+    const compiler = makeFullStatementCompiler();
     const parentFrame = createFrame();
     compileSlotFunction({
       compiler: compiler as unknown as Compiler,
@@ -64,7 +37,7 @@ describe('compileSlotFunction', () => {
   });
 
   test('params are prefixed with l_ and set on frame', () => {
-    const compiler = makeCompiler();
+    const compiler = makeFullStatementCompiler();
     const parentFrame = createFrame();
     compileSlotFunction({
       compiler: compiler as unknown as Compiler,
@@ -81,7 +54,7 @@ describe('compileSlotFunction', () => {
   });
 
   test('compiles body content', () => {
-    const compiler = makeCompiler();
+    const compiler = makeFullStatementCompiler();
     const parentFrame = createFrame();
     compileSlotFunction({
       compiler: compiler as unknown as Compiler,

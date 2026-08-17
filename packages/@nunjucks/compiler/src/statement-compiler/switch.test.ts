@@ -4,29 +4,13 @@ import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileSwitch } from './switch.ts';
+import { makeSwitchCompiler } from './test-helpers.ts';
 
 const frame = createFrame();
 
-const makeCompiler = () => {
-  const emitted: string[] = [];
-  return {
-    emitted,
-    emit: (s: string) => {
-      emitted.push(s);
-    },
-    emitLine: (s: string) => {
-      emitted.push(`${s}\n`);
-    },
-    compile: (n: { marker?: string }) => {
-      emitted.push(n.marker ?? 'X');
-    },
-    withScopedSyntax: (fn: () => void) => fn(),
-  };
-};
-
 describe('compileSwitch', () => {
   test('emits switch with cases and default', () => {
-    const c = makeCompiler();
+    const c = makeSwitchCompiler();
     const node = switchNode(ZERO_LOC, {
       expr: symbol(ZERO_LOC, 'x'),
       cases: [
@@ -46,7 +30,7 @@ describe('compileSwitch', () => {
   });
 
   test('omits default when not present', () => {
-    const c = makeCompiler();
+    const c = makeSwitchCompiler();
     const node = switchNode(ZERO_LOC, {
       expr: symbol(ZERO_LOC, 'x'),
       cases: [

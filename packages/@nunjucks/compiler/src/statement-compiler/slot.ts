@@ -27,7 +27,12 @@ const compileSlotFunction = ({
   const localParams = params.map((p) => `l_${p}`);
 
   compiler.emitLine(`let ${slotVar} = async (${localParams.join(', ')}) => {`);
-  compiler.emitLine('  let __slotFrame = frame;');
+  // WHY: save/restore of the generator-scope frame — a `let frame` shadow here is a
+  // TDZ trap (the first parent capture would reference the shadow before init).
+  // Restoring after the body's awaits is safe today because slot functions only run
+  // while the owning generator is suspended awaiting the component call, so no other
+  // rebinding of `frame` interleaves with the restore.
+  compiler.emitLine('  const __slotFrame = frame;');
   compiler.emitLine('  frame = runtime.createFrame({ parent: __slotFrame });');
 
   const slotFrame = createFrame({ parent: parentFrame });

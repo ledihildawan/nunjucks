@@ -1,4 +1,4 @@
-import { ERROR_CODES } from '@nunjucks/error-catalog';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { createLog } from '@nunjucks/error-formatter';
 import type { Node } from '@nunjucks/nodes';
 import {
@@ -71,6 +71,12 @@ const EXPRESSION_TYPES: NodeTypeMatcher[] = [
   neg,
   pos,
   optionalChain,
+  // WHY: templateLiteral / optionalCall / walrus are parser-producible at guarded
+  // expression positions (`{% if `a${b}` %}`, `obj?.()[0]`, `{% set y = (x := 5) %}`)
+  // — omitting them made assertType throw ASSERT_TYPE_ERROR on legal templates.
+  'templateLiteral',
+  'optionalCall',
+  'walrus',
   nullishCoalesce,
   nodeList,
   slice,
@@ -114,12 +120,15 @@ const isMatchingType = (typeName: string | undefined, type: NodeTypeMatcher): bo
 };
 
 export const assertNodeType = (node: Node, ...types: NodeTypeMatcher[]): void => {
-  const typeName = getNodeTypeName(node);
+  const typeName = getNodeTypeName(node) ?? 'unknown';
   const matches = types.some((type) => isMatchingType(typeName, type));
 
   if (!matches) {
+    // WHY: canonical catalog definition keeps causes/fixCode enrichment — an inline
+    // def would drift from the registry (ARCHITECTURE §6 error-cluster contract).
     throw createLog('error', {
-      def: { name: ERROR_CODES.ASSERT_TYPE_ERROR, message: `assertType: invalid type: ${typeName}` },
+      def: ERROR_DEFINITIONS.ASSERT_TYPE_ERROR,
+      params: { type: typeName },
       subject: typeName,
       context: {
         phase: 'compile',
