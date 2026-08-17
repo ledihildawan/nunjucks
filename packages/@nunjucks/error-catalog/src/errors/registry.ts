@@ -43,7 +43,10 @@ interface Rule {
 const toRule = (def: ErrorDefinition): Rule => ({
   pattern: def.pattern,
   category: def.category,
-  subjectFrom: def.subjectFrom ?? firstCapture,
+  // WHY: `!== undefined` distinguishes an explicit `subjectFrom: null` (definitively
+  // no subject — never extract from captures) from an absent field (fall back to the
+  // first capture group). `??` conflated the two and mis-extracted for explicit-null defs.
+  subjectFrom: def.subjectFrom !== undefined ? def.subjectFrom : firstCapture,
   extraFrom: def.extraFrom ?? null,
   titleTemplate: def.titleTemplate,
   causes: def.causes,

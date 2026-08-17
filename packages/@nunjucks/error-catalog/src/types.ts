@@ -20,7 +20,7 @@ export interface ErrorLike {
   environment?: string | null;
 }
 
-export const isObjectValue = (value: unknown): value is ErrorLike =>
+export const isRecord = (value: unknown): value is ErrorLike =>
   typeof value === 'object' && value !== null;
 
 export interface Warning {

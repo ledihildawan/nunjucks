@@ -70,7 +70,7 @@ export const SANDBOX_ERRORS = {
       'An infinite loop or unbounded recursion',
       'Large data processing that exceeds the timeout',
     ],
-    fixCode: 'env.opts.executionTimeout = 60000',
+    fixCode: 'nunjucks({ limits: { executionTimeout: 60000 } })',
     fixComment: 'Increase `executionTimeout` or refactor to break long work into smaller chunks',
   }),
   SANDBOX_CONTEXT_ERROR: createErrorDefinition({

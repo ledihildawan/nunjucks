@@ -12,7 +12,7 @@ const TIMEOUT = {
     'Large data processing in template (e.g. nested loops over millions of items)',
     'A blocking operation that does not resolve',
   ],
-  fixCode: '{{ env.opts.executionTimeout = 60000; /* 60s */ }}',
+  fixCode: 'nunjucks({ limits: { executionTimeout: 60000 } })',
   fixComment: 'Increase the `executionTimeout` config or simplify the template',
   severity: 'error' as const,
   subjectFrom: null,

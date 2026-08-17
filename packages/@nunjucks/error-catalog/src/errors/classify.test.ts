@@ -122,4 +122,43 @@ describe('classify', () => {
     expect(cls.causes.some((c) => c.includes('foo'))).toBe(true);
     expect(cls.fixCode).toContain('foo');
   });
+
+  test('oversized message skips regex classification but keeps code-based classification', async () => {
+    const { classifyFromError } = await import('./classify.ts');
+    const cls = classifyFromError({
+      code: 'UNDEFINED_VARIABLE',
+      message: `Variable '${'x'.repeat(5000)}' is not defined`,
+    });
+
+    expect(cls.category).toBe(ERROR_DEFINITIONS.UNDEFINED_VARIABLE.category);
+  });
+
+  test('oversized message without a code falls back to the default classification', async () => {
+    const { classifyFromError } = await import('./classify.ts');
+    const cls = classifyFromError({
+      message: `Cannot access 'name' on null '${'x'.repeat(5000)}'`,
+    });
+
+    expect(cls.category).toBe('unknown');
+  });
+
+  test('classifies a NULL_VALUE-shaped message exactly at the 4096-char boundary', async () => {
+    const { classifyFromError } = await import('./classify.ts');
+    const prefix = "Cannot access 'name' on null '";
+    const message = `${prefix}${'x'.repeat(4096 - prefix.length - 1)}'`;
+    expect(message).toHaveLength(4096);
+
+    const cls = classifyFromError({ message });
+    expect(cls.category).toBe('null_value');
+  });
+
+  test('skips regex classification one character past the 4096-char boundary', async () => {
+    const { classifyFromError } = await import('./classify.ts');
+    const prefix = "Cannot access 'name' on null '";
+    const message = `${prefix}${'x'.repeat(4097 - prefix.length - 1)}'`;
+    expect(message).toHaveLength(4097);
+
+    const cls = classifyFromError({ message });
+    expect(cls.category).toBe('unknown');
+  });
 });

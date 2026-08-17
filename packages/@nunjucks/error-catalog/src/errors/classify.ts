@@ -41,7 +41,7 @@ interface MapCausesOptions {
 
 const mapCauses = ({ causes, undefinedName, extra }: MapCausesOptions): string[] =>
   causes
-    .map((c) => replacePlaceholders({ str: c, undefinedName, extra }))
+    .map((cause) => replacePlaceholders({ str: cause, undefinedName, extra }))
     .filter((cause): cause is string => cause !== null);
 
 const extractRuleData = (rule: (typeof RULES)[0], match: RegExpMatchArray | null) => ({
@@ -105,9 +105,16 @@ const codeClassifier: Classifier = (input) => {
 };
 
 const patternClassifier: Classifier = (input) => {
-  const rule = RULES.find((r) => r.pattern.test(input.message ?? ''));
+  const rule = RULES.find((candidate) => candidate.pattern.test(input.message ?? ''));
   return rule ? deriveFromRule(rule, input) : null;
 };
+
+// WHY: RULES patterns are anchored with greedy wildcards; against a pathologically long
+// message (error text embeds template-controlled values) the pattern loop degrades to
+// polynomial backtracking. Oversized messages skip regex classification entirely —
+// code-based classification still runs, since it never needs the message text to look up
+// its definition.
+const MAX_CLASSIFY_MESSAGE_LENGTH = 4096;
 
 const classifiers: Classifier[] = [
   reservedKeywordClassifier,
@@ -115,12 +122,17 @@ const classifiers: Classifier[] = [
   patternClassifier,
 ];
 
-const classifyInput = (input: ClassifyInput): Classification =>
-  pipe(
+const classifyInput = (input: ClassifyInput): Classification => {
+  const boundedInput =
+    input.message !== undefined && input.message.length > MAX_CLASSIFY_MESSAGE_LENGTH
+      ? { ...input, message: undefined }
+      : input;
+  return pipe(
     classifiers,
-    map((classifier) => classifier(input)),
+    map((classifier) => classifier(boundedInput)),
     find((result): result is Classification => result !== null)
   ) ?? DEFAULT_CLASSIFICATION;
+};
 
 interface ErrorWithExtras {
   message?: string;
