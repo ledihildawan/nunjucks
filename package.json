@@ -40,9 +40,9 @@
     "format": "biome format --write packages samples bench scripts",
     "format:check": "biome format packages samples bench scripts",
     "typecheck": "tsc --noEmit",
-    "test": "bun test",
+    "test": "bun test --timeout 5000",
     "bench": "bun run bench/render.bench.ts",
-    "coverage": "bun test --coverage"
+    "coverage": "bun test --coverage --timeout 5000"
   },
   "keywords": [
     "template",
