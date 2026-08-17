@@ -33,6 +33,10 @@ interface CreateFilterErrorInput {
   fallbackMessage: string;
 }
 
+/**
+ * Creates a `TemplateError` log entry from a catalog `errorDef`, or from the
+ * fallback message when no definition was supplied.
+ */
 const createFilterError = ({
   errorDef,
   params,
@@ -47,6 +51,10 @@ const createFilterError = ({
   return filterError({ ctx: undefined, errorDef: resolvedDef, params, subject });
 };
 
+/**
+ * Marks the string form of a value as safe so it bypasses autoescape;
+ * `SafeString` inputs pass through unchanged.
+ */
 const safeString = (str: unknown): SafeString => {
   if (isSafeString(str)) {
     return str;
@@ -55,6 +63,10 @@ const safeString = (str: unknown): SafeString => {
   return markSafe(stringValue);
 };
 
+/**
+ * HTML-escapes the string form of a value and marks the result safe, so the
+ * escaped text renders verbatim instead of being double-escaped downstream.
+ */
 const safeHtml = (str: unknown): SafeString => {
   if (isSafeString(str)) {
     return str;
@@ -69,6 +81,7 @@ const safeHtml = (str: unknown): SafeString => {
 const preserveSafe = (original: unknown, result: string): string | SafeString =>
   copySafeness(original, result);
 
+/** Builds the "expected array" error for filters with an array contract. */
 const requireArrayError = (value: unknown, errorDef: ErrorDefinitionEntry | undefined) =>
   createFilterError({
     errorDef,
@@ -77,6 +90,7 @@ const requireArrayError = (value: unknown, errorDef: ErrorDefinitionEntry | unde
     fallbackMessage: `Expected array but got ${typeof value}`,
   });
 
+/** Builds the "expected number" error for filters with a numeric contract. */
 const requireNumberError = (value: unknown, errorDef: ErrorDefinitionEntry | undefined) =>
   createFilterError({
     errorDef,
@@ -91,6 +105,10 @@ interface ValidateItemsInput {
   errorDef: ErrorDefinitionEntry | undefined;
 }
 
+/**
+ * Validates that every item in `items` owns `attr` (own-property check),
+ * narrowing them to records or returning a filter error naming the attribute.
+ */
 const validateItemsHaveAttr = ({
   items,
   attr,

@@ -34,6 +34,10 @@ const resolveQueryPairs = (input: unknown): Result<[string | number, unknown][],
 const encodeQueryPair = ([key, val]: [string | number, unknown]): string =>
   `${encodeURIComponent(String(key))}=${encodeURIComponent(String(val))}`;
 
+/**
+ * URL-encodes a query: strings pass through `encodeURIComponent` whole, while
+ * objects and `[key, value]`-pair arrays encode per part and join with `&`.
+ */
 const urlencode = (queryParameters: unknown): Result<string, TemplateError> => {
   if (typeof queryParameters === 'string') {
     return ok(encodeURIComponent(queryParameters));

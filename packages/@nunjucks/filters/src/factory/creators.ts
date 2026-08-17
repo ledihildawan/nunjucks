@@ -4,6 +4,10 @@ import { createComponent } from '@nunjucks/runtime';
 import { normalize, preserveSafe } from './helpers.ts';
 import type { SafeString, StringFn } from './types.ts';
 
+/**
+ * Wraps a string transform into a filter that normalizes the input to its
+ * string form and carries the original's `safe` marking over to the result.
+ */
 const createStringFilter =
   (fn: StringFn) =>
   (value: unknown): Result<string | SafeString, TemplateError> => {
@@ -17,6 +21,11 @@ const createStringFilter =
 const createMacroFilter = <R>(argNames: string[], fn: (...args: unknown[]) => R) =>
   createComponent({ argNames, kwargNames: [], func: fn });
 
+/**
+ * Wraps an options-object implementation as a filter: the first arg name binds
+ * positionally, the rest become kwargs, and the compiler's keywords envelope
+ * arrives as one options record.
+ */
 const createFilter = <T extends object, R>(argNames: string[], func: (options: T) => R) => {
   const wrapper = (opts: Record<string, unknown>) => func(opts as T);
   const firstName = argNames[0] ?? '';

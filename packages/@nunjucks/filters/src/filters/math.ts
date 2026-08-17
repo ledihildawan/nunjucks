@@ -3,6 +3,7 @@ import type { TemplateError } from '@nunjucks/error-formatter';
 import { err, ok, type Result } from '@nunjucks/lib';
 import { createFilter, createFilterError, requireNumberError } from '../factory/index.ts';
 
+/** Returns the absolute value; non-numbers fail the numeric contract. */
 export const abs = (value: unknown): Result<number, TemplateError> => {
   if (typeof value !== 'number') {
     return err(requireNumberError(value, ERROR_DEFINITIONS.MATH_FILTER));
@@ -38,4 +39,8 @@ const roundImpl = ({ value, precision, method }: RoundOptions): Result<number, T
   return ok(rounder(value * factor) / factor);
 };
 
+/**
+ * Rounds to `precision` digits with `ceil`/`floor`/`round`; positional
+ * `round(1.234, 2)` and kwargs `round(precision=2, method="ceil")` both bind.
+ */
 export const round = createFilter(['value', 'precision', 'method'], roundImpl);

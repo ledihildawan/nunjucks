@@ -11,6 +11,7 @@ import {
   validateItemsHaveAttr,
 } from '../factory/index.ts';
 
+/** Returns the first element; non-arrays fail the `first`/`last` contract. */
 export const first = (values: unknown): Result<unknown, TemplateError> => {
   if (!isArray(values)) {
     return err(requireArrayError(values, ERROR_DEFINITIONS.FIRST_LAST_FILTER));
@@ -18,6 +19,7 @@ export const first = (values: unknown): Result<unknown, TemplateError> => {
   return ok(values[0]);
 };
 
+/** Returns the last element; non-arrays fail the `first`/`last` contract. */
 export const last = (values: unknown): Result<unknown, TemplateError> => {
   if (!isArray(values)) {
     return err(requireArrayError(values, ERROR_DEFINITIONS.FIRST_LAST_FILTER));
@@ -53,11 +55,17 @@ const getLengthFromValue = (value: unknown): number => {
   return getValueLength(value);
 };
 
+/**
+ * Measures a value: `Map`/`Set` by size, plain objects by key count, anything
+ * else by numeric `length`; nullish/false coerce to the empty string and
+ * length-less values (numbers, booleans) report 0.
+ */
 export const lengthFilter = (input: unknown): Result<number, TemplateError> => {
   const value = input === null || input === undefined || input === false ? '' : input;
   return ok(getLengthFromValue(value));
 };
 
+/** Reverses arrays and strings (by code points); other types fail the contract. */
 export const reverse = (value: unknown): Result<unknown[] | string, TemplateError> => {
   if (typeof value === 'string') {
     return ok([...value].toReversed().join(''));
@@ -144,6 +152,10 @@ const sliceImpl = ({
   return ok(resultSlices);
 };
 
+/**
+ * Splits an array into `slices` balanced chunks, padding short tails with
+ * `fill`; positional `slice(3, 'x')` and kwargs `slice(3, fill='x')` both bind.
+ */
 export const slice = createFilter(['values', 'slices', 'fill'], sliceImpl);
 
 interface SumWithAttributeInput {
@@ -213,6 +225,10 @@ const sumImpl = ({ values, attr, start }: SumFilterOptions): Result<number, Temp
   return sumWithoutAttribute(values, start ?? 0);
 };
 
+/**
+ * Sums array numbers — or the items' `attr` values when given — starting from
+ * `start`; positional `sum(items, 'n', 10)` and kwargs `sum(attr='n')` bind.
+ */
 export const sum = createFilter(['values', 'attr', 'start'], sumImpl);
 
 interface SortOptions {
@@ -262,4 +278,9 @@ const sortImpl = ({
   return sortArray(values, { sortAttr, sortReverse, caseSens: isTruthyKwarg(caseSens) });
 };
 
+/**
+ * Sorts an array, case-insensitively by default. A string in the positional
+ * `reversed` slot is really the attribute (nunjucks `sort(attr, ...)` form),
+ * and `caseSens` then carries the reverse flag.
+ */
 export const sort = createFilter(['values', 'reversed', 'caseSens', 'attr'], sortImpl);

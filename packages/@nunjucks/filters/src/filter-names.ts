@@ -15,6 +15,11 @@ const FILTER_ALIASES: Readonly<Record<string, unknown>> = Object.freeze({
   length: arrayFilters.lengthFilter,
 });
 
+/**
+ * Assembles the builtin filter registry under its reserved names, folding in
+ * the 3.x compat aliases; the shared `BUILTIN_FILTER_NAMES` tuple is the
+ * drift-pin for the exact key set.
+ */
 const BUILTIN_FILTERS: Readonly<Record<string, unknown>> = Object.freeze({
   ...arrayFilters,
   ...mathFilters,

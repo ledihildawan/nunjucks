@@ -5,6 +5,11 @@ import { err, getAttrGetter, ok } from '@nunjucks/lib';
 import { createComponent } from '@nunjucks/runtime';
 import { isArray, requireArrayError, validateItemsHaveAttr } from '../factory/index.ts';
 
+/**
+ * Groups array items into a map keyed by `String(getAttr(item))`; the
+ * attribute resolves via attribute-path semantics (dot paths supported) and
+ * every item must own it.
+ */
 export const groupby = createComponent({
   argNames: ['arr', 'attr'],
   kwargNames: [],

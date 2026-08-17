@@ -19,4 +19,8 @@ const sanitizeImpl = ({ str, config }: SanitizeOptions): Result<SafeString, Temp
   return ok(safeString(clean));
 };
 
+/**
+ * Sanitizes markup through DOMPurify and marks the result `safe`; positional
+ * `sanitize(x, cfg)` and kwargs `sanitize(config={...})` both bind.
+ */
 export const sanitize = createFilter(['str', 'config'], sanitizeImpl);

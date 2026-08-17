@@ -22,6 +22,7 @@ const capitalizeString = (s: string): string => {
   return `${(lowercased[0] ?? '').toUpperCase()}${lowercased.slice(1)}`;
 };
 
+/** Capitalizes the first letter and lowercases the rest of the string form. */
 const capitalize = createStringFilter(capitalizeString);
 
 // WHY: `bool` is `unknown`, not boolean — the macro-filter wrapper invokes implementations
@@ -40,8 +41,13 @@ const fallbackImpl = (
   return ok(value);
 };
 
+/** Substitutes `def` when the value is nullish — or falsy when `bool` is set. */
 const fallback = createMacroFilter(['val', 'def', 'bool'], fallbackImpl);
 
+/**
+ * HTML-escapes the string form of the input and returns a `SafeString`, so
+ * the escaped markup is never double-escaped downstream.
+ */
 // biome-ignore lint/suspicious/noShadowRestrictedNames: `escape` is the public name of this Nunjucks filter; renaming it would break every template that uses it.
 const escape = (str: unknown): Result<SafeString, TemplateError> => ok(safeHtml(str));
 
@@ -53,6 +59,10 @@ const escapeJsonForMarkup = (serialized: string): string =>
 
 const serializeJsonValue = (value: unknown): string => JSON.stringify(value) ?? 'undefined';
 
+/**
+ * Serializes any value to JSON, `\u003c`-escaping `<`, `>`, `&` so the
+ * `SafeString` output stays inert inside script and HTML contexts.
+ */
 const tojson = (value: unknown): Result<SafeString, TemplateError> =>
   ok(pipe(value, serializeJsonValue, escapeJsonForMarkup, safeString));
 
@@ -87,6 +97,7 @@ const indentImpl = ({
   return ok(preserveSafe(str, indented));
 };
 
+/** Indents every line but the first by `width` (default 4) spaces. */
 const indent = createFilter(['str', 'width', 'indentfirst'], indentImpl);
 
 // WHY: createFilter-wrapped so BOTH forms bind — positional `join('-')` and kwargs
@@ -117,8 +128,10 @@ const joinImpl = ({ values, delim, attr }: JoinFilterOptions): Result<string, Te
   return ok(validatedResult.value.map((item) => item[attr]).join(resolvedDelimiter));
 };
 
+/** Joins array items — or their `attr` values — with `delim` (default empty). */
 const join = createFilter(['values', 'delim', 'attr'], joinImpl);
 
+/** Lowercases the string form of the input value. */
 const lower = createStringFilter((s: string): string => s.toLowerCase());
 
 const resolveOldString = (old: unknown): string | null => {
@@ -204,12 +217,19 @@ interface ReplaceOptions {
 const replaceImpl = (replaceOptions: ReplaceOptions): Result<unknown, TemplateError> =>
   ok(applyReplace(replaceOptions));
 
+/**
+ * Replaces `old` with `newValue` up to `maxCount` times (default all),
+ * accepting plain strings, numbers, or a `RegExp`; unresolvable needles or
+ * inputs pass the input through untouched.
+ */
 const replace = createFilter(['str', 'old', 'newValue', 'maxCount'], replaceImpl);
 
+/** Title-cases the string form by capitalizing each space-separated word. */
 const title = createStringFilter((s: string): string =>
   pipe(s, split(' '), map(capitalizeString), joinRemeda(' '))
 );
 
+/** Trims leading and trailing whitespace from the string form of the input. */
 const trim = createStringFilter((s: string): string => s.trim());
 
 interface TruncateOptions {
@@ -240,8 +260,13 @@ const truncateImpl = ({
   return ok(preserveSafe(originalInput, result));
 };
 
+/**
+ * Truncates to `length` (default 255) at a word boundary and appends `end`
+ * (default `...`); `killwords` cuts mid-word instead.
+ */
 const truncate = createFilter(['input', 'length', 'killwords', 'end'], truncateImpl);
 
+/** Uppercases the string form of the input value. */
 const upper = createStringFilter((s: string): string => s.toUpperCase());
 
 export {
