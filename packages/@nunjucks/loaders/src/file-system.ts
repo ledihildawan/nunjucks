@@ -206,9 +206,13 @@ export const createFileSystemLoader = (
       return;
     }
 
-    watcher.on('error', (watchFailure: unknown) =>
-      base.emit('error', createWatchError(filePath, watchFailure))
-    );
+    // WHY: a failed watcher is deleted from the registry — watchFile early-returns on
+    // known paths, so keeping the dead entry would block any future re-watch attempt
+    // for the lifetime of the loader.
+    watcher.on('error', (watchFailure: unknown) => {
+      watchedFiles.delete(filePath);
+      base.emit('error', createWatchError(filePath, watchFailure));
+    });
     watchedFiles.set(filePath, watcher);
   };
 

@@ -179,4 +179,23 @@ describe('watch', () => {
     loader.watchFile(file);
     expect(loader.watchedFiles.size).toBe(1);
   });
+
+  test('a failing watcher is deleted from the registry and emits a catalogued error', async () => {
+    const dir = await makeDir();
+    const file = join(dir, 'failing.njk');
+    await writeFile(file, 'x');
+    const loader = createFileSystemLoader(dir, { watch: true });
+    loader.watchFile(file);
+    const emitted: unknown[] = [];
+    loader.on('error', (error) => emitted.push(error));
+
+    // WHY: deterministic trigger — drive the watcher's own error event instead of
+    // waiting for a real fs failure.
+    loader.watchedFiles.get(file)?.emit('error', new Error('EPIPE'));
+
+    expect(loader.watchedFiles.has(file)).toBe(false);
+    expect(emitted).toHaveLength(1);
+    expect((emitted[0] as { name: string }).name).toBe('Template render error');
+    expect((emitted[0] as { message: string }).message).toContain('watch failed');
+  });
 });

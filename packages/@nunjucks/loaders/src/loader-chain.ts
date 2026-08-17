@@ -3,8 +3,10 @@ import type { Result } from '@nunjucks/lib';
 
 // WHY: the minimal loader contract the render pipeline consumes — getSource resolves a
 // template name to source text. `null` means "not found here" (a chain moves on to the
-// next loader); `err` is a hard failure (filesystem error, traversal blocked) that aborts
-// resolution; `ok` carries the source. Custom loaders only need this shape.
+// next loader); `err` is a hard failure (filesystem error, permission denied) that aborts
+// resolution; `ok` carries the source. Note: the built-in FS loader treats a
+// traversal-blocked name as a MISS (null, defers onward) — nothing is ever read for it;
+// custom loaders decide their own miss-vs-error envelope. Custom loaders only need this shape.
 export interface TemplateLoaderSource {
   src: string;
   path: string;
