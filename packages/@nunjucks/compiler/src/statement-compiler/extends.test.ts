@@ -44,7 +44,7 @@ describe('compileInclude', () => {
     (node as unknown as { only: boolean }).only = true;
     compileInclude(compiler as unknown as Compiler, { node, frame });
     const out = compiler.emitted.join('');
-    expect(out).toContain('template.render({}, frame)');
+    expect(out).toContain('template.render({}, frame, runtime["__warnings__"])');
   });
 
   test('with with flag emits forked context', () => {

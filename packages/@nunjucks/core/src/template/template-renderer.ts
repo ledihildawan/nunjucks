@@ -39,7 +39,11 @@ const createTemplateRenderer = ({ getState, compiler, errorHandler }: TemplateRe
     });
   };
 
-  const render = async (ctx: Record<string, unknown>, parentFrame?: Frame): Promise<string> => {
+  const render = async (
+    ctx: Record<string, unknown>,
+    parentFrame?: Frame,
+    warningsCollector?: unknown[]
+  ): Promise<string> => {
     await compiler.safeCompile();
     const state = getState();
 
@@ -68,7 +72,10 @@ const createTemplateRenderer = ({ getState, compiler, errorHandler }: TemplateRe
     const frame = createRenderFrame(parentFrame);
 
     try {
-      const runtime = createRuntimeWithContext(state.path, ctx ?? {});
+      // WHY: warningsCollector arrives from the compiled include call (render arg 3) —
+      // sharing the ROOT collector keeps include-emitted warnings on the page; without
+      // it each include got a private throwaway array nobody drained.
+      const runtime = createRuntimeWithContext(state.path, ctx ?? {}, warningsCollector);
       const rootGen = state.rootRenderFunc?.(state.env, context, frame, runtime);
       // WHY: rootRenderFunc is optional (?.); a missing root means compilation produced no entry
       // point, so surface it via the error catalog instead of casting an undefined result to string.

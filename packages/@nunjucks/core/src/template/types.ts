@@ -48,7 +48,14 @@ export interface TemplateObject {
   blocks: Record<string, BlockFn>;
   blockMeta: Record<string, BlockLocation>;
   rootRenderFunc: RootRenderFunc | null;
-  render: (ctx: Record<string, unknown>, parentFrame?: Frame) => Promise<string>;
+  // WHY: warningsCollector is threaded by compiled {% include %} code (render arg 3)
+  // so include-emitted warnings land in the ROOT render's collector and surface once
+  // per page instead of vanishing in a per-include throwaway runtime.
+  render: (
+    ctx: Record<string, unknown>,
+    parentFrame?: Frame,
+    warningsCollector?: unknown[]
+  ) => Promise<string>;
   compile: () => void;
   getExported: (
     ctx?: Record<string, unknown>,

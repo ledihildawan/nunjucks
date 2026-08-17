@@ -1,5 +1,6 @@
 import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { ExtendsNode, IncludeNode } from '@nunjucks/nodes';
+import { WARNINGS_CONTEXT_KEY as WARNINGS_KEY } from '@nunjucks/shared';
 import { appendTarget, emitLineLocation } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
@@ -62,7 +63,9 @@ export const compileInclude = (
       compiler.emitLine(`if (${tmplVar}_template !== null) {`);
     }
     if (node.only) {
-      compiler.emit(`let ${resultVar} = await ${tmplVar}_template.render({}, frame);`);
+      compiler.emit(
+        `let ${resultVar} = await ${tmplVar}_template.render({}, frame, runtime[${JSON.stringify(WARNINGS_KEY)}]);`
+      );
     } else if (node.with) {
       // WHY: fork(childContext) merges via object spread (define-own semantics), so an own
       // '__proto__' key in the with-expression cannot retarget the forked context's
@@ -72,11 +75,11 @@ export const compileInclude = (
       compiler.emitLine(';');
       compiler.emit('let __forkedCtx = context.fork(__withData);');
       compiler.emit(
-        `let ${resultVar} = await ${tmplVar}_template.render(__forkedCtx.getVariables(), frame);`
+        `let ${resultVar} = await ${tmplVar}_template.render(__forkedCtx.getVariables(), frame, runtime[${JSON.stringify(WARNINGS_KEY)}]);`
       );
     } else {
       compiler.emit(
-        `let ${resultVar} = await ${tmplVar}_template.render(context.getVariables(), frame);`
+        `let ${resultVar} = await ${tmplVar}_template.render(context.getVariables(), frame, runtime[${JSON.stringify(WARNINGS_KEY)}]);`
       );
     }
     compiler.emitLine(`${appendTarget(compiler)}${resultVar};`);
