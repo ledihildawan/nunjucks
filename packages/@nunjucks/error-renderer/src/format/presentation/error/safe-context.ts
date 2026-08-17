@@ -37,7 +37,7 @@ const truncate = (value: string, state: TruncateState): string => {
   return result;
 };
 
-const visibleKey = (key: string, depth: number): boolean => {
+const isVisibleKey = (key: string, depth: number): boolean => {
   if (key.startsWith('__nunjucks')) {
     return false;
   }
@@ -83,6 +83,7 @@ const readOwnValue = (value: object, key: string | symbol): unknown => {
     }
     return descriptor.value;
   } catch {
+    // WHY: hostile objects (Proxy traps) may throw on descriptor access — degrade to placeholder.
     return '[Unavailable]';
   }
 };
@@ -226,7 +227,7 @@ const normalizePlainObject = (
   context: NormalizeContext
 ): Record<string, unknown> => {
   const { state, depth, seen } = context;
-  const visibleKeys = ownEnumerableKeys(value).filter((key) => visibleKey(key, depth));
+  const visibleKeys = ownEnumerableKeys(value).filter((key) => isVisibleKey(key, depth));
   const visibleEntries = visibleKeys.slice(0, state.maxEntries).map((key) => {
     const isBlocked = state.blockedKeys.has(key) || DANGEROUS_KEY_PATTERN.test(key);
     const normalizedValue = isBlocked
@@ -270,6 +271,7 @@ const normalizeValue = (value: unknown, context: NormalizeContext): unknown => {
 
     return normalizePlainObject(objectValue, context);
   } catch {
+    // WHY: hostile getters/collections may throw during normalization — degrade to placeholder.
     return '[Unavailable]';
   } finally {
     seen.delete(objectValue);

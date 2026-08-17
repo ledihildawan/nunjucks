@@ -1,5 +1,5 @@
 import type { LineBase } from '@nunjucks/error-catalog';
-import { getErrorMessage, isObjectValue } from '@nunjucks/error-catalog';
+import { getErrorMessage, isRecord } from '@nunjucks/error-catalog';
 import { slice } from '@nunjucks/lib';
 import picocolors from 'picocolors';
 import { filter, join, map, pipe, split } from 'remeda';
@@ -102,7 +102,7 @@ const extractAnsiErrorParts = ({
   colno,
 }: ExtractAnsiErrorPartsInput): AnsiErrorParts => {
   const parts = mergeErrorParts(error);
-  const errObj = isObjectValue(error) ? error : {};
+  const errObj = isRecord(error) ? error : {};
   return {
     ...parts,
     severity: errObj.severity,
@@ -129,7 +129,7 @@ const formatFullAnsi = (message: string, input: FullAnsiInput): string => {
     colno: parts.displayColno,
     lineBase: parts.lineBase,
   });
-  const stack = (isObjectValue(error) ? error.stack : undefined) ?? '';
+  const stack = (isRecord(error) ? error.stack : undefined) ?? '';
   const formattedStack = pipe(
     stack,
     split('\n'),
@@ -142,7 +142,7 @@ const formatFullAnsi = (message: string, input: FullAnsiInput): string => {
   const severityLabel = getSeverityLabel(severity);
   const header = `${severityLabel} ${message}${locationStr}\n`;
 
-  const blockedKeys = (isObjectValue(error) ? error.blockedKeys : undefined) ?? null;
+  const blockedKeys = (isRecord(error) ? error.blockedKeys : undefined) ?? null;
   const causesStr = formatCausesAnsi(causes);
   const fixStr = formatFixAnsi({ fixCode, fixComment, documentationUrl });
   const outputParts: string[] = [

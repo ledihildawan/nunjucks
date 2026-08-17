@@ -49,12 +49,11 @@ const findNonWordLeft = (line: string, pos: number): number => {
 };
 
 const findWordBoundaries = (line: string, pos: number): { wordStart: number; wordEnd: number } => {
-  let wordStart = pos;
-  let wordEnd = pos;
-  if (isWordChar(line[pos])) {
-    wordEnd = findWordEnd(line, pos);
-    wordStart = findWordStart(line, wordEnd);
+  if (!isWordChar(line[pos])) {
+    return { wordStart: pos, wordEnd: pos };
   }
+  const wordEnd = findWordEnd(line, pos);
+  const wordStart = findWordStart(line, wordEnd);
   return { wordStart, wordEnd };
 };
 

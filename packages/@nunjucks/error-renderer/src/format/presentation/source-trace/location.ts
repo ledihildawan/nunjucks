@@ -11,22 +11,6 @@ interface LocationInput {
   lineBase?: LineBase | null;
 }
 
-export const formatLocationAnnotation = ({ lineno, colno, lineBase }: LocationInput): string => {
-  const hasLine = lineno !== undefined && lineno !== null;
-  const hasCol = colno !== undefined && colno !== null;
-
-  if (!hasLine) {
-    return '';
-  }
-
-  const colnoArg = hasCol ? colno : null;
-  const location = toDisplayLocation({ lineno, colno: colnoArg, lineBase });
-  if (hasCol) {
-    return `[Line ${location.line}, Column ${location.col}]`;
-  }
-  return `[Line ${location.line}]`;
-};
-
 export const toDisplayLocation = ({ lineno, colno, lineBase }: LocationInput): DisplayLocation => {
   const lineBaseValue = normalizeLineBase(lineBase);
   const safeLine = lineno ?? 0;

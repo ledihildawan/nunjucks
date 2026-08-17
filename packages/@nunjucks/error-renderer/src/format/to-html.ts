@@ -1,23 +1,27 @@
 import cssContent from '../../public/error-page.css' with { type: 'text' };
 import scriptContent from '../../public/error-script.js' with { type: 'text' };
+import { escapeAttribute } from '@nunjucks/lib';
 import { escapeHtml } from './presentation/syntax-highlight/highlight.ts';
 import { buildErrorSections } from './to-html-assembly.ts';
 import type { Csp, ErrorLike, ToHtmlOptions } from './to-html-types.ts';
 
-const TOGGLE_SCRIPT = `<script>\n${scriptContent}\n</script>`;
-
 const buildDocument = ({
   title,
   body,
-  scripts = '',
+  includeScript = false,
   csp = null,
 }: {
   title: string;
   body: string;
-  scripts?: string;
+  includeScript?: boolean;
   csp?: Csp | null;
 }): string => {
-  const styleNonce = csp?.nonce ? ` nonce="${csp.nonce}"` : '';
+  // WHY: nonce is caller-supplied config interpolated into an attribute context — it
+  // must pass escapeAttribute like every other dynamic attribute value; the same
+  // attribute is threaded onto the toggle <script> so strict nonce-based CSP blocks
+  // neither the stylesheet nor the script.
+  const nonceAttr = csp?.nonce ? ` nonce="${escapeAttribute(csp.nonce)}"` : '';
+  const scripts = includeScript ? `<script${nonceAttr}>\n${scriptContent}\n</script>` : '';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,7 +29,7 @@ const buildDocument = ({
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>${title}</title>
-<style${styleNonce}>
+<style${nonceAttr}>
 body{margin:0;min-block-size:100dvh;padding:1rem;background:var(--color-bg-page);color:var(--color-text-primary);font-family:system-ui,-apple-system,sans-serif}
 ${cssContent}
 </style>
@@ -72,7 +76,7 @@ const buildErrorDocument = (error: ErrorLike, options: ToHtmlOptions): string =>
   return buildDocument({
     title: docTitle,
     body: sections.wrapped,
-    scripts: TOGGLE_SCRIPT,
+    includeScript: true,
     csp: options.csp ?? null,
   });
 };

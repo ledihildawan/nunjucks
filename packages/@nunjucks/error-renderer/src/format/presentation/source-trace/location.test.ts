@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { formatLocationAnnotation, toDisplayLocation } from './location.ts';
+import { toDisplayLocation } from './location.ts';
 
 describe('toDisplayLocation', () => {
   describe('lineBase zero (default)', () => {
@@ -71,45 +71,5 @@ describe('toDisplayLocation', () => {
         col: 1,
       });
     });
-  });
-});
-
-describe('formatLocationAnnotation', () => {
-  test('returns an empty string when lineno is undefined', () => {
-    expect(formatLocationAnnotation({ colno: 3, lineBase: 'zero' })).toBe('');
-  });
-
-  test('returns an empty string when lineno is null', () => {
-    expect(formatLocationAnnotation({ lineno: null, colno: 3, lineBase: 'zero' })).toBe('');
-  });
-
-  test('renders line and column under lineBase zero', () => {
-    expect(formatLocationAnnotation({ lineno: 4, colno: 2, lineBase: 'zero' })).toBe(
-      '[Line 5, Column 3]'
-    );
-  });
-
-  test('renders line and column under lineBase one', () => {
-    expect(formatLocationAnnotation({ lineno: 4, colno: 2, lineBase: 'one' })).toBe(
-      '[Line 4, Column 2]'
-    );
-  });
-
-  test('renders only the line when colno is null', () => {
-    expect(formatLocationAnnotation({ lineno: 4, colno: null, lineBase: 'zero' })).toBe('[Line 5]');
-  });
-
-  test('renders only the line when colno is undefined', () => {
-    expect(formatLocationAnnotation({ lineno: 4, lineBase: 'zero' })).toBe('[Line 5]');
-  });
-
-  test('defaults to lineBase zero when lineBase is omitted', () => {
-    expect(formatLocationAnnotation({ lineno: 0, colno: 0 })).toBe('[Line 1, Column 1]');
-  });
-
-  test('clamps a zero lineno and colno to one under lineBase one', () => {
-    expect(formatLocationAnnotation({ lineno: 0, colno: 0, lineBase: 'one' })).toBe(
-      '[Line 1, Column 1]'
-    );
   });
 });

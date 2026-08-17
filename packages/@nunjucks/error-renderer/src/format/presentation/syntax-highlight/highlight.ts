@@ -96,14 +96,18 @@ const highlightHtml = (code: string): string => {
   if (!code) {
     return '';
   }
-  const loop = (i: number, out: string, inTag: boolean): string => {
-    if (i >= code.length) {
-      return out;
-    }
-    const chunk = nextHtmlChunk(code.slice(i), inTag);
-    return loop(i + chunk.length, out + chunk.html, chunk.inTag);
-  };
-  return loop(0, '', false);
+  // WHY: iterative scan — per-chunk tail recursion overflowed the stack on multi-MB
+  // single-line sources; loop exemption: recursion safety (ARCHITECTURE.md).
+  let index = 0;
+  let out = '';
+  let inTag = false;
+  while (index < code.length) {
+    const chunk = nextHtmlChunk(code.slice(index), inTag);
+    out += chunk.html;
+    inTag = chunk.inTag;
+    index += chunk.length;
+  }
+  return out;
 };
 
 const JS_RULES: SyntaxRule[] = [
@@ -155,14 +159,15 @@ const highlightJs = (code: string): string => {
   if (!code) {
     return '';
   }
-  const loop = (i: number, out: string): string => {
-    if (i >= code.length) {
-      return out;
-    }
-    const chunk = nextJsChunk(code.slice(i));
-    return loop(i + chunk.length, out + chunk.html);
-  };
-  return loop(0, '');
+  // WHY: iterative scan — same recursion-safety rationale as highlightHtml.
+  let index = 0;
+  let out = '';
+  while (index < code.length) {
+    const chunk = nextJsChunk(code.slice(index));
+    out += chunk.html;
+    index += chunk.length;
+  }
+  return out;
 };
 
 // WHY: ANSI syntax coloring — mirrors the HTML tokenizer (SYNTAX_RULES + inTag toggle) but outputs picocolors terminal colors instead of HTML spans. Color scheme matches the HTML CSS (tag=red, delimiter=cyan, string=green, keyword=magenta, etc.) so ANSI and HTML output look consistent.
@@ -232,14 +237,17 @@ const highlightAnsi = (code: string): string => {
   if (!code) {
     return '';
   }
-  const loop = (i: number, out: string, inTag: boolean): string => {
-    if (i >= code.length) {
-      return out;
-    }
-    const chunk = nextAnsiChunk(code.slice(i), inTag);
-    return loop(i + chunk.length, out + chunk.text, chunk.inTag);
-  };
-  return loop(0, '', false);
+  // WHY: iterative scan — same recursion-safety rationale as highlightHtml.
+  let index = 0;
+  let out = '';
+  let inTag = false;
+  while (index < code.length) {
+    const chunk = nextAnsiChunk(code.slice(index), inTag);
+    out += chunk.text;
+    inTag = chunk.inTag;
+    index += chunk.length;
+  }
+  return out;
 };
 
 export { escapeAttribute, escapeHtml } from '@nunjucks/lib';

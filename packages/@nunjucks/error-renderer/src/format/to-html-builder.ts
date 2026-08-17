@@ -133,7 +133,7 @@ const buildFullErrorBody = ({
     : '';
   const fixCodeBlock = fixCode ? highlightHtml(fixCode) : '// No fix available';
   const docsLink = documentationUrl
-    ? `\n<span class="docs-inline">Learn more: <a href="${escapeHtml(documentationUrl)}" target="_blank" rel="noopener" class="docs-link">${escapeHtml(documentationUrl)}</a></span>`
+    ? `\n<span class="docs-inline">Learn more: <a href="${escapeAttribute(documentationUrl)}" target="_blank" rel="noopener" class="docs-link">${escapeHtml(documentationUrl)}</a></span>`
     : '';
   const renderContextSection = renderContext
     ? renderContextHtml(renderContext, error.blockedKeys)

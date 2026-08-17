@@ -18,6 +18,16 @@ const renderBadge = (variant: string, text?: string | null): string => {
   return `<span class="badge ${variant}">${escapeHtml(text)}</span>`;
 };
 
+// WHY: titles render from the catalog's titleTemplate — the single source of truth.
+// A local literal copy could drift from the definition the classifier renders.
+const catalogTitle = (name: keyof typeof ERROR_DEFINITIONS, subject?: string): string | null => {
+  const template = ERROR_DEFINITIONS[name].titleTemplate;
+  if (template === undefined) {
+    return null;
+  }
+  return subject === undefined ? template : template.replaceAll('{name}', subject);
+};
+
 const resolveHumanTitle = ({
   category,
   undefinedName,
@@ -31,19 +41,19 @@ const resolveHumanTitle = ({
       if (!undefinedName) {
         return fallback;
       }
-      return `Variable '${undefinedName}' is not defined`;
+      return catalogTitle('UNDEFINED_VARIABLE', undefinedName) ?? fallback;
     case 'UNDEFINED_FUNCTION':
-      return `Function '${named}' is not defined`;
+      return catalogTitle('UNDEFINED_FUNCTION', named) ?? fallback;
     case 'UNDEFINED_FILTER':
-      return `Filter '${named}' is not defined`;
+      return catalogTitle('UNDEFINED_FILTER', named) ?? fallback;
     case 'IMPORT_ERROR':
-      return 'Cannot import template - module not found';
+      return catalogTitle('IMPORT_ERROR') ?? fallback;
     case 'FILE_NOT_FOUND':
       return `Template file not found: ${named}`;
     case 'SYNTAX_ERROR':
-      return 'Template syntax error';
+      return catalogTitle('SYNTAX_ERROR') ?? fallback;
     case 'VALIDATION_ERROR':
-      return 'Template must be a string';
+      return catalogTitle('TEMPLATE_MUST_BE_STRING') ?? fallback;
     case 'RESERVED_KEYWORD_CONTEXT':
       return plain;
     case 'RESERVED_KEYWORD': {
