@@ -17,6 +17,10 @@ import {
 } from '@nunjucks/runtime';
 
 // WHY: a generator cannot be wrapped by withTimeout (it is not a Promise), so streaming timeout is enforced per-chunk: each .next() races against a timer. This is the idle/per-chunk guard complementing the total executionTimeout deadline enforced by withStreamDeadline. try/finally guarantees the timer is cleared on EVERY exit path (chunk yielded, done, timeout, external .return(), throw) — previously N chunks leaked N concurrent timers. The finally also best-effort returns the underlying iterator WITHOUT awaiting: a stalled .next() (e.g. an async filter awaiting a never-resolving promise) may never let .return() settle, so awaiting would re-introduce the hang this guard exists to break. A .return() on an already-completed iterator is a no-op, so calling it unconditionally is safe.
+/**
+ * Enforces a per-chunk idle timeout by racing each `.next()` against a timer —
+ * `try`/`finally` clears the timer and cascades `.return()` on every exit.
+ */
 const withStreamTimeout = async function* (
   stream: AsyncIterator<string>,
   timeoutMs: number
@@ -57,6 +61,10 @@ const withStreamTimeout = async function* (
 };
 
 // WHY: total wall-clock deadline for a stream — a single timer set once at start; if it elapses before the source completes, a deadline-flavored StreamTimeoutError (code='TIMEOUT') throws regardless of chunk cadence. This complements withStreamTimeout (per-chunk idle): a stream trickling a chunk every 50ms passes the idle guard but is still bounded by the total deadline. try/finally clears the timer and cascades .return() on every exit path. Wired from createRenderStream via resolvedConfig.executionTimeout so the SAME knob bounds blocking and streaming renders.
+/**
+ * Enforces a total wall-clock deadline on a stream — one timer from start; a
+ * trickle that passes the idle guard still cannot outlast the deadline.
+ */
 const withStreamDeadline = async function* (
   stream: AsyncGenerator<string>,
   deadlineMs: number
@@ -87,6 +95,7 @@ const withStreamDeadline = async function* (
 };
 
 // WHY: streaming yield boundary — coerce SafeString (a boxed String, instanceof String) to a primitive string. suppressValue returns the SafeString object for already-safe values so the blocking path's `buffer += value` coerces via toString; the streaming path yields directly, so without this coercion a SafeString object reaches the HTTP sink (res.write / TextEncoder.encode) which rejects boxed strings with ERR_INVALID_ARG_TYPE. The thenable check is a fail-loud safety net: a Promise reaching here means an emit site forgot to await (every known site does — see compile-output/extension/extends); stringifying it would silently produce "[object Promise]", so return err instead to surface the bug.
+/** Coerces a yielded value to a primitive string, erring on leaked thenables. */
 const coerceChunk = (value: unknown): Result<string, TemplateError> => {
   if (typeof value === 'string') {
     return ok(value);
@@ -110,6 +119,7 @@ const coerceChunk = (value: unknown): Result<string, TemplateError> => {
 };
 
 // WHY: single-use guard around the streaming generator. Async generators already reject CONCURRENT .next() calls ("Generator is already running"), but a consumer that caches result.stream and iterates it a SECOND time after completion would silently get an empty stream (every subsequent .next() returns { done: true }). This wrapper converts that silent empty into a clear error so the mistake surfaces immediately. .return()/.throw() delegate to the inner generator so the cleanup cascade is unaffected.
+/** Wraps a stream so a second iteration fails loudly instead of yielding nothing. */
 const guardSingleConsumer = (inner: AsyncGenerator<string>): AsyncGenerator<string> => {
   let finished = false;
   const iterator = {

@@ -27,6 +27,7 @@ const adoptCompiledExports = (
   rootRenderFunc: compiledExports.root,
 });
 
+/** Inputs to `createTemplate` — source string/object, env, path, and compile flags. */
 interface CreateTemplateOptions {
   src: string | TemplateSource;
   env?: Env;
@@ -40,6 +41,11 @@ interface CreateTemplateOptions {
   compiledExports?: CompiledTemplateExports;
 }
 
+/**
+ * Creates a stateful `TemplateObject` — a `source`→`compiled` state machine
+ * wired to its own compiler, renderer, and error handler, with optional
+ * eager compile and pre-computed export adoption for include-path reuse.
+ */
 export const createTemplate = ({
   src,
   env,

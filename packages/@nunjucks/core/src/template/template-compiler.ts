@@ -16,6 +16,10 @@ interface TemplateStateCell {
   commit: (next: TemplateState) => void;
 }
 
+/**
+ * Creates the template compiler — compiles on demand, commits the resulting
+ * state, and emits start/complete/error lifecycle hooks around the eval.
+ */
 const createTemplateCompiler = ({ getState, commit }: TemplateStateCell) => {
   const compileToProps = (state: TemplateState): Result<CompiledTemplateExports, Error> => {
     if (state.status === 'compiled') {

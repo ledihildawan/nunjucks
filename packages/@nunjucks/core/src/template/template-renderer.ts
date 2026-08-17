@@ -17,6 +17,7 @@ export { createRenderFrame, createTemplateRenderer };
 const toErrorWithLineInfo = (e: unknown): ErrorWithLineInfo =>
   normalizeErrorMetadata(e).error as ErrorWithLineInfo;
 
+/** Creates a top-level render frame — write-isolated when nested under a parent. */
 const createRenderFrame = (parentFrame: Frame | undefined): Frame =>
   createFrame({ parent: parentFrame, isolateWrites: parentFrame !== undefined, topLevel: true });
 
@@ -26,6 +27,11 @@ interface TemplateRendererOptions {
   errorHandler: { enrichError: (e: ErrorWithLineInfo) => Error };
 }
 
+/**
+ * Creates the template renderer — compiles on demand, guards circular
+ * includes via the env-scoped set, drains the root generator to a string,
+ * and enriches any thrown error with path/include-chain context.
+ */
 const createTemplateRenderer = ({ getState, compiler, errorHandler }: TemplateRendererOptions) => {
   const { enrichError } = errorHandler;
 

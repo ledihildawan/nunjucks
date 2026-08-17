@@ -11,6 +11,10 @@ import type {
 import type { Phase } from '@nunjucks/shared';
 import type { keys } from 'remeda';
 
+/**
+ * The runtime contract object handed to compiled templates — every helper
+ * compiler-emitted code can call, plus warnings and log context.
+ */
 interface RuntimeContext {
   createFrame: () => Frame;
   createSafeString: (str: unknown) => SafeString;

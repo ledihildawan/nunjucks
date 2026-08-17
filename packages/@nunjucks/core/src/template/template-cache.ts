@@ -41,9 +41,10 @@ const buildCompileCacheKey = ({
     config.trimBlocks ? 't' : '-',
     config.lstripBlocks ? 'l' : '-',
     config.streamErrorRecovery ? 'r' : '-',
-    config.extensions ? Object.keys(config.extensions).sort().join('+') : '-',
+    config.extensions ? Object.keys(config.extensions).toSorted().join('+') : '-',
   ].join('::');
 
+/** Minimal LRU surface the engine consumes from a compiled-code cache. */
 interface CompiledCodeCache {
   get: (key: string) => string | undefined;
   set: (key: string, code: string) => void;
@@ -51,12 +52,17 @@ interface CompiledCodeCache {
   readonly size: number;
 }
 
+/** Options for `createTemplateCache` — the LRU entry bound. */
 interface TemplateCacheOptions {
   // WHY: bounded LRU — an engine rendering unbounded distinct templates must not grow
   // the cache without limit; insertion order of the Map IS the recency list.
   maxEntries?: number;
 }
 
+/**
+ * Creates a bounded LRU compiled-code cache — Map insertion order doubles as
+ * the recency list, and reads re-insert to keep hot entries fresh.
+ */
 const createTemplateCache = ({
   maxEntries = 100,
 }: TemplateCacheOptions = {}): CompiledCodeCache => {

@@ -10,6 +10,7 @@ const readStringProp = (value: unknown, key: string): string | undefined => {
   return typeof stringValue === 'string' ? stringValue : undefined;
 };
 
+/** Snapshots an error's own fields, dropping location coords and re-adding `name`/`message`. */
 const extractErrorSnapshot = (err: unknown): Record<string, unknown> => {
   if (!isKeyedObject(err)) {
     return {};
@@ -24,6 +25,7 @@ const extractErrorSnapshot = (err: unknown): Record<string, unknown> => {
   };
 };
 
+/** Narrows catalog-style props (causes, fix, severity) off an unknown error shape. */
 const resolveErrorProps = (
   err: unknown
 ): {
@@ -52,6 +54,7 @@ const resolveErrorProps = (
   };
 };
 
+/** Builds a catalog error definition from normalized metadata plus resolved props. */
 const buildErrorDef = (
   metadata: ReturnType<typeof normalizeErrorMetadata>,
   resolved: ReturnType<typeof resolveErrorProps>
@@ -67,6 +70,7 @@ const buildErrorDef = (
   severity: resolved.originalSeverity ?? 'error',
 });
 
+/** Narrows a value to a render-context record, `null` for non-objects. */
 const toRenderContext = (value: unknown): Record<string, unknown> | null =>
   isKeyedObject(value) ? (value as Record<string, unknown>) : null;
 

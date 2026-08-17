@@ -14,6 +14,7 @@ interface NunjucksPlugin {
   readonly dompurify?: DomPurifyConfig;
 }
 
+/** Result of folding a plugin list — merged maps plus the last `dompurify` config. */
 interface FoldedPlugins {
   readonly filters: ExtensionMap;
   readonly globals: ExtensionMap;
@@ -52,6 +53,10 @@ const mergeExtensions = (
 // WHY: fold plugins left-to-right so a later plugin overrides an earlier one's same-named filter/global/etc.
 // (declarative reduce per Rule 2). The factory then layers the user's direct filters/globals/tests/extensions
 // on top of this folded result, which in turn sit above the built-in default filter bundle.
+/**
+ * Folds plugins left-to-right into one bundle — a later plugin overrides an
+ * earlier one's same-named entry; malformed values drop at fold time.
+ */
 const foldPlugins = (plugins: readonly NunjucksPlugin[] = []): FoldedPlugins =>
   plugins.reduce<FoldedPlugins>(
     (folded, plugin) => ({

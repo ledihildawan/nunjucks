@@ -15,6 +15,7 @@ type RootRenderFunc = (
   runtime: RuntimeContext
 ) => AsyncGenerator<string, unknown>;
 
+/** Shared template state — env, path, include chain, and block maps. */
 type TemplateStateBase = {
   env: Env;
   path: string | undefined;
@@ -23,6 +24,7 @@ type TemplateStateBase = {
   blockMeta: Record<string, BlockLocation>;
 };
 
+/** The template state machine — `source` with raw text, or `compiled` with loaded exports. */
 type TemplateState = TemplateStateBase &
   (
     | { status: 'source'; tmplStr: string; tmplProps: null; rootRenderFunc: null }
@@ -40,6 +42,10 @@ export type TemplateSource =
   | { readonly type: 'code'; readonly value: CompiledTemplateExports }
   | { readonly type: 'string'; readonly value: string };
 
+/**
+ * The public template handle — env/path/block accessors plus `render`,
+ * `compile`, and `getExported` over the shared state machine.
+ */
 export interface TemplateObject {
   readonly [key: symbol]: true;
   env: Env;

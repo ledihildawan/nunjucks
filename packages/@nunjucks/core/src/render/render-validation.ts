@@ -90,6 +90,10 @@ interface ValidationOptions {
   context: unknown;
 }
 
+/**
+ * Validates the render invocation — template type, config, then context —
+ * fail-fast in that order so the most specific error surfaces first.
+ */
 export const validateRender = async (
   template: unknown,
   { config, context }: ValidationOptions
@@ -146,6 +150,7 @@ export const validateRender = async (
   return ok(undefined);
 };
 
+/** Validates resolved template source against size and content limits. */
 export const validateTemplateSource = async (
   templateSource: string,
   { config, context }: ValidationOptions

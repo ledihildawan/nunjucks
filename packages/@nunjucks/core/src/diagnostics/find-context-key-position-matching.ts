@@ -1,10 +1,12 @@
 import { escapeRegex } from '@nunjucks/lib';
 
+/** A 1-based line/column hit within the caller's source file. */
 interface LinePosition {
   line: number;
   col: number;
 }
 
+/** Folds a hit into the running best — nearest line wins, earlier column breaks ties. */
 const findBetterMatch = (
   acc: { best: LinePosition | null; bestDistance: number },
   candidate: LinePosition,
@@ -30,6 +32,7 @@ interface FindBestMatchInput {
   searchRadius: number;
 }
 
+/** Finds the best key occurrence within a ±radius window around the render call line. */
 const findBestMatch = ({
   lines,
   keyName,

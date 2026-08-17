@@ -9,6 +9,7 @@ import { buildCompileCacheKey } from '../template/template-cache.ts';
 import type { CompiledCodeCache } from '../template/template-cache.ts';
 import type { RenderConfig } from './render-types.ts';
 
+/** Builds env lookups that resolve (or catalog-throw) filters, tests, and extensions. */
 const createEnvLookups = (
   config: RenderConfig
 ): Pick<Env, 'getFilter' | 'getTest' | 'getExtension'> => ({
@@ -77,6 +78,7 @@ const createIncludeExportsMemo = () => {
   };
 };
 
+/** Builds the include-capable env — loader-backed `getTemplate` with compiled reuse. */
 const buildRenderEnv = (loader: TemplateLoader | null, config: RenderConfig): Env | null => {
   if (!loader || config.env) {
     return null;
@@ -154,6 +156,7 @@ const buildRenderEnv = (loader: TemplateLoader | null, config: RenderConfig): En
   };
 };
 
+/** Resolves the execution env — the caller's own, or a fresh one with load-error `getTemplate`. */
 const buildExecutionEnv = (config: RenderConfig): Env =>
   config.env ?? {
     opts: {

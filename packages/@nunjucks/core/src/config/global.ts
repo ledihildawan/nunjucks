@@ -2,6 +2,7 @@ import type { UndefinedMode } from '@nunjucks/shared';
 import type { DomPurifyConfig, Environment, SandboxMode } from '@nunjucks/shared';
 import packageJson from '../../package.json';
 
+/** Engine version sourced from `package.json`; stamped into error markers and stream output. */
 const PACKAGE_VERSION = packageJson.version as string;
 
 export { PACKAGE_VERSION };
@@ -131,10 +132,15 @@ interface GlobalConfigBase {
   readonly dompurify: DomPurifyConfig;
 }
 
+/**
+ * The engine's fully-resolved defaults — `GlobalConfigBase` plus an index
+ * signature so the loose `RenderOptions` input bag can spread it unchecked.
+ */
 interface GlobalConfig extends GlobalConfigBase {
   readonly [key: string]: unknown;
 }
 
+/** A frozen pair of built-in filters and their `dompurify` sanitizer config. */
 interface FilterBundle {
   readonly filters: Readonly<Record<string, unknown>>;
   readonly dompurify: DomPurifyConfig;
@@ -159,6 +165,10 @@ const DEFAULT_CONFIG: Omit<GlobalConfig, 'filters' | 'dompurify'> = Object.freez
   views: null,
 });
 
+/**
+ * Builds the frozen default `GlobalConfig` — sandbox and autoescape defaults,
+ * safe built-in globals, plus the supplied (or empty) filter bundle.
+ */
 const getDefaultConfig = (bundle?: FilterBundle): GlobalConfig =>
   ({
     ...DEFAULT_CONFIG,

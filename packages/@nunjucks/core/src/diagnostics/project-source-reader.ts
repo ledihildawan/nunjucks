@@ -11,6 +11,7 @@ const isProjectSource = (path: string): boolean => {
   return !normalized.includes('/node_modules/');
 };
 
+/** Reads a caller source for enrichment — skips `node_modules` and unreadable/oversized files. */
 export const readProjectSource = (location: ProjectSourceLocation): ProjectSourceContent | null => {
   if (location.line === null || !isProjectSource(location.path)) {
     return null;

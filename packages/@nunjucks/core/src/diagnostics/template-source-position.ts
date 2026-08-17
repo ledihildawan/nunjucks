@@ -3,6 +3,7 @@ import { slice } from '@nunjucks/lib';
 import { flatMap, pipe, reduce } from 'remeda';
 import type { SourcePosition, TemplateMatch } from './error-location-types.ts';
 
+/** Expands a hint to its CRLF twin when multi-line, so Windows-authored callers still match. */
 const templateCandidates = (templateHint: string): string[] => {
   if (!templateHint.includes('\n')) {
     return [templateHint];
@@ -57,6 +58,7 @@ interface TemplateOccurrenceInput {
   preferredLine: number | null;
 }
 
+/** Finds the occurrence of the template hint closest to the preferred line. */
 const findTemplateOccurrence = ({
   content,
   templateHint,
@@ -98,6 +100,10 @@ interface TemplateMatchInput {
   preferredLine: number | null;
 }
 
+/**
+ * Maps a template-relative error coordinate onto the template's occurrence in
+ * the caller file — returns `null` unless the coordinate lies within bounds.
+ */
 const matchTemplateInCaller = ({
   content,
   templateHint,

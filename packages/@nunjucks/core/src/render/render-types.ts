@@ -9,6 +9,7 @@ import type { SandboxMode } from '../config/global.ts';
 import type { CompiledCodeCache } from '../template/template-cache.ts';
 import type { CallerLocation } from './caller-file.ts';
 
+/** Context validation failure carrying the offending value paths. */
 interface RenderValidationError extends BaseValidationError {
   dangerousPaths?: string[];
 }
@@ -71,10 +72,12 @@ interface ValidationErrorRequest {
   context: unknown;
 }
 
+/** Successful compile output — the executable code string. */
 interface CompileResult {
   code: string;
 }
 
+/** Everything the execute/stream phases need — produced by `prepareRender`. */
 interface PreparedTemplate {
   readonly code: string;
   readonly sandboxedCtx: Record<string, unknown>;
@@ -87,6 +90,7 @@ interface PreparedTemplate {
   readonly version?: string;
 }
 
+/** Loose input bag for the internal render entry points — defaults over `GlobalConfig`. */
 interface RenderOptions extends Partial<import('../config/global.ts').GlobalConfig> {
   context?: Record<string, unknown>;
   streamContentType?: ContentType;

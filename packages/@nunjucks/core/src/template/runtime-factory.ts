@@ -4,6 +4,7 @@ export { createRuntimeWithContext };
 
 import type { RuntimeContext } from './runtime-context.ts';
 
+/** Builds the runtime contract for one render — template name, context, warnings. */
 const createRuntimeWithContext = (
   templatePath: string | undefined,
   renderContext: unknown = null,

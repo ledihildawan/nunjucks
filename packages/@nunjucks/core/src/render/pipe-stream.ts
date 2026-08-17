@@ -20,6 +20,7 @@ interface PipeSink {
   off?: (event: string, listener: () => void) => void;
 }
 
+/** Options for `pipeRenderStream` — content type, dev flags, limits, and lifecycle hooks. */
 interface PipeRenderStreamOptions {
   contentType?: ContentType;
   dev?: boolean;
@@ -59,6 +60,7 @@ const CONTENT_TYPE_MAP: Record<string, string> = {
   text: 'text/plain; charset=utf-8',
 };
 
+/** Serializes a marker error to its JSON wire shape for `json` content-type responses. */
 const serializeErrorPayload = (error: RenderMarkerError): string =>
   JSON.stringify({
     error: true,

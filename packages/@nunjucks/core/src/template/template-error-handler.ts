@@ -3,6 +3,7 @@ import { defaultTo } from 'remeda';
 
 export { buildErrorMessage, createTemplateErrorHandler, extractFrameDetails };
 
+/** An `Error` widened with optional template line-info fields. */
 export interface ErrorWithLineInfo extends Error {
   lineBase?: string;
   colno?: number;
@@ -27,6 +28,7 @@ interface BuildErrorMessageOptions {
   e: ErrorWithLineInfo;
 }
 
+/** Builds the `(path) [Line, Column]\n message` display form. */
 const buildErrorMessage = ({
   currentPath,
   sourceLineno,
@@ -50,6 +52,10 @@ interface ExtractFrameDetailsInput {
   hasIncludeChain: unknown;
 }
 
+/**
+ * Rebuilds an error with synthetic frame details — only for errors lacking
+ * `lineBase`, an include chain, or usable coordinates; `null` otherwise.
+ */
 const extractFrameDetails = ({
   error: e,
   sourceLineno,
@@ -86,6 +92,7 @@ const extractFrameDetails = ({
   return newError;
 };
 
+/** Creates the error enricher bound to the template's path and include chain. */
 const createTemplateErrorHandler = (
   getState: () => { path: string | undefined; includeChain: IncludeChain | null }
 ) => {

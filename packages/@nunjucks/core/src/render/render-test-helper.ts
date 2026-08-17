@@ -2,6 +2,7 @@ import { isErr } from '@nunjucks/lib';
 import type { GlobalConfig } from '../config/global.ts';
 import { render } from './render.ts';
 
+/** Renders a template, throwing on `Err` — the test-suite convenience around `render`. */
 const renderTemplate = async (
   template: string,
   context: Record<string, unknown> = {},

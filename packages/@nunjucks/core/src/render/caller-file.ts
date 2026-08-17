@@ -6,6 +6,7 @@ const MAX_CALLER_FRAMES = 6;
 export type { CallerLocation };
 
 // WHY: stack capture is the impure shell of this module (it mutates Error.prepareStackTrace to read V8 CallSites). Kept isolated here so the rest of the module stays pure. The try/finally guarantees the global swap is restored even if stack access throws — a leaked override would corrupt every future Error stack capture in the process.
+/** Captures the V8 `CallSite[]`, restoring `prepareStackTrace` in a `finally` block. */
 const captureCallerStack = (): NodeJS.CallSite[] => {
   const original = Error.prepareStackTrace;
   let captured: NodeJS.CallSite[] | undefined;
@@ -53,6 +54,7 @@ const callsiteToCallerLocation = (site: NodeJS.CallSite): CallerLocation | null 
 };
 
 // WHY: render() is often invoked through one or more user wrappers (e.g. an Express renderTemplate helper), so the template literal lives in a frame above the immediate caller. Capturing a small slice of the stack lets the resolver walk up until it finds the file that actually contains the literal, instead of fixating on the wrapper where render() is called.
+/** Collects the consumer-side stack frames that may contain the template literal. */
 const getCallerFrames = (): CallerLocation[] =>
   captureCallerStack()
     .slice(CALLER_INDEX, CALLER_INDEX + MAX_CALLER_FRAMES)

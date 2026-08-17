@@ -121,6 +121,7 @@ const formatSentinelChunk = async ({
   });
 };
 
+/** Formats a mid-stream error as an inline marker — JSON, text, or HTML by content type. */
 const formatErrorMarker = (
   error: RenderMarkerError,
   options: { ide?: string; contentType?: string; version?: string; dev?: boolean } = {}
@@ -179,6 +180,11 @@ const formatStreamChunk = async ({
   return chunkResult.value;
 };
 
+/**
+ * Streams a prepared template's output — sentinel errors render as inline
+ * markers (enriched once, then location-cached), thrown errors surface as
+ * enriched `TemplateError`s, and a cooperative deadline bounds CPU-bound chains.
+ */
 const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGenerator<string> {
   const { code, sandboxedCtx, warningsCollector, resolvedConfig, templateSource, context } =
     prepared;

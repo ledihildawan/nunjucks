@@ -32,6 +32,7 @@ const BLOCK_ERROR_CODES: ReadonlySet<string> = new Set([
   ERROR_CODES.UNKNOWN_BLOCK_RUNTIME,
 ]);
 
+/** Maps an error to its stream display — `block` for structural codes, `inline` otherwise. */
 const getSeverity = (error: unknown): DisplaySeverity => {
   const code = readErrorCode(error);
   return code !== null && BLOCK_ERROR_CODES.has(code) ? 'block' : 'inline';

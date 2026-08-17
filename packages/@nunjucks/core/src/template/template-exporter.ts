@@ -6,6 +6,10 @@ import type { TemplateState } from './types';
 
 export { createGetExported };
 
+/**
+ * Creates the `getExported` function — compiles on demand, drains the root
+ * generator to capture its post-render context, and returns the exports.
+ */
 const createGetExported =
   (getState: () => TemplateState, compiler: { safeCompile: () => Promise<void> }) =>
   async (ctx?: Record<string, unknown>, parentFrame?: Frame): Promise<Record<string, unknown>> => {

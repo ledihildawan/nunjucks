@@ -251,6 +251,11 @@ const resolveTemplateLocation = (inputs: LocationInputs): ResolvedLocation => {
   };
 };
 
+/**
+ * Resolves where an error should be reported — caller `file:line:col` when a
+ * candidate-source match wins (reads caller files off disk), else the
+ * template's own coordinates with the original `lineBase` preserved.
+ */
 const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation> => {
   if (resolvePreferCallerLocation(inputs)) {
     const candidates = buildCallerCandidates(inputs);

@@ -8,6 +8,11 @@ interface FindContextKeyPositionInput {
   dangerousPath: string;
 }
 
+/**
+ * Locates the line/col where a dangerous context key is defined in the caller's
+ * source — reads the file off disk, preferring property-key occurrences
+ * (`key:`) near the render call, degrading to `null` when unreadable.
+ */
 export const findContextKeyPosition = async ({
   sourceFile,
   callLine,

@@ -4,6 +4,7 @@ import { flatMap, pipe, reduce } from 'remeda';
 import type { SourcePosition } from './error-location-types.ts';
 import { findTemplateOccurrence, matchTemplateInCaller } from './template-source-position.ts';
 
+/** Stringifies a template value for caller-source matching — `null`/`undefined` kept literal. */
 const templateLiteralText = (template: unknown): string => {
   if (template === null) {
     return 'null';
@@ -217,6 +218,7 @@ const extractTemplatePosition = (input: CallerPositionInput): SourcePosition | n
   return null;
 };
 
+/** Locates the subject as a quoted string (`'...'`/`"..."`) in the caller file. */
 const extractQuotedSubjectPosition = (input: CallerPositionInput): SourcePosition | null => {
   const effectiveSubject = resolveEffectiveSubject(input.subject, input.template);
   return findSubjectOccurrence({
@@ -227,6 +229,7 @@ const extractQuotedSubjectPosition = (input: CallerPositionInput): SourcePositio
   });
 };
 
+/** Locates the subject as a bare word in the caller file — lowest-confidence tier. */
 const extractBareSubjectPosition = (input: CallerPositionInput): SourcePosition | null => {
   const effectiveSubject = resolveEffectiveSubject(input.subject, input.template);
   return findSubjectOccurrence({

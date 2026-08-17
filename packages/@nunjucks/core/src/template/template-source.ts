@@ -17,6 +17,7 @@ interface GetTemplateOptions {
 
 // WHY: derives from runtime's canonical bare Env (SSOT) — this fallback only adds the
 // getTemplate behavior a source-loading path needs.
+/** Derives from runtime's bare `Env` — only adds the `FILE_NOT_FOUND`-throwing `getTemplate`. */
 const createFallbackEnv = (): Env => ({
   ...createDefaultEnv(),
   getTemplate({ name, ignoreMissing }: GetTemplateOptions) {
@@ -39,6 +40,7 @@ interface InitTemplateStateOptions {
   includeChain: IncludeChain | null | undefined;
 }
 
+/** Seeds template state — env (fallback included), path, chain, empty block maps. */
 const initTemplateState = ({
   src: _src,
   env,
@@ -52,6 +54,7 @@ const initTemplateState = ({
   blockMeta: {},
 });
 
+/** Loads src into the state machine — string or `TemplateSource`; throws on bad shapes. */
 const loadSource = (base: TemplateStateBase, src: string | TemplateSource): TemplateState => {
   if (isPlainObject(src)) {
     // WHY: cast is boundary defense — JS callers can pass any object shape; the runtime

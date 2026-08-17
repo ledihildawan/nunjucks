@@ -29,6 +29,10 @@ interface CompileToCodeOptions {
   extensions?: readonly ParserExtension[];
 }
 
+/**
+ * Compiles template source to executable JS code — parse, transform, codegen —
+ * folding every stage's failure into a `Result` instead of throwing.
+ */
 const compileToCode = ({
   source,
   templateName,

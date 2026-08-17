@@ -14,6 +14,7 @@ import type { SandboxEnvironment, SandboxMode } from './global.ts';
 // render pipeline casts to the callable shape at the call site.
 export type ExtensionMap = Readonly<Record<string, unknown>>;
 
+/** Groups sandbox and context-hardening knobs — mode, allowlists, blocked keys, strictness. */
 interface SecurityConfig {
   readonly sandbox?: boolean;
   readonly sandboxMode?: SandboxMode;
@@ -26,12 +27,14 @@ interface SecurityConfig {
   readonly strictMode?: boolean;
 }
 
+/** Groups resource ceilings — execution timeout and template/output size caps. */
 interface LimitsConfig {
   readonly executionTimeout?: number;
   readonly maxTemplateSize?: number;
   readonly maxOutputSize?: number;
 }
 
+/** Groups stream behavior — error recovery, content type, idle timeout, chunk coalescing. */
 interface StreamingConfig {
   readonly errorRecovery?: boolean;
   readonly contentType?: ContentType;
@@ -81,6 +84,7 @@ interface NunjucksConfig {
   readonly plugins?: readonly NunjucksPlugin[];
 }
 
+/** Per-call overrides accepted by every engine method — views, timeout, content type. */
 interface PerRenderOverrides {
   readonly views?: string | string[];
   readonly templatePath?: string | null;
