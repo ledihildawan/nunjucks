@@ -96,9 +96,9 @@ Unterminated strings, comments, and template literals raise `UNTERMINATED_LITERA
 
 Registered set (aliases in parentheses). All return `Result` internally; failures surface as catalogued filter errors.
 
-> **Note on parameter names below:** signatures use the positional/upstream-nunjucks style for readability. The registered keyword-argument names differ in a few filters (e.g. `indent` registers `indentfirst`, `truncate` registers `length`, `replace` registers `newValue`/`maxCount`, `fallback` registers `val`/`def`/`bool`) — prefer positional arguments to avoid misbinding kwargs.
+> **Note on parameter names below:** signatures use the positional/upstream-nunjucks style for readability. The registered keyword-argument names differ in a few filters (e.g. `indent` registers `indentfirst`, `truncate` registers `length`, `replace` registers `newValue`/`maxCount`, `fallback` registers `val`/`def`/`bool`). Passing an **unknown** kwarg throws a catalogued `UNKNOWN_FILTER_KWARG` error — prefer positional arguments to sidestep the naming mismatch entirely.
 
-**String** — `capitalize`, `escape` (`e`) HTML-escape → SafeString, `fallback` (`default`, `d`) `(value, fallback, useFalsy=false)`, `indent(width=4, first=false)`, `lower`, `upper`, `trim`, `title`, `replace(old, new, max=-1)` (string or RegExp needle), `truncate(len=255, killwords=false, end='...')`, `tojson` (XSS-safe JSON → SafeString).
+**String** — `capitalize`, `escape` (`e`) HTML-escape → SafeString, `fallback` (`default`, `d`) `(value, fallback, useFalsy=false)`, `indent(width=4, first=false)`, `lower`, `upper`, `trim`, `title`, `replace(old, new, max=-1)` (string or RegExp needle; an **omitted** `new` deletes the needle), `truncate(len=255, killwords=false, end='...')`, `tojson` (XSS-safe JSON → SafeString; script-safe, and attribute-safe under autoescape — attribute contexts entity-encode the SafeString so quotes cannot break out).
 
 **Array** — `first`, `last`, `length` / `lengthFilter` (both names callable — the internal function name is registered alongside its upstream-compat alias), `reverse`, `join(delim='', attr)` (array input; errors on non-arrays), `slice(n, fill)` (n near-equal columns), `sort`, `sum(attr?, start=0)`.
 
@@ -167,6 +167,27 @@ const njk = nunjucks({ extensions: { hello: helloExtension } });
 ```
 
 Parser-authoring helpers (`advanceAfterBlockEnd`, `skipSymbol`, `peekToken`, `nextToken`, `fail`, `consumeWhitespaceDrop`) are exported from `@nunjucks/parser`. Precedence: built-ins → plugins (left-to-right) → direct config maps.
+
+## Globals
+
+Templates can read a small set of engine-provided globals (all read-only under sandboxing; interact with `security.allowedGlobals` to permit custom callables):
+
+- **JSON** — `parse`, `stringify` (prefer the `tojson` filter for markup-safe output)
+- **Math** — `floor`, `ceil`, `abs`, `min`, `max`, `round`, `trunc`, `sign`, `sqrt`, `pow`, `PI`, `E`, …
+- **Number** — `isInteger`, `isFinite`, `isNaN`, `parseFloat`, `parseInt`, `MAX_SAFE_INTEGER`, …
+- **Object** — `keys`, `values`, `entries`, `assign`, `freeze`, `fromEntries`, `hasOwn`
+- **Array** — `isArray`, `of`, `from`
+- **String** — `fromCharCode`, `fromCodePoint`, `raw`
+- **Date** — `now`, `parse`, `UTC`
+- **Promise** — `all`, `allSettled`, `race`, `any`, `resolve`, `reject`
+- **ArrayBuffer** — `isView`
+- **version** — the engine's `PACKAGE_VERSION` string (e.g. `{{ version }}`)
+
+Deviation from upstream: no `range`/`cycler`/`joiner` globals — use `1..n` range expressions and `config.globals` for app-specific data.
+
+## Walrus (`:=`) and undefined modes
+
+The walrus operator's right-hand side is **not** undefined-checked, even under `undefined: 'strict'` — binding semantics intentionally differ from output-position reads (`{{ x := missing }}` binds silently; a later `{{ x }}` errors on the *read*). Guard with `?? default` or `|> fallback(...)` when the source may be missing.
 
 ## Defaults at a glance
 
