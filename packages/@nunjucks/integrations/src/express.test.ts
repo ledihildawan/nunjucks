@@ -78,4 +78,33 @@ describe('Express integration', () => {
 
     expect(rendered).toBe('<em>ok</em>');
   });
+
+  test('broken template surfaces the error via the callback (Result err path)', async () => {
+    const viewsDirectory = await mkdtemp(join(tmpdir(), 'nunjucks-express-'));
+    temporaryDirectories.push(viewsDirectory);
+    const templatePath = join(viewsDirectory, 'broken.njk');
+    await writeFile(templatePath, '{% if %}');
+
+    const error = await new Promise<Error | null>((resolve) => {
+      createEngine()(templatePath, {}, (err) => resolve(err));
+    });
+
+    expect(error).toBeInstanceOf(Error);
+  });
+
+  test('missing template file falls back to inline rendering (no error)', async () => {
+    const viewsDirectory = await mkdtemp(join(tmpdir(), 'nunjucks-express-'));
+    temporaryDirectories.push(viewsDirectory);
+    const missingPath = join(viewsDirectory, 'does-not-exist.njk');
+
+    const outcome = await new Promise<{ err: Error | null; html?: string }>((resolve) => {
+      createEngine()(missingPath, {}, (err, html) => resolve({ err, html }));
+    });
+
+    // WHY: engine by-design — a loader miss without template syntax falls back to
+    // rendering the name as inline text, so Express receives a successful literal
+    // render rather than a load error.
+    expect(outcome.err).toBeNull();
+    expect(outcome.html).toBe('does-not-exist.njk');
+  });
 });
