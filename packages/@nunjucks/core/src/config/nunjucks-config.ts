@@ -47,6 +47,14 @@ interface CacheConfig {
   readonly maxEntries?: number;
 }
 
+/**
+ * Engine configuration consumed by the `nunjucks()` factory. Every field is
+ * optional; unset fields fall back to safe defaults (autoescape on, filesystem
+ * resolution from `views`, in-memory compiled-template cache).
+ *
+ * Template sources: set `views` (filesystem roots, first match wins) **or**
+ * `loaders` (custom chain that replaces filesystem resolution entirely).
+ */
 interface NunjucksConfig {
   readonly dev?: boolean;
   // WHY: multi-root lookup mirrors createFileSystemLoader's searchPaths contract —
@@ -85,16 +93,44 @@ interface PerRenderOverrides {
 // (subject + payload + optional config); pipeRenderStream keeps its (result, sink, options)
 // shape so all three engine methods read uniformly as (subject, target, optional-config).
 interface NunjucksEngine {
+  /**
+   * Renders a template to a complete string.
+   *
+   * @param template - Template name resolved via `views`/`loaders`, or inline
+   *   source when no matching file exists.
+   * @param context - Template variables.
+   * @param overrides - Per-render overrides (views, timeout, content type).
+   * @returns Result string, or a `TemplateError` (`err`) covering parse,
+   *   compile, load, security, and render-phase failures.
+   */
   render(
     template: string,
     context?: Record<string, unknown>,
     overrides?: PerRenderOverrides
   ): Promise<Result<string, TemplateError>>;
+  /**
+   * Renders a template as a two-pass chunked stream (validation pass, then
+   * streamed output).
+   *
+   * @param template - Template name or inline source (see {@link render}).
+   * @param context - Template variables.
+   * @param overrides - Per-render overrides.
+   * @returns Stream result whose chunks are consumed via its async iterator;
+   *   pre-stream failures surface before the first chunk, mid-stream failures
+   *   abort iteration (or render inline markers when error recovery is on).
+   */
   renderToStream(
     template: string,
     context?: Record<string, unknown>,
     overrides?: PerRenderOverrides
   ): Promise<RenderStreamResult>;
+  /**
+   * Pipes a {@link renderToStream} result into an HTTP-style sink.
+   *
+   * @param result - Stream result to drain.
+   * @param sink - Sink implementing `status`/`setHeader`/`write`/`end`.
+   * @param options - Sink behavior (error hook, headers, content type).
+   */
   pipeRenderStream(
     result: RenderStreamResult,
     sink: PipeSink,

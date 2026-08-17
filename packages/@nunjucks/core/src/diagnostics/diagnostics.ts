@@ -192,6 +192,24 @@ interface WrapWithLogInput {
   renderContext?: unknown;
 }
 
+/**
+ * Enriches a raw render error into a fully-located `TemplateError` — the
+ * second pass of the two-layer error pipeline (runtime `handleError` normalizes
+ * first; see the WHY above for the full layer split).
+ *
+ * Reads caller project sources off disk (`resolveLocation`) to map template
+ * offsets to caller `file:line:col`, then re-creates the error with full
+ * metadata, resolved location, environment label, and timestamp.
+ *
+ * @param error - Raw or Layer-1-normalized error of any shape.
+ * @param config - Diagnostics inputs: `phase`, `dev`, `ide`, template/caller
+ *   location hints, and `environment` label.
+ * @param template - Template source (inline string or literal value) used for
+ *   source traces and caller-source matching. Defaults to `null`.
+ * @param renderContext - Context snapshot attached to the enriched error.
+ *   Defaults to `null`.
+ * @returns The enriched, fully-located `TemplateError`.
+ */
 export const wrapWithLog = async ({
   error,
   config,
