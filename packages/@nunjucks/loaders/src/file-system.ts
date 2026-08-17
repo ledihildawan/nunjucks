@@ -8,6 +8,7 @@ import { containsNullByte, err, isWithinBase, ok, type Result } from '@nunjucks/
 import { isArray } from 'remeda';
 import { createLoader, type Loader } from './base.ts';
 import type { TemplateLoader, TemplateLoaderSource } from './loader-chain.ts';
+import { createSourceMemo } from './source-memo.ts';
 
 const normalizeSearchPaths = (searchPaths: string | string[] | undefined): string[] => {
   if (!searchPaths) {
@@ -157,19 +158,8 @@ const createWatchHandler =
 
 interface FileSystemLoaderOptions {
   watch?: boolean;
-  // WHY: source memo — repeated getSource calls for an unchanged file answer from
-  // memory after a single stat() revalidation instead of the full verification pass
-  // (stat + realpath x2 + readFile). A rewritten file (different mtimeMs/size) always
-  // takes the full path, so traversal containment is re-proven after any change.
+  // WHY: source memo — see source-memo.ts; false restores the always-verify path.
   memo?: boolean;
-}
-
-// WHY: memo identity = (mtimeMs, size) — the same pair filesystems use to detect
-// modification; content equality follows because any real write updates mtime.
-interface MemoizedSource {
-  readonly source: TemplateLoaderSource;
-  readonly mtimeMs: number;
-  readonly size: number;
 }
 
 export interface FileSystemLoader extends Loader, TemplateLoader {
@@ -193,7 +183,7 @@ export const createFileSystemLoader = (
   const pathsToNames = new Map<string, string>();
   const watchEnabled = Boolean(options.watch);
   const memoEnabled = options.memo !== false;
-  const sourceMemo = new Map<string, MemoizedSource>();
+  const sourceMemo = memoEnabled ? createSourceMemo() : null;
 
   const unwatchFile = (filePath: string): void => {
     const watcher = watchedFiles.get(filePath);
@@ -240,57 +230,9 @@ export const createFileSystemLoader = (
     watchedFiles.clear();
   };
 
-  // WHY: revalidation touch — one stat() on the full path. Same mtime+size means the
-  // memoized source (already traversal-proven) is still valid; any difference falls
-  // through to the full verification pass. ENOENT on revalidation means the file was
-  // deleted — drop the memo and treat it as a miss.
-  const readMemoizedSource = async (
-    fullPath: string
-  ): Promise<Result<TemplateLoaderSource, TemplateError> | null> => {
-    const memoized = sourceMemo.get(fullPath);
-    if (!memoized) {
-      return null;
-    }
-    try {
-      const currentStat = await stat(fullPath);
-      if (
-        currentStat.mtimeMs === memoized.mtimeMs &&
-        currentStat.size === memoized.size
-      ) {
-        return ok(memoized.source);
-      }
-    } catch {
-      sourceMemo.delete(fullPath);
-      return null;
-    }
-    sourceMemo.delete(fullPath);
-    return null;
-  };
-
-  const getSource = async (
+  const readVerifiedSource = async (
     name: string
   ): Promise<Result<TemplateLoaderSource, TemplateError> | null> => {
-    if (containsNullByte(name)) {
-      return null;
-    }
-
-    if (memoEnabled) {
-      const memoKey = path.resolve(
-        normalizedSearchPaths.find(
-          (searchPath) => sourceMemo.has(path.resolve(searchPath, name))
-        ) ?? normalizedSearchPaths[0] ?? '.',
-        name
-      );
-      const memoHit = await readMemoizedSource(memoKey);
-      if (memoHit !== null) {
-        if (!memoHit.ok) {
-          return err(memoHit.error);
-        }
-        base.emit('load', name, memoHit.value);
-        return ok(memoHit.value);
-      }
-    }
-
     const pathResult = await findFileInSearchPaths(normalizedSearchPaths, name);
     if (pathResult === null) {
       return null;
@@ -314,21 +256,28 @@ export const createFileSystemLoader = (
     }
 
     const source: TemplateLoaderSource = { ...sourceResult.value };
-    if (memoEnabled) {
-      try {
-        const fileStat = await stat(fullPath);
-        sourceMemo.set(fullPath, {
-          source,
-          mtimeMs: fileStat.mtimeMs,
-          size: fileStat.size,
-        });
-      } catch {
-        // WHY: memo population is best-effort — a stat race right after read falls
-        // back to the always-correct uncached path on the next call.
-      }
+    if (sourceMemo) {
+      await sourceMemo.remember(fullPath, source);
     }
-    base.emit('load', name, source);
     return ok(source);
+  };
+
+  const getSource = async (
+    name: string
+  ): Promise<Result<TemplateLoaderSource, TemplateError> | null> => {
+    if (containsNullByte(name)) {
+      return null;
+    }
+    const memoHit = sourceMemo ? await sourceMemo.consult(normalizedSearchPaths, name) : null;
+    if (memoHit !== null) {
+      return memoHit.ok ? ok(memoHit.value) : err(memoHit.error);
+    }
+    const verified = await readVerifiedSource(name);
+    if (verified === null || !verified.ok) {
+      return verified;
+    }
+    base.emit('load', name, verified.value);
+    return ok(verified.value);
   };
 
   return {
