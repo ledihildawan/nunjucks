@@ -4,13 +4,15 @@ import { createNumberToken } from '../tokens.ts';
 import type { LexerState, Tokenizer } from '../types.ts';
 
 const parseDigits = (current: LexerState): { num: string; current: LexerState } => {
-  const scan = (pos: LexerState, num: string): { num: string; current: LexerState } => {
-    if (pos.index >= pos.source.length || !isDigit(pos.source[pos.index] ?? '')) {
-      return { num, current: pos };
-    }
-    return scan(advance(pos), num + (pos.source[pos.index] ?? ''));
-  };
-  return scan(current, '');
+  // WHY: while loop instead of per-digit recursion — a long digit run overflowed the
+  // native stack. Loop exemption: lexer/tokenizer engine, per ARCHITECTURE.md.
+  let scanState = current;
+  let num = '';
+  while (scanState.index < scanState.source.length && isDigit(scanState.source[scanState.index] ?? '')) {
+    num += scanState.source[scanState.index] ?? '';
+    scanState = advance(scanState);
+  }
+  return { num, current: scanState };
 };
 
 const parseDecimalPart = (

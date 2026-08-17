@@ -140,4 +140,14 @@ describe('createTokenizer large-input regression (no stack overflow)', () => {
     expect(tks.filter((t) => t.type === 'variable-start').length).toBe(10_000);
     expect(tks.filter((t) => t.type === 'variable-end').length).toBe(10_000);
   });
+
+  test('tokenizes a ~100KB digit run as a single number token (no stack overflow)', () => {
+    const digits = '9'.repeat(100 * 1024);
+    const tks = tokens(`{{ ${digits} }}`);
+    const numberTokens = tks.filter((t) => t.type === 'int' || t.type === 'float');
+    expect(numberTokens.length).toBe(1);
+    // WHY: parseInt overflows to Infinity for digit runs past float precision — the
+    // pinned behavior is "one numeric token, lexed without stack overflow", not a value.
+    expect(numberTokens[0]?.value).toBe(Number.POSITIVE_INFINITY);
+  });
 });

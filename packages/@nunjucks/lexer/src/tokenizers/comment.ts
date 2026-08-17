@@ -2,7 +2,7 @@ import { createUnterminatedLiteralError } from '../literal-error.ts';
 import { advance, getChar, isFinished, matches } from '../state.ts';
 import { TOKEN_COMMENT } from '../token-types.ts';
 import { createToken } from '../tokens.ts';
-import type { LexerState, Tokenizer } from '../types.ts';
+import type { Tokenizer } from '../types.ts';
 
 export const tokenizeComment: Tokenizer = (state) => {
   if (!matches(state, state.tags.commentStart)) {
@@ -10,27 +10,24 @@ export const tokenizeComment: Tokenizer = (state) => {
   }
 
   const initial = advance(state, state.tags.commentStart.length);
-  const scan = (current: LexerState, comment: string): { current: LexerState; comment: string } => {
-    if (isFinished(current)) {
-      throw createUnterminatedLiteralError('comment', state);
-    }
+  // WHY: while loop instead of per-character recursion — a large comment body overflowed
+  // the native stack. Loop exemption: lexer/tokenizer engine, per ARCHITECTURE.md.
+  let current = initial;
+  let comment = state.tags.commentStart;
+  while (!isFinished(current)) {
     if (matches(current, state.tags.commentEnd)) {
       return {
-        current: advance(current, state.tags.commentEnd.length),
-        comment: comment + state.tags.commentEnd,
+        token: createToken({
+          type: TOKEN_COMMENT,
+          value: comment + state.tags.commentEnd,
+          lineno: state.lineno,
+          colno: state.colno,
+        }),
+        state: advance(current, state.tags.commentEnd.length),
       };
     }
-    return scan(advance(current), comment + getChar(current));
-  };
-  const { current: finalState, comment: commentValue } = scan(initial, state.tags.commentStart);
-
-  return {
-    token: createToken({
-      type: TOKEN_COMMENT,
-      value: commentValue,
-      lineno: state.lineno,
-      colno: state.colno,
-    }),
-    state: finalState,
-  };
+    comment += getChar(current);
+    current = advance(current);
+  }
+  throw createUnterminatedLiteralError('comment', state);
 };

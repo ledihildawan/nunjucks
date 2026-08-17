@@ -1,5 +1,5 @@
 import { firstMatch } from '../combinators.ts';
-import type { TokenStep } from '../types.ts';
+import type { LexerState, TokenStep } from '../types.ts';
 import { tokenizeBlockEnd, tokenizeBlockStart } from './block.ts';
 import { tokenizeComment } from './comment.ts';
 import { tokenizeNumber } from './number.ts';
@@ -43,7 +43,7 @@ const codeTokenizers = firstMatch(
   tokenizeOperator
 );
 
-export const tokenizers = (state: import('../types').LexerState): TokenStep | null => {
+export const tokenizers = (state: LexerState): TokenStep | null => {
   if (state.inCode) {
     return codeTokenizers(state);
   }

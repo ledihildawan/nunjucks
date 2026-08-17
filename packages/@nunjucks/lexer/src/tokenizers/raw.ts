@@ -1,4 +1,5 @@
 import { advance, getChar, isFinished, matches } from '../state.ts';
+import { WHITESPACE_CHARS } from '../constants.ts';
 import { TOKEN_RAW } from '../token-types.ts';
 import { createToken } from '../tokens.ts';
 import type { LexerState, Tokenizer } from '../types.ts';
@@ -13,11 +14,12 @@ interface RawTagOptions {
   readonly tags: { blockStart: string; blockEnd: string };
 }
 
-const skipSpaces = (state: LexerState): LexerState => {
+const skipWhitespace = (state: LexerState): LexerState => {
   // WHY: while loop instead of per-character recursion. Loop exemption: lexer/tokenizer
-  // engine, per ARCHITECTURE.md.
+  // engine, per ARCHITECTURE.md. Covers the full whitespace family (tabs/newlines) so
+  // `{%\traw %}` and `{% raw\n%}` lex like upstream's `\s*` tag syntax.
   let current = state;
-  while (!isFinished(current) && getChar(current) === ' ') {
+  while (!isFinished(current) && WHITESPACE_CHARS.includes(getChar(current))) {
     current = advance(current);
   }
   return current;
@@ -25,7 +27,7 @@ const skipSpaces = (state: LexerState): LexerState => {
 
 const shouldContinueTagName = (current: LexerState): boolean => {
   const char = getChar(current);
-  return !isFinished(current) && char !== ' ' && char !== '%' && char !== '}';
+  return !isFinished(current) && !WHITESPACE_CHARS.includes(char) && char !== '%' && char !== '}';
 };
 
 const extractTagName = (state: LexerState): { name: string; current: LexerState } => {
@@ -72,17 +74,24 @@ interface InnerControlTag {
   readonly isEndTag: boolean;
 }
 
+interface InnerControlTagInput {
+  readonly state: LexerState;
+  readonly name: string;
+  readonly endTagName: string;
+  readonly tags: RawTagOptions['tags'];
+}
+
 // WHY: reads the tag that starts at `state` (already known to sit on blockStart) and
 // decides whether it is a well-formed raw control tag — a nested open (raw/verbatim)
 // or the matching close (endraw/endverbatim). Returns null for anything else so the
 // caller keeps the `{%` as literal content.
-const readInnerControlTag = (
-  state: LexerState,
-  name: string,
-  endTagName: string,
-  tags: RawTagOptions['tags']
-): InnerControlTag | null => {
-  const afterInnerName = skipSpaces(advance(state, tags.blockStart.length));
+const readInnerControlTag = ({
+  state,
+  name,
+  endTagName,
+  tags,
+}: InnerControlTagInput): InnerControlTag | null => {
+  const afterInnerName = skipWhitespace(advance(state, tags.blockStart.length));
   const { name: innerName, current: afterTagName } = extractTagName(afterInnerName);
   if (innerName !== name && innerName !== endTagName) {
     return null;
@@ -117,7 +126,7 @@ const processRawContent = ({
   let depth = 1;
   while (!isFinished(scanState)) {
     const innerTag = matches(scanState, tags.blockStart)
-      ? readInnerControlTag(scanState, name, endTagName, tags)
+      ? readInnerControlTag({ state: scanState, name, endTagName, tags })
       : null;
     if (innerTag === null) {
       content += getChar(scanState);
@@ -139,7 +148,7 @@ export const tokenizeRaw: Tokenizer = (state) => {
     return null;
   }
 
-  const afterBlockStart = skipSpaces(advance(state, state.tags.blockStart.length));
+  const afterBlockStart = skipWhitespace(advance(state, state.tags.blockStart.length));
   const { name, current: afterName } = extractTagName(afterBlockStart);
 
   if (name !== 'raw' && name !== 'verbatim') {
