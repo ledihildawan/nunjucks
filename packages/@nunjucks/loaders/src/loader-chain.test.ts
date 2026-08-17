@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { err, ok } from '@nunjucks/lib';
-import { createLoaderChain, type TemplateLoader } from './loader-chain.ts';
+import { createLoaderChain, type TemplateLoader, type TemplateLoaderSource } from './loader-chain.ts';
 
 interface InMemoryLoaderInput {
   templates: Record<string, string>;
@@ -20,6 +20,12 @@ const createInMemoryLoader = ({ templates }: InMemoryLoaderInput): TemplateLoade
 
 const failingLoader = (): TemplateLoader => ({
   getSource: async () => err({ code: 'FILESYSTEM_ERROR' } as unknown as TemplateError),
+});
+
+// WHY: a JS caller's loader can resolve ok() with a contract-breaking payload — the chain
+// must reject it at the boundary instead of letting it surface as a downstream compile failure.
+const malformedLoader = (): TemplateLoader => ({
+  getSource: async () => ok({ src: 42, path: 'a.njk' } as unknown as TemplateLoaderSource),
 });
 
 describe('createLoaderChain', () => {
@@ -59,6 +65,16 @@ describe('createLoaderChain', () => {
     const chain = createLoaderChain([failingLoader(), createInMemoryLoader({ templates: {} })]);
     const result = await chain.getSource('any.njk');
     expect(result && !result.ok).toBe(true);
+  });
+
+  test('a malformed ok payload is rejected at the chain boundary', async () => {
+    const chain = createLoaderChain([malformedLoader()]);
+    const result = await chain.getSource('a.njk');
+    expect(result && !result.ok).toBe(true);
+    if (result && !result.ok) {
+      expect(result.error.code).toBe('FILESYSTEM_ERROR');
+      expect(result.error.message).toContain('malformed source');
+    }
   });
 
   test('empty chain resolves nothing', async () => {

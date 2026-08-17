@@ -1,5 +1,7 @@
+import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import type { Result } from '@nunjucks/lib';
+import { createLog } from '@nunjucks/error-formatter';
+import { err, isErr, type Result } from '@nunjucks/lib';
 
 // WHY: the minimal loader contract the render pipeline consumes — getSource resolves a
 // template name to source text. `null` means "not found here" (a chain moves on to the
@@ -21,6 +23,27 @@ interface ResolveChainInput {
   name: string;
 }
 
+// WHY: a JS caller's custom loader may resolve ok() with a malformed payload (non-string
+// src/path) — trusting the TS contract lets the defect surface far downstream as a
+// cache-key/compile failure; rejecting at the chain boundary keeps it diagnosable at the
+// loader that produced it.
+const validateLoaderSource = (
+  result: Result<TemplateLoaderSource, TemplateError>,
+  name: string
+): Result<TemplateLoaderSource, TemplateError> => {
+  if (isErr(result) || (typeof result.value.src === 'string' && typeof result.value.path === 'string')) {
+    return result;
+  }
+  return err(
+    createLog('error', {
+      def: getError('FILESYSTEM_ERROR'),
+      params: { msg: `custom loader returned a malformed source for '${name}' (src/path must be strings)` },
+      subject: name,
+      context: { phase: 'load' },
+    })
+  );
+};
+
 // WHY: recursive first-match-wins — the first loader returning a non-null result (ok OR
 // err) ends resolution; null defers to the next loader. Mirrors findFileInSearchPaths.
 const resolveChainSource = async ({
@@ -33,7 +56,7 @@ const resolveChainSource = async ({
   }
   const result = await firstLoader.getSource(name);
   if (result !== null) {
-    return result;
+    return validateLoaderSource(result, name);
   }
   return resolveChainSource({ loaders: remainingLoaders, name });
 };
