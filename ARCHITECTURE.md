@@ -133,6 +133,7 @@ This architecture enables:
 - **Self-Explanatory Code** — Code structure and naming must explain intent, eliminating the need for redundant inline comments.
 - **No Shadowing & Pseudo-Privates** — Variable shadowing is prohibited. Avoid pseudo-private naming conventions (e.g., `_myPrivateVar`); enforce encapsulation via language-level scope mechanism.
 - **Unused Parameters** — Use a single `_` or a `_` prefix exclusively for intentionally unused arguments (e.g., `.map((_, index) => ...)`).
+- **Sanctioned Abbreviations** — Bespoke abbreviations (`usrDta`, `procReq`) are forbidden; fully articulated identifiers are required. Globally recognized domain-standard abbreviations are permitted to prevent hyper-verbose identifiers: `config`, `ctx`, `err`, `req`, `res`, `id`, `idx`, `acc`, `str`, `num`, `len`, `buf`, `ast`, `env`, `fn`, `loc`, `ws` (whitespace, lexer), `sig` (signature, expression parser), plus the `R`-suffix convention (`tokR`, `nodeR`) marking `Result`-wrapped values.
 - **Modern Syntax Only** — Rely strictly on current, stable language features. Commented-out code and legacy syntax must be permanently removed prior to code review.
 
 ### Namespace-Marker Sentinels (exception to the pseudo-private rule)
