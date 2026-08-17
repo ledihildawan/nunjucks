@@ -62,8 +62,10 @@ const discoverRoutes = async (base: string): Promise<string[]> => {
         return [...new Set(found)].sort((a, b) => a.localeCompare(b));
       }
     }
-  } catch {
-    // fallthrough to source parsing
+  } catch (probeError: unknown) {
+    // WHY: a failed probe (server down, timeout, bad URL) is an expected degraded mode —
+    // log it so a hung server stays diagnosable, then fall through to source parsing.
+    console.warn(`Route probe failed, falling back to source parsing: ${String(probeError)}`);
   }
   let errorsSrc: string;
   try {
@@ -281,14 +283,14 @@ const run = async (base: string): Promise<number> => {
       .join('\n')
   );
 
-  const bad = rows.filter((r) => !['OK', 'NO_ERROR'].includes(r.status));
-  const noErr = rows.filter((r) => r.status === 'NO_ERROR').length;
+  const bad = rows.filter((row) => !['OK', 'NO_ERROR'].includes(row.status));
+  const noErr = rows.filter((row) => row.status === 'NO_ERROR').length;
   console.log('-'.repeat(120));
   console.log(
-    `Total: ${rows.length} | OK: ${rows.filter((r) => r.status === 'OK').length} | NO_ERROR: ${noErr} | Issues: ${bad.length}`
+    `Total: ${rows.length} | OK: ${rows.filter((row) => row.status === 'OK').length} | NO_ERROR: ${noErr} | Issues: ${bad.length}`
   );
   if (bad.length) {
-    console.log('Issues:', bad.map((r) => `${r.route}(${r.status})`).join(', '));
+    console.log('Issues:', bad.map((row) => `${row.route}(${row.status})`).join(', '));
   }
   return bad.length;
 };
