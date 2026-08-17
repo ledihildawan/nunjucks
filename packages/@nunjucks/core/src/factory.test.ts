@@ -316,6 +316,38 @@ describe('createNunjucks', () => {
     }
   });
 
+  test('an extension-bearing name a loader cannot resolve is FILE_NOT_FOUND, not inline text', async () => {
+    const missEngine = createNunjucks({ loaders: [{ getSource: async () => null }] });
+    const missResult = await missEngine.render('typo.njk');
+    expect(isErr(missResult)).toBe(true);
+    if (isErr(missResult)) {
+      expect(missResult.error.code).toBe('FILE_NOT_FOUND');
+    }
+    // extension-less misses keep the inline fallback (inline templates stay usable)
+    const inlineResult = await missEngine.render('just plain text');
+    expect(isOk(inlineResult)).toBe(true);
+  });
+
+  test('config applies end-to-end: autoescape false renders raw markup', async () => {
+    const engine = createNunjucks({ autoescape: false });
+    const result = await engine.render('{{ v }}', { v: '<b>x</b>' });
+    expect(isOk(result) && result.value).toBe('<b>x</b>');
+  });
+
+  test('config applies end-to-end: trimBlocks strips the newline after block tags', async () => {
+    const engine = createNunjucks({ trimBlocks: true });
+    const result = await engine.render('{% if true %}\nkept{% endif %}');
+    expect(isOk(result) && result.value).toBe('kept');
+    const control = await createNunjucks({}).render('{% if true %}\nkept{% endif %}');
+    expect(isOk(control) && control.value).toBe('\nkept');
+  });
+
+  test('config applies end-to-end: undefined strict throws on a missing variable', async () => {
+    const engine = createNunjucks({ undefined: 'strict' });
+    const result = await engine.render('{{ missing }}', {});
+    expect(isErr(result)).toBe(true);
+  });
+
   test('valid configs with string globals still create engines (globals are data, not callables)', () => {
     expect(() => createNunjucks({ globals: { appName: 'MyApp' } })).not.toThrow();
   });

@@ -27,6 +27,30 @@ interface ResolvedTemplateSource {
   templatePath: string | null;
 }
 
+// WHY: an extension-bearing name that a configured loader cannot resolve is almost
+// certainly a typo'd file reference — silently rendering the literal filename as the
+// page is the worst failure mode. Extension-less misses keep the inline fallback
+// (inline templates must keep working without any loader hit).
+const resolveLoaderMiss = (template: string): Result<ResolvedTemplateSource, unknown> =>
+  TEMPLATE_FILE_EXTENSION_RE.test(template)
+    ? err(
+        createLog('error', {
+          def: getError('FILE_NOT_FOUND'),
+          params: { path: template },
+          subject: template,
+          context: { phase: 'load' },
+        })
+      )
+    : ok({ templateSource: template, templatePath: null });
+
+const isLoaderMissCode = (loaderError: unknown): boolean => {
+  const errorCode =
+    isKeyedObject(loaderError) && typeof loaderError.code === 'string' ? loaderError.code : null;
+  return (
+    errorCode === 'ENOENT' || errorCode === 'MODULE_NOT_FOUND' || errorCode === 'ERR_MODULE_NOT_FOUND'
+  );
+};
+
 // WHY: returns Result like its sibling prepareRender steps; the raw loader error stays
 // `unknown` here and is enriched (wrapWithLog) by the caller, which owns the renderContext.
 const resolveTemplateSource = async ({
@@ -40,20 +64,13 @@ const resolveTemplateSource = async ({
 
   const sourceResult = await loader.getSource(template);
   if (sourceResult === null) {
-    return ok({ templateSource: template, templatePath: null });
+    return resolveLoaderMiss(template);
   }
   if (isErr(sourceResult)) {
-    const loaderError: unknown = sourceResult.error;
-    const errorCode =
-      isKeyedObject(loaderError) && typeof loaderError.code === 'string' ? loaderError.code : null;
-    if (
-      errorCode === 'ENOENT' ||
-      errorCode === 'MODULE_NOT_FOUND' ||
-      errorCode === 'ERR_MODULE_NOT_FOUND'
-    ) {
-      return ok({ templateSource: template, templatePath: null });
+    if (isLoaderMissCode(sourceResult.error)) {
+      return resolveLoaderMiss(template);
     }
-    return err(loaderError);
+    return err(sourceResult.error);
   }
   const source = sourceResult.value;
   // WHY: config.loaders is a user-supplied JS boundary — narrow the envelope's src at the

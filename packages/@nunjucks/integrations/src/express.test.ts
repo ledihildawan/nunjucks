@@ -92,19 +92,18 @@ describe('Express integration', () => {
     expect(error).toBeInstanceOf(Error);
   });
 
-  test('missing template file falls back to inline rendering (no error)', async () => {
+  test('missing template file with a view extension surfaces FILE_NOT_FOUND', async () => {
     const viewsDirectory = await mkdtemp(join(tmpdir(), 'nunjucks-express-'));
     temporaryDirectories.push(viewsDirectory);
     const missingPath = join(viewsDirectory, 'does-not-exist.njk');
 
-    const outcome = await new Promise<{ err: Error | null; html?: string }>((resolve) => {
-      createEngine()(missingPath, {}, (err, html) => resolve({ err, html }));
+    const error = await new Promise<Error | null>((resolve) => {
+      createEngine()(missingPath, {}, (err) => resolve(err));
     });
 
-    // WHY: engine by-design — a loader miss without template syntax falls back to
-    // rendering the name as inline text, so Express receives a successful literal
-    // render rather than a load error.
-    expect(outcome.err).toBeNull();
-    expect(outcome.html).toBe('does-not-exist.njk');
+    // WHY: an extension-bearing miss under a configured views loader is a typo'd file
+    // reference — the old behavior rendered the literal filename as a 200 page.
+    expect(error).toBeInstanceOf(Error);
+    expect((error as { code?: string }).code).toBe('FILE_NOT_FOUND');
   });
 });
