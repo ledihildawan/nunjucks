@@ -39,6 +39,10 @@ const complexUserContext: Record<string, unknown> = {
   },
 };
 
+/**
+ * Data-driven catalog of `/errors` demo routes — each entry pairs a failing template
+ * with the context that triggers it; `routes/errors.ts` folds this into GET handlers.
+ */
 const errorRoutes: ErrorRoute[] = [
   {
     path: 'undefined-variable',

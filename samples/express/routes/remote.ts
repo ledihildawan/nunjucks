@@ -5,6 +5,7 @@ import { localizedTime } from '../lib/io/clock.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
 import { standardRouteConfig } from '../lib/io/views-path.ts';
 
+/** Remote-fragment demo router — engine-rendered shell plus client-side fetch API endpoints. */
 const router: Router = express.Router();
 
 // WHY: engine-rendered shell (standardRouteConfig supplies views) + client-side fetch —

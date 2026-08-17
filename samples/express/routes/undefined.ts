@@ -3,6 +3,7 @@ import express, { type NextFunction, type Request, type Response, type Router } 
 import { escapeHtml } from '@nunjucks/lib';
 import { renderDemoTemplate } from '../lib/domain/render-template.ts';
 
+/** Undefined-handling demo router — contrasts the `strict`, `debug`, and `chainable` modes. */
 const router: Router = express.Router();
 
 router.get('/', (_req: Request, res: Response) => {

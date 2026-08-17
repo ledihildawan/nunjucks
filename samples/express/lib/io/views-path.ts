@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 // WHY: single shell-level owner of the views directory resolution. Every route and demo module
 // imports VIEWS from here instead of re-computing __dirname independently (was duplicated 6×).
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
+/** Resolves the absolute path of the views directory. */
 const VIEWS = path.resolve(currentDir, '..', '..', 'views');
 
 // WHY: named render-config constants (Rule-of-Three) — these exact shapes were repeated inline

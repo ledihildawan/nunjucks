@@ -15,17 +15,20 @@ const baseStreamConfig = {
   limits: { executionTimeout: 30000 },
 };
 
+/** Streaming engine — strict undefined + error recovery for the HTML dashboard routes. */
 const streamNjk = nunjucks({
   ...baseStreamConfig,
   undefined: 'strict',
   streaming: { errorRecovery: true },
 });
 
+/** Blocking engine — default-undefined buffered renders for the benchmark twin route. */
 const blockingNjk = nunjucks({
   ...baseStreamConfig,
   undefined: 'default',
 });
 
+/** JSON streaming engine — recoverable sentinels are fatal so output stays parseable. */
 const apiNjk = nunjucks({
   ...baseStreamConfig,
   undefined: 'strict',

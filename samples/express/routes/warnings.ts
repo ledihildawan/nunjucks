@@ -3,6 +3,7 @@ import { renderTemplate } from '../lib/domain/render-template.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
 import { VIEWS } from '../lib/io/views-path.ts';
 
+/** Warnings demo router — renders the dev-warning view under `undefined: 'debug'` mode. */
 const router: Router = express.Router();
 
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {

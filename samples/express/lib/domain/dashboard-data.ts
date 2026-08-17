@@ -9,6 +9,11 @@ const formatPrice = (value: unknown): string => {
   return Number.isFinite(numericValue) ? `$${numericValue.toFixed(2)}` : '—';
 };
 
+/**
+ * Demo dataset for the streaming dashboard — deliberately incomplete (missing shipping
+ * city, empty bio fields) so strict-undefined streaming surfaces inline error markers
+ * while the remaining blocks render normally.
+ */
 const dashboardData = {
   mode: 'Streaming',
   kpi: {

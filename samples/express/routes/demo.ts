@@ -3,6 +3,7 @@ import { renderTemplate } from '../lib/domain/render-template.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
 import { demoRouteConfig, VIEWS } from '../lib/io/views-path.ts';
 
+/** Language-feature demo router — scope, exec, switch, slot, component, and pipe views. */
 const router: Router = express.Router();
 
 router.get('/scope', async (_req: Request, res: Response, next: NextFunction) => {

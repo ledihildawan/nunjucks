@@ -47,6 +47,11 @@ interface DangerousContextValues {
   process: unknown;
 }
 
+/**
+ * Runs a suite's test cases through `renderDemoTemplate`, merging per-test
+ * `sandbox`/`security` overrides into the suite config and mapping each `Result` to a
+ * row with `blocked` and `passed` verdicts.
+ */
 const runTests = async ({
   tests,
   context,
@@ -115,6 +120,10 @@ const statusClass = (row: SandboxTestResult, suite: SandboxSuite): string =>
 const statusLabel = (row: SandboxTestResult, suite: SandboxSuite): string =>
   classifyStatus(row, suite).label;
 
+/**
+ * Renders a suite's results as a standalone HTML report — engine output arrives
+ * pre-escaped under forced autoescape; only error messages need explicit escaping.
+ */
 const renderTable = (table: SandboxTestResult[], suite: SandboxSuite): string => {
   const rows = table
     .map((row) => {
@@ -188,6 +197,11 @@ const renderTable = (table: SandboxTestResult[], suite: SandboxSuite): string =>
   );
 };
 
+/**
+ * Builds the four demo suites (sandbox, normal, allowlist, code-execution); dangerous
+ * references such as `process` are injected by the shell route to keep this module
+ * environment-neutral.
+ */
 const createSandboxSuites = (dangerousValues: DangerousContextValues): SandboxSuite[] => [
   {
     key: 'test',

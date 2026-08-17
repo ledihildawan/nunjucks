@@ -5,6 +5,10 @@ import { createSandboxSuites, renderTable, runTests } from '../lib/domain/sandbo
 // the sandbox scanner probes so lib/domain stays environment-neutral (mirrors routes/errors.ts).
 const sandboxSuites = createSandboxSuites({ process });
 
+/**
+ * Sandbox demo router — static index page plus one route per suite built by
+ * `createSandboxSuites`, running the probes and rendering each results table.
+ */
 const router: Router = express.Router();
 
 router.get('/', (_req: Request, res: Response) => {

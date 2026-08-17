@@ -8,6 +8,11 @@ import { renderTemplate } from '../lib/domain/render-template.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
 import { devErrorRouteConfig, strictErrorRouteConfig, VIEWS } from '../lib/io/views-path.ts';
 
+/**
+ * Error-catalog router — mounts one intentionally-failing route per engine boundary,
+ * data-driven from `errorRoutes` plus inline-template, sandbox, and security probes,
+ * so the central error middleware renders each rich diagnostic page.
+ */
 const router: Router = express.Router();
 
 errorRoutes.reduce<Router>((acc, { path: routePath, template, context }) => {

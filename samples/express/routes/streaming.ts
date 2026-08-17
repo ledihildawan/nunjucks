@@ -3,6 +3,11 @@ import { dashboardData } from '../lib/domain/dashboard-data.ts';
 import { isoTimestamp } from '../lib/io/clock.ts';
 import { apiNjk, blockingNjk, streamNjk } from '../lib/io/stream-engines.ts';
 
+/**
+ * Streaming demo router — progressive HTML streaming with recovery, a blocking
+ * benchmark twin, a JSON API variant, and a fatal block-error demo, all piped
+ * through shared guardrails.
+ */
 const router: Router = express.Router();
 
 // WHY: shared pipeRenderStream guardrails — every streaming route gets the same per-chunk
