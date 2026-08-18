@@ -220,11 +220,13 @@
 
     const type = valueType(value);
     const displayVal = escapeHtml(previewValue(value));
+    // WHY: valueType() returns a fixed lowercase vocabulary, so escaping is a no-op today —
+    // it guards against a future vocabulary change smuggling markup into the class attribute.
     row.innerHTML =
       '<span class="ctx-toggle"></span><span class="ctx-key">' +
       escapeHtml(key) +
       ':</span> <span class="ctx-' +
-      type +
+      escapeHtml(type) +
       '">' +
       displayVal +
       '</span>';

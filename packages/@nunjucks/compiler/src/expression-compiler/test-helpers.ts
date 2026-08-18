@@ -2,6 +2,9 @@
 // the factories each co-located *.test.ts file previously re-declared locally.
 // Empty-bodied members (e.g. assertType) deliberately return undefined: the doubles must
 // stay behavior-identical while remaining lint-clean as a non-test source file.
+// Sanctioned engine test seam: these are recording sinks over the local Compiler shape,
+// not infrastructure mocks — the core no-mock policy targets I/O doubles, not data
+// fixtures of the engine's own dispatch contract.
 import { createLog } from '@nunjucks/error-formatter';
 import type { FailFields } from '../codegen.ts';
 import { makeRecordingCore } from '../test-helpers.ts';
