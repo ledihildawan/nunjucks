@@ -25,6 +25,13 @@ const createMacroFilter = <R>(argNames: string[], fn: (...args: unknown[]) => R)
  * Wraps an options-object implementation as a filter: the first arg name binds
  * positionally, the rest become kwargs, and the compiler's keywords envelope
  * arrives as one options record.
+ *
+ * WHY: the `opts as T` cast is the trust boundary — every filter implementation
+ * re-validates its own option fields before use (matching the GlobalConfig pattern
+ * where the factory validates top-level keys but not nested user-supplied data).
+ * The cast is a TypeScript type-bridge: the filter function's typed `options: T`
+ * receives the raw `Record<string, unknown>` after the compiler's keyword-envelope
+ * has already been partitioned into typed key/value pairs at the call site.
  */
 const createFilter = <T extends object, R>(argNames: string[], func: (options: T) => R) => {
   const wrapper = (opts: Record<string, unknown>) => func(opts as T);

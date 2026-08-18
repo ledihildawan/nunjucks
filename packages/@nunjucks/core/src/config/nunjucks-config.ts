@@ -3,6 +3,7 @@ import type { Result } from '@nunjucks/lib';
 import type { TemplateLoader } from '@nunjucks/loaders';
 import type { UndefinedMode } from '@nunjucks/shared';
 import type { ContentType, DomPurifyConfig } from '@nunjucks/shared';
+import type { ExpressionSecurityConfig } from '@nunjucks/validators';
 import type { NunjucksPlugin } from '../plugin/plugin.ts';
 import type { PipeRenderStreamOptions, PipeSink } from '../render/pipe-stream.ts';
 import type { RenderStreamResult } from '../render/render-types.ts';
@@ -25,6 +26,12 @@ interface SecurityConfig {
   readonly contextStrict?: boolean | 'error';
   readonly scanContextValues?: boolean;
   readonly strictMode?: boolean;
+  // WHY: expression security is opt-in — rejecting templates that statically name dangerous
+  // properties (`__proto__`, `constructor`, prototype) or call dangerous callees (eval,
+  // Function) at compile time gives fast-fail on hostile templates without waiting for
+  // runtime sandboxing. The default is `false` (off) so existing templates are not broken;
+  // set to `{ blockedPropertyPatterns: [...] }` to enable.
+  readonly expressionSecurity?: ExpressionSecurityConfig;
 }
 
 /** Groups resource ceilings — execution timeout and template/output size caps. */

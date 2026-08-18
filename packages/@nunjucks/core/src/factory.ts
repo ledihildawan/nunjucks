@@ -110,6 +110,7 @@ const buildBaseOptions = (config: NunjucksConfig): RenderOptions => {
     sandboxAllowlist: config.security?.sandboxAllowlist,
     sandboxEnvironment: config.security?.sandboxEnvironment,
     blockedContextKeys: config.security?.blockedContextKeys,
+    expressionSecurity: config.security?.expressionSecurity,
     contextStrict: config.security?.contextStrict,
     scanContextValues: config.security?.scanContextValues,
     strictMode: config.security?.strictMode,

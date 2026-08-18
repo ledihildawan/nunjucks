@@ -2,11 +2,7 @@ import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError, TemplateWarning } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
 import { err, isErr, isKeyedObject, ok, type Result } from '@nunjucks/lib';
-import {
-  createFileSystemLoader,
-  type FileSystemLoader,
-  type TemplateLoader,
-} from '@nunjucks/loaders';
+import { createFileSystemLoader, type FileSystemLoader, type TemplateLoader } from '@nunjucks/loaders';
 import { createSandboxedContext } from '@nunjucks/runtime';
 import { findContextDangerousValues, scrubDangerousReferences } from '@nunjucks/validators';
 import { compileToCode, resolveParserExtensions } from '../compile-pipeline.ts';
@@ -165,6 +161,7 @@ const compileTemplate = ({
     },
     streamErrorRecovery: config.streamErrorRecovery ?? false,
     extensions: resolveParserExtensions(config.extensions),
+    expressionSecurity: config.expressionSecurity,
   });
   // WHY: only successful compiles are cached — a failed parse/compile must retry
   // cleanly on the next render instead of pinning its error in the LRU.

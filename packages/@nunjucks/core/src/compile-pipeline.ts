@@ -1,5 +1,6 @@
 import { createCompiler } from '@nunjucks/compiler';
 import { err, isErr, isKeyedObject, ok, type Result } from '@nunjucks/lib';
+import type { ExpressionSecurityConfig } from '@nunjucks/validators';
 import type { ParseOptions, ParserExtension } from '@nunjucks/parser';
 import { parse } from '@nunjucks/parser';
 import type { UndefinedMode } from '@nunjucks/shared';
@@ -27,6 +28,8 @@ interface CompileToCodeOptions {
   parseOpts?: ParseOptions;
   streamErrorRecovery?: boolean;
   extensions?: readonly ParserExtension[];
+  /** Pass-through to parseOpts.security for compile-time expression validation. */
+  expressionSecurity?: ExpressionSecurityConfig;
 }
 
 /**
@@ -40,6 +43,7 @@ const compileToCode = ({
   parseOpts,
   streamErrorRecovery,
   extensions,
+  expressionSecurity,
 }: CompileToCodeOptions): Result<string, Error> => {
   try {
     const compiler = createCompiler({
@@ -48,7 +52,11 @@ const compileToCode = ({
       source,
       streamErrorRecovery: streamErrorRecovery ?? false,
     });
-    const astR = parse(source, { ...parseOpts, extensions });
+    const astR = parse(source, {
+      ...parseOpts,
+      extensions,
+      security: expressionSecurity ?? parseOpts?.security,
+    });
     if (isErr(astR)) {
       return err(astR.error instanceof Error ? astR.error : new Error(String(astR.error)));
     }
