@@ -1,20 +1,15 @@
 export type { Environment } from './blocked-keys.ts';
 export {
+  BLOCKED_KEY_CATEGORIES,
   BLOCKED_KEYS_LIST,
   CODE_EXECUTION_KEYS,
   DANGEROUS_KEY_PATTERN,
   ENVIRONMENT_VALUES,
-  getBlockedKeyCategory,
-  isBlockedKey,
-  isCodeExecutionPattern,
-  isDangerousGlobal,
   OBJECT_INTRINSICS,
 } from './blocked-keys.ts';
 export * from './compiled-template.ts';
-export { isDangerousReference } from './dangerous-reference.ts';
 export { BUILTIN_FILTER_NAMES } from './filter-names.ts';
 export { BUILTIN_TEST_NAMES } from './test-names.ts';
-export { isPrototypeEscapeKey } from './blocked-keys.ts';
 export type { Loc } from './loc.ts';
 export { loc, ZERO_LOC } from './loc.ts';
 export type {

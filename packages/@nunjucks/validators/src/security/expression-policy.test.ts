@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { CODE_EXECUTION_KEYS, isPrototypeEscapeKey, OBJECT_INTRINSICS } from '@nunjucks/shared';
+import { isPrototypeEscapeKey } from '@nunjucks/security';
+import { CODE_EXECUTION_KEYS, OBJECT_INTRINSICS } from '@nunjucks/shared';
 import {
   DANGEROUS_CALLEES,
   DANGEROUS_PROPERTIES,

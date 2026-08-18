@@ -1,13 +1,13 @@
 import type { IncludeChain } from '@nunjucks/error-formatter';
 import { collectString, hasOwn } from '@nunjucks/lib';
-import { isPrototypeEscapeKey, type NodeLocation } from '@nunjucks/shared';
+import { isPrototypeEscapeKey } from '@nunjucks/security';
+import type { NodeLocation, UndefinedMode } from '@nunjucks/shared';
 import { find, keys, reduce } from 'remeda';
 import {
   throwBlockNotFoundError,
   throwBlockNotFunctionError,
   throwNoSuperBlockError,
 } from './context-errors.ts';
-import type { UndefinedMode } from '@nunjucks/shared';
 
 const CONTEXT_KEY = Symbol('Context');
 

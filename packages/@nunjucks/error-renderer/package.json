@@ -10,6 +10,7 @@
     "@nunjucks/lib": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "@nunjucks/error-catalog": "workspace:*",
+    "@nunjucks/security": "workspace:*",
     "picocolors": "^1.1.1",
     "remeda": "^2.39.0"
   },

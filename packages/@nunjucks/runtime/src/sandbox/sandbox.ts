@@ -1,6 +1,6 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { hasOwn, isFunction, isKeyedObject, isNonNullish } from '@nunjucks/lib';
-import { isPrototypeEscapeKey } from '@nunjucks/shared';
+import { isPrototypeEscapeKey } from '@nunjucks/security';
 import {
   ACCESS_PATH,
   createPropertyNotFoundCallable,

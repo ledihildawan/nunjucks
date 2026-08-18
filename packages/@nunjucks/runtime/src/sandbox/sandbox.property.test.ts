@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { isCodeExecutionPattern } from '@nunjucks/shared';
+import { isCodeExecutionPattern } from '@nunjucks/security';
 import { createSandboxedContext, createSandboxedObject, wrapMemberAccess } from './index.ts';
 
 describe('Sandbox Property-Based Tests', () => {

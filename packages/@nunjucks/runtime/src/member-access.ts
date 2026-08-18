@@ -8,7 +8,7 @@ import {
   isNonNullish,
   normalizeIndex,
 } from '@nunjucks/lib';
-import { isPrototypeEscapeKey } from '@nunjucks/shared';
+import { isPrototypeEscapeKey } from '@nunjucks/security';
 
 /** Marker key identifying a null-access sentinel from reading a member of `null`/`undefined`. */
 export const NULL_MARKER = '__nunjucks_null__';

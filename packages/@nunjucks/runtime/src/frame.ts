@@ -1,5 +1,5 @@
 import { hasOwn, isPlainObject } from '@nunjucks/lib';
-import { isPrototypeEscapeKey } from '@nunjucks/shared';
+import { isPrototypeEscapeKey } from '@nunjucks/security';
 import { reduce } from 'remeda';
 import type { CreateFrameOptions, Frame, FrameSetOptions } from './runtime-contract/frame.ts';
 

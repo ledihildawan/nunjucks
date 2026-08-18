@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { isBlockedKey, isCodeExecutionPattern } from '@nunjucks/shared';
+import { isBlockedKey, isCodeExecutionPattern } from '@nunjucks/security';
 import { isPropertyNotFoundResult } from '../member-access.ts';
 import {
   createSandboxedContext,

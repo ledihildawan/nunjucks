@@ -75,6 +75,7 @@
       "dependencies": {
         "@nunjucks/error-catalog": "workspace:*",
         "@nunjucks/lib": "workspace:*",
+        "@nunjucks/security": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "picocolors": "^1.1.1",
         "remeda": "^2.39.0",
@@ -156,8 +157,16 @@
         "@nunjucks/error-catalog": "workspace:*",
         "@nunjucks/error-formatter": "workspace:*",
         "@nunjucks/lib": "workspace:*",
+        "@nunjucks/security": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "remeda": "^2.39.0",
+      },
+    },
+    "packages/@nunjucks/security": {
+      "name": "@nunjucks/security",
+      "version": "1.0.0",
+      "dependencies": {
+        "@nunjucks/shared": "workspace:*",
       },
     },
     "packages/@nunjucks/shared": {
@@ -184,6 +193,7 @@
         "@nunjucks/error-catalog": "workspace:*",
         "@nunjucks/lib": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
+        "@nunjucks/security": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "remeda": "^2.39.0",
       },
@@ -287,6 +297,8 @@
     "@nunjucks/samples-express": ["@nunjucks/samples-express@workspace:samples/express"],
 
     "@nunjucks/samples-vanilla-ts": ["@nunjucks/samples-vanilla-ts@workspace:samples/vanilla-ts"],
+
+    "@nunjucks/security": ["@nunjucks/security@workspace:packages/@nunjucks/security"],
 
     "@nunjucks/shared": ["@nunjucks/shared@workspace:packages/@nunjucks/shared"],
 

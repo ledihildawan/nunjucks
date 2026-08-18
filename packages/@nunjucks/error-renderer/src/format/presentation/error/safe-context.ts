@@ -1,5 +1,6 @@
 import { slice } from '@nunjucks/lib';
-import { DANGEROUS_KEY_PATTERN, getBlockedKeyCategory, isBlockedKey } from '@nunjucks/shared';
+import { getBlockedKeyCategory, isBlockedKey } from '@nunjucks/security';
+import { DANGEROUS_KEY_PATTERN } from '@nunjucks/shared';
 import { filter, map, pipe } from 'remeda';
 
 const DEFAULT_OPTIONS = Object.freeze({

@@ -1,15 +1,10 @@
-type BlockedKeyCategory =
-  | 'object_intrinsic'
-  | 'universal_global'
-  | 'node_global'
-  | 'browser_global'
-  | 'deno_global'
-  | null;
-
-const toSet = (...lists: readonly (readonly string[] | Set<string>)[]): Set<string> =>
-  new Set<string>(lists.flatMap((list) => [...list]));
-
-const BLOCKED_KEY_CATEGORIES = Object.freeze({
+/**
+ * Frozen category lists — the single source of truth for the sandbox security tiers.
+ * The policy PREDICATES that consume them live in `@nunjucks/security` so both runtime
+ * and validators can derive from one source without inverting the package DAG, while
+ * this module stays a pure constants tier (types, constants, snapshots — no logic).
+ */
+export const BLOCKED_KEY_CATEGORIES = Object.freeze({
   OBJECT_INTRINSICS: [
     '__proto__',
     'constructor',
@@ -99,16 +94,12 @@ const BLOCKED_KEY_CATEGORIES = Object.freeze({
   ] as readonly string[],
 });
 
-const BASE_BLOCKED_KEYS = toSet(
-  BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS,
-  BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS
-);
+const toSet = (...lists: readonly (readonly string[] | Set<string>)[]): Set<string> =>
+  new Set<string>(lists.flatMap((list) => [...list]));
 
-const NODE_BLOCKED_KEYS = toSet(BASE_BLOCKED_KEYS, BLOCKED_KEY_CATEGORIES.NODE_GLOBALS);
-const BROWSER_BLOCKED_KEYS = toSet(BASE_BLOCKED_KEYS, BLOCKED_KEY_CATEGORIES.BROWSER_GLOBALS);
-const DENO_BLOCKED_KEYS = toSet(BASE_BLOCKED_KEYS, BLOCKED_KEY_CATEGORIES.DENO_GLOBALS);
 const AUTO_BLOCKED_KEYS = toSet(
-  BASE_BLOCKED_KEYS,
+  BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS,
+  BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS,
   BLOCKED_KEY_CATEGORIES.NODE_GLOBALS,
   BLOCKED_KEY_CATEGORIES.BROWSER_GLOBALS,
   BLOCKED_KEY_CATEGORIES.DENO_GLOBALS
@@ -120,8 +111,6 @@ const DANGEROUS_GLOBALS = toSet(
   BLOCKED_KEY_CATEGORIES.BROWSER_GLOBALS,
   BLOCKED_KEY_CATEGORIES.DENO_GLOBALS
 );
-
-const CODE_EXECUTION_PATTERNS = toSet(BLOCKED_KEY_CATEGORIES.CODE_EXECUTION);
 
 /**
  * Freezes the named sandbox environment identifiers — `ENVIRONMENT_VALUES` derives its
@@ -143,81 +132,6 @@ export const ENVIRONMENT_VALUES = ['auto', ...Object.values(ENVIRONMENTS)] as co
  */
 export type Environment = (typeof ENVIRONMENT_VALUES)[number];
 
-/** Checks whether a name matches a known code-execution sink such as `eval` or `exec`. */
-export const isCodeExecutionPattern = (key: string): boolean => CODE_EXECUTION_PATTERNS.has(key);
-
-const checkEnvGlobals = (key: string, env: Environment): BlockedKeyCategory | null => {
-  if ((env === 'auto' || env === 'node') && BLOCKED_KEY_CATEGORIES.NODE_GLOBALS.includes(key)) {
-    return 'node_global';
-  }
-  if (
-    (env === 'auto' || env === 'browser') &&
-    BLOCKED_KEY_CATEGORIES.BROWSER_GLOBALS.includes(key)
-  ) {
-    return 'browser_global';
-  }
-  if ((env === 'auto' || env === 'deno') && BLOCKED_KEY_CATEGORIES.DENO_GLOBALS.includes(key)) {
-    return 'deno_global';
-  }
-  return null;
-};
-
-/**
- * Classifies a key by blocklist category — `'auto'` widens the environment-specific tiers,
- * and a miss on every tier returns `null` (not blocked) rather than defaulting to intrinsic.
- */
-export const getBlockedKeyCategory = (
-  key: string,
-  env: Environment = 'auto'
-): BlockedKeyCategory => {
-  if (BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS.includes(key)) {
-    return 'object_intrinsic';
-  }
-  if (BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS.includes(key)) {
-    return 'universal_global';
-  }
-  return checkEnvGlobals(key, env);
-};
-
-/**
- * Reports whether `key` is blocked for `env`: every environment inherits the base union of
- * object intrinsics and universal globals, while `'auto'` takes the union of all three tiers.
- */
-export const isBlockedKey = (key: string, env: Environment = 'auto'): boolean => {
-  switch (env) {
-    case 'auto':
-      return AUTO_BLOCKED_KEYS.has(key);
-    case 'node':
-      return NODE_BLOCKED_KEYS.has(key);
-    case 'browser':
-      return BROWSER_BLOCKED_KEYS.has(key);
-    case 'deno':
-      return DENO_BLOCKED_KEYS.has(key);
-    default:
-      return BASE_BLOCKED_KEYS.has(key);
-  }
-};
-
-/** Checks membership in the environment-globals union, excluding object intrinsics. */
-export const isDangerousGlobal = (key: string): boolean => DANGEROUS_GLOBALS.has(key);
-
-// WHY: the minimal inherited-key set that yields code execution (`x.constructor.constructor`
-// reaches Function). Blocked for INHERITED reads unconditionally (sandbox or not) because
-// RCE must not depend on the host remembering to enable the sandbox; own properties are the
-// host's explicit choice and remain allowed. Deliberately narrower than OBJECT_INTRINSICS —
-// harmless inherited members (toString/valueOf) keep working.
-const PROTOTYPE_ESCAPE_KEYS: ReadonlySet<string> = new Set([
-  '__proto__',
-  'constructor',
-  'prototype',
-]);
-
-/**
- * Reports whether reading `key` as an inherited property escapes the prototype chain to
- * code execution — blocked unconditionally, independent of any sandbox configuration.
- */
-const isPrototypeEscapeKey = (key: string): boolean => PROTOTYPE_ESCAPE_KEYS.has(key);
-
 /**
  * Lists every key blocked under `'auto'` (base plus all three environment tiers) as a
  * plain array snapshot — set order is unspecified, so consumers must not rely on it.
@@ -225,7 +139,6 @@ const isPrototypeEscapeKey = (key: string): boolean => PROTOTYPE_ESCAPE_KEYS.has
 export const BLOCKED_KEYS_LIST: readonly string[] = [...AUTO_BLOCKED_KEYS];
 /** Lists the environment-global names (universal, Node, browser, Deno) as an array snapshot. */
 export const DANGEROUS_GLOBALS_LIST: readonly string[] = [...DANGEROUS_GLOBALS];
-export { isPrototypeEscapeKey };
 
 /** Lists the frozen object-intrinsic names (`__proto__`, `constructor`, `prototype`, …). */
 export const OBJECT_INTRINSICS: readonly string[] = [...BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS];

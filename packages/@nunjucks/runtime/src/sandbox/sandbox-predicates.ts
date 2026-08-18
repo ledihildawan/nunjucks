@@ -1,4 +1,4 @@
-import { getBlockedKeyCategory } from '@nunjucks/shared';
+import { getBlockedKeyCategory } from '@nunjucks/security';
 import type { ResolvedSandboxOptions } from './sandbox-options.ts';
 
 // WHY: this set is consulted alongside `hasOwn(target, key)` in the Proxy `get` trap. Only the three keys that are inherited from `Object.prototype` via a property-accessor (rather than a plain inherited method) need to be flagged when the key is NOT an own property — those three (`__proto__`, `constructor`, `prototype`) are reachable even on `{}` because they are accessor properties on the prototype. The other intrinsics (`toString`, `hasOwnProperty`, etc.) are inherited methods, not accessors, so they don't need an extra gate; the `hasOwn` check alone properly short-circuits them.

@@ -1,6 +1,6 @@
 import { isPlainObject } from '@nunjucks/lib';
 import { keys } from 'remeda';
-import { isDangerousReference } from '@nunjucks/shared';
+import { isDangerousReference } from '@nunjucks/security';
 
 // WHY: recursion bound — the scrubber walks untrusted context shapes before render;
 // a hostile deeply-nested object must not turn the security pass itself into a

@@ -11,6 +11,7 @@
     "@nunjucks/lib": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "@nunjucks/nodes": "workspace:*",
+    "@nunjucks/security": "workspace:*",
     "remeda": "^2.39.0"
   },
   "description": "Validation utilities for Nunjucks",
