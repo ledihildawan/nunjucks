@@ -6,6 +6,7 @@ import {
   TOKEN_COMMA,
   TOKEN_OPERATOR,
   TOKEN_PIPEFORWARD,
+  TOKEN_RIGHT_BRACKET,
   TOKEN_RIGHT_PAREN,
 } from '@nunjucks/lexer';
 import { isErr, ok, type Result } from '@nunjucks/lib';
@@ -73,9 +74,15 @@ const normalizePattern = (node: Node): Node => {
   return objectPattern(loc(node), (node.children ?? []).map(mapObjectPatternChild));
 };
 
+// WHY: the following token decides walrus-vs-declaration — a value position (`)`, `,`,
+// `]`, or any operator) means the binding is an expression; `]` must count so a walrus
+// as the LAST array element stays a walrus like its comma-preceded siblings.
 const isExpressionContext = (tok: Token): boolean =>
   tok &&
-  (tok.type === TOKEN_OPERATOR || tok.type === TOKEN_RIGHT_PAREN || tok.type === TOKEN_COMMA);
+  (tok.type === TOKEN_OPERATOR ||
+    tok.type === TOKEN_RIGHT_PAREN ||
+    tok.type === TOKEN_RIGHT_BRACKET ||
+    tok.type === TOKEN_COMMA);
 
 const handleWalrusAssignment = (
   node: Node,

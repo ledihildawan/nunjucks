@@ -174,24 +174,37 @@ const parseBitwiseOr = (parserContext: ParserContext): Result<Node, TemplateErro
   if (isErr(initialR)) {
     return initialR;
   }
-  const initialNode = initialR.value;
-  const tokR = nextToken(parserContext);
-  if (isErr(tokR)) {
-    return tokR;
-  }
-  const tok = tokR.value;
+  let node = initialR.value;
 
-  const createNode = bitwiseNodeMap[String(tok.value)];
-  if (!createNode) {
-    pushToken(parserContext, tok);
-    return ok(initialNode);
-  }
+  // WHY: left-fold like every sibling binary level — the previous single-shot form
+  // consumed at most one operator and silently dropped the rest of the chain
+  // (`a | b | c` parsed as `a | b`).
+  const foldLoop = (): Result<void, TemplateError> => {
+    const tokR = nextToken(parserContext);
+    if (isErr(tokR)) {
+      return tokR;
+    }
+    const tok = tokR.value;
 
-  const rightR = parseIs(parserContext);
-  if (isErr(rightR)) {
-    return rightR;
+    const createNode = bitwiseNodeMap[String(tok.value)];
+    if (!createNode) {
+      pushToken(parserContext, tok);
+      return ok(undefined);
+    }
+
+    const rightR = parseIs(parserContext);
+    if (isErr(rightR)) {
+      return rightR;
+    }
+    node = createNode(loc(tok), { left: node, right: rightR.value });
+    return foldLoop();
+  };
+
+  const loopR = foldLoop();
+  if (isErr(loopR)) {
+    return loopR;
   }
-  return ok(createNode(loc(tok), { left: initialNode, right: rightR.value }));
+  return ok(node);
 };
 
 const isInToken = (tok: Token): boolean => tok?.type === TOKEN_SYMBOL && tok?.value === 'in';

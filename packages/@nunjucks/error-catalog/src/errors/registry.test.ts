@@ -91,12 +91,12 @@ describe('ERROR_DEFINITIONS', () => {
 describe('getError', () => {
   test('resolves every registered code to its definition', () => {
     for (const [name] of entries) {
-      expect(getError(name as keyof typeof ERROR_DEFINITIONS).name).toBe(name);
+      expect(getError(name)?.name).toBe(name);
     }
   });
 
-  test('returns undefined for an unregistered code despite the non-optional signature', () => {
-    expect(getError('NOT_A_REGISTERED_CODE' as never)).toBeUndefined();
+  test('returns undefined for an unregistered code', () => {
+    expect(getError('NOT_A_REGISTERED_CODE')).toBeUndefined();
   });
 });
 

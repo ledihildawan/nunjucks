@@ -195,13 +195,19 @@ describe('parseBitwiseOr: bitwise operators', () => {
     expect(getNodeTypeName((node as { right: Node }).right)).toBe('symbol');
   });
 
-  // WHY: pins current single-shot behavior — parseBitwiseOr consumes at most one
-  // operator, so `a | b | c` parses as `a | b` and silently drops `| c` (suspected
-  // bug: every other binary level folds, this one does not; see comparison.ts).
-  test('a second bitwise operator is not folded into the node', () => {
+  test('bitwise operator chains left-fold like every other binary level', () => {
     const node = parse('a | b | c');
     expect(getNodeTypeName(node)).toBe('bitwiseOr');
-    expect(getNodeTypeName((node as { left: Node }).left)).toBe('symbol');
+    const left = (node as { left: Node }).left;
+    expect(getNodeTypeName(left)).toBe('bitwiseOr');
+    expect(getNodeTypeName((left as { left: Node }).left)).toBe('symbol');
+    expect(getNodeTypeName((left as { right: Node }).right)).toBe('symbol');
     expect(getNodeTypeName((node as { right: Node }).right)).toBe('symbol');
+  });
+
+  test('mixed bitwise operators fold with their own node types', () => {
+    const node = parse('a & b ^ c');
+    expect(getNodeTypeName(node)).toBe('bitwiseXor');
+    expect(getNodeTypeName((node as { left: Node }).left)).toBe('bitwiseAnd');
   });
 });

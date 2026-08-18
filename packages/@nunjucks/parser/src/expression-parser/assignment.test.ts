@@ -80,13 +80,10 @@ describe('parseWalrus: := on a symbol target', () => {
     expect(getNodeTypeName(childOf(node))).toBe('walrus');
   });
 
-  // WHY: pins current behavior of the following-token heuristic — `]` is not treated
-  // as expression context, so the last element degrades to a variableDeclaration
-  // inside an array literal (suspected bug, see assignment.ts isExpressionContext).
-  test('a walrus followed by ] inside an array literal degrades to a variableDeclaration', () => {
+  test('a walrus followed by ] inside an array literal stays a walrus', () => {
     const node = parse('[x := 1]');
     expect(getNodeTypeName(node)).toBe('array');
-    expect(getNodeTypeName(childOf(node))).toBe('variableDeclaration');
+    expect(getNodeTypeName(childOf(node))).toBe('walrus');
   });
 });
 

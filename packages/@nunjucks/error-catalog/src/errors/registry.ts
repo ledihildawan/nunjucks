@@ -29,10 +29,15 @@ type ErrorName = keyof typeof allErrors;
  */
 const ERROR_DEFINITIONS: Record<ErrorName, ErrorDefinition> = allErrors;
 
-/** Resolves the definition registered under an exact error code name. */
-const getError = <T extends ErrorName>(name: T): ErrorDefinition => {
-  return ERROR_DEFINITIONS[name];
-};
+/**
+ * Resolves the definition registered under an exact error code name — a known
+ * `ErrorName` is guaranteed to resolve; an arbitrary string may yield `undefined`.
+ */
+function getError<T extends ErrorName>(name: T): ErrorDefinition;
+function getError(name: string): ErrorDefinition | undefined;
+function getError(name: string): ErrorDefinition | undefined {
+  return ERROR_DEFINITIONS[name as ErrorName];
+}
 
 interface Rule {
   pattern: RegExp;

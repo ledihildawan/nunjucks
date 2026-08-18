@@ -17,12 +17,20 @@ const replacePlaceholders = ({
   if (!str) {
     return str ?? null;
   }
-  // WHY: {subject}, {target}, {name}, {key} are aliases — they all resolve to the same value (the extracted subject from the pattern match). This is because catalog definitions use different placeholder names for semantic clarity (e.g. "Variable '{name}'" vs "Property '{key}'") even though the runtime always extracts one subject value.
+  // WHY: {subject}, {target}, {name}, {key}, {path}, {marker} and {attr} are aliases —
+  // they all resolve to the same value (the extracted subject from the pattern match).
+  // This is because catalog definitions use different placeholder names for semantic
+  // clarity (e.g. "Variable '{name}'" vs "Property '{key}'" vs "template not found:
+  // {path}") even though the runtime always extracts one subject value — without the
+  // extended set, those spellings leaked unreplaced into user-facing guidance.
   const baseResult = str
     .replaceAll('{subject}', undefinedName ?? '')
     .replaceAll('{target}', undefinedName ?? '')
     .replaceAll('{name}', undefinedName ?? '')
-    .replaceAll('{key}', undefinedName ?? '');
+    .replaceAll('{key}', undefinedName ?? '')
+    .replaceAll('{path}', undefinedName ?? '')
+    .replaceAll('{marker}', undefinedName ?? '')
+    .replaceAll('{attr}', undefinedName ?? '');
   if (!extra) {
     return baseResult;
   }

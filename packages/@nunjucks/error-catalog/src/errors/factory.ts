@@ -35,6 +35,7 @@ const PLACEHOLDER_PATTERNS: ReadonlyArray<{
   { placeholder: '{expected}', capture: '(.+)' },
   { placeholder: '{tag}', capture: '([^"\']+)' },
   { placeholder: '{detail}', capture: '(.+)' },
+  { placeholder: '{accepted}', capture: '(.+)' },
 ];
 
 const messageHasVariable = (messageTemplate: string): boolean =>
