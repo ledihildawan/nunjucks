@@ -8,6 +8,12 @@ on:
 permissions:
   contents: read
 
+# WHY: superseded pushes/PR-updates on the same ref cancel stale runs instead of
+# burning matrix minutes on commits nobody will look at.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     runs-on: ${{ matrix.os }}
@@ -42,7 +48,9 @@ jobs:
         with:
           bun-version: ${{ matrix.bun }}
       - run: bun install
-      - run: bun test
+      # WHY: --timeout 5000 mirrors `npm test` — a wedged test fails in 5s instead of
+      # burning the job's full 15-minute wall.
+      - run: bun test --timeout 5000
 
   lint:
     runs-on: ubuntu-latest
@@ -92,5 +100,7 @@ jobs:
         with:
           bun-version: latest
       - run: bun install
-      - run: bun test --coverage | tee coverage.txt
+      # WHY: pipefail — without it `tee`'s exit 0 can mask a failing test suite, leaving
+      # only the coverage number to fail the job; --timeout 5000 mirrors `npm test`.
+      - run: set -o pipefail && bun test --coverage --timeout 5000 | tee coverage.txt
       - run: bash scripts/coverage-gate.sh 95
