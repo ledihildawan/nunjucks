@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises';
-
 import { reduce } from 'remeda';
 import {
   extractBareSubjectPosition,
@@ -7,6 +5,7 @@ import {
   extractTemplatePosition,
 } from './error-location-matching.ts';
 import type { CallerLocation, LocationInputs, ResolvedLocation } from './error-location-types.ts';
+import { readSourceContent } from './shell/read-source-content.ts';
 
 interface CallerCandidate {
   fileName: string;
@@ -94,14 +93,10 @@ interface CandidateRead {
 
 const readCandidateContents = (candidates: readonly CallerCandidate[]): Promise<CandidateRead[]> =>
   Promise.all(
-    candidates.map(async (candidate) => {
-      try {
-        const content = await readFile(candidate.fileName, 'utf8');
-        return { candidate, content };
-      } catch {
-        return { candidate, content: null };
-      }
-    })
+    candidates.map(async (candidate) => ({
+      candidate,
+      content: await readSourceContent(candidate.fileName),
+    }))
   );
 
 const INITIAL_SEARCH_OUTCOME: CallerSearchOutcome = { status: 'not-found' };

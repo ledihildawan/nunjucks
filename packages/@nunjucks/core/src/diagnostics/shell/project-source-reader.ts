@@ -6,6 +6,9 @@ import type { ProjectSourceContent, ProjectSourceLocation } from '@nunjucks/erro
 // wholesale into the error-enrichment pipeline.
 const MAX_PROJECT_SOURCE_BYTES = 1_000_000;
 
+// WHY: deliberately synchronous — the public `formatError` (error-formatter) invokes
+// `SourceFileReader` synchronously, so this shell reader matches that contract. It is
+// the engine's only sync-fs site, quarantined here at the diagnostics shell boundary.
 const isProjectSource = (path: string): boolean => {
   const normalized = path.replace(/\\/g, '/');
   return !normalized.includes('/node_modules/');

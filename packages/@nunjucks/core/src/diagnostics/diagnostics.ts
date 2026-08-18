@@ -48,7 +48,7 @@ interface DiagnosticsBuildInput {
 }
 
 export { findContextKeyPosition } from './find-context-key-position.ts';
-export { readProjectSource } from './project-source-reader.ts';
+export { readProjectSource } from './shell/project-source-reader.ts';
 
 const buildContextObj = (input: DiagnosticsBuildInput): Record<string, unknown> => ({
   lineno: input.metadata.lineno,
