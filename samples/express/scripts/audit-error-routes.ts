@@ -3,8 +3,7 @@
 
 import { createServer, type Server } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { errorGroups } from '../lib/domain/error-route-metadata.ts';
 
 interface ParsedLocation {
   path: string | null;
@@ -41,12 +40,10 @@ interface RouteRow {
   info: RouteInfo;
 }
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const headless = process.argv.includes('--headless') || process.env.AUDIT_HEADLESS === '1';
 const positionalBase = process.argv.slice(2).find((arg) => !arg.startsWith('--'));
 const rawBase = positionalBase ?? 'http://localhost:4000';
 const BASE = rawBase.startsWith('http') ? rawBase : `http://${rawBase}`;
-const ERRORS_TS = path.join(__dirname, '..', 'routes', 'errors.ts');
 
 const discoverRoutes = async (base: string): Promise<string[]> => {
   try {
@@ -64,24 +61,15 @@ const discoverRoutes = async (base: string): Promise<string[]> => {
     }
   } catch (probeError: unknown) {
     // WHY: a failed probe (server down, timeout, bad URL) is an expected degraded mode —
-    // log it so a hung server stays diagnosable, then fall through to source parsing.
-    console.warn(`Route probe failed, falling back to source parsing: ${String(probeError)}`);
+    // log it so a hung server stays diagnosable, then fall through to the registry.
+    console.warn(`Route probe failed, falling back to the route registry: ${String(probeError)}`);
   }
-  let errorsSrc: string;
-  try {
-    errorsSrc = readFileSync(ERRORS_TS, 'utf8');
-  } catch {
-    throw new Error(
-      `Cannot read ${ERRORS_TS} — route fallback requires routes/errors.ts (run from samples/express)`
-    );
-  }
-  return [
-    ...new Set(
-      [...errorsSrc.matchAll(/router\.get\(\s*'\/([a-z0-9-]+)'/gu)]
-        .map((m) => m[1])
-        .filter((s): s is string => s !== undefined)
-    ),
-  ];
+  // WHY: the offline fallback reuses the same errorGroups registry that renders the
+  // live /errors index page — regex-scraping routes/errors.ts used to silently miss the
+  // data-driven routes registered via reduce() from error-route-data.ts.
+  return [...new Set(errorGroups.flatMap((group) => group.items.map((item) => item.path)))].sort(
+    (a, b) => a.localeCompare(b)
+  );
 };
 
 const decode = (input: string): string =>
