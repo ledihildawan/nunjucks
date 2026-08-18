@@ -10,13 +10,16 @@ export type {
   Classification,
   ErrorDefinition,
   ErrorSeverity,
+  HumanTitleInput,
 } from './errors/index.ts';
 export {
+  classifyAndBuildTitle,
   classifyFromError,
   ERROR_DEFINITIONS,
   getError,
 } from './errors/index.ts';
 export { getErrorMessage } from './get-error-message.ts';
+export { resolveHumanTitle } from './errors/classify-title.ts';
 export type { LineBase } from './line-base.ts';
 export { normalizeLineBase } from './line-base.ts';
 export type { ErrorLike, Warning } from './types.ts';

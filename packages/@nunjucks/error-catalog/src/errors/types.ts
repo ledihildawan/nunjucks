@@ -7,6 +7,14 @@ type ExtraExtractor = (groups: RegExpMatchArray) => Record<string, string> | nul
 // catalog barrel instead of re-declaring the inline union.
 type ErrorSeverity = 'error' | 'warning' | 'info';
 
+/** Options for resolving a human-facing title from a classified error. */
+export interface HumanTitleInput {
+  readonly category: string;
+  readonly undefinedName: string | null;
+  readonly plain: string;
+  readonly fallback: string;
+}
+
 /**
  * Defines one catalogued error: its stable code `name`, a `message` template
  * whose `{placeholder}` params double as pattern captures, the `pattern` used to

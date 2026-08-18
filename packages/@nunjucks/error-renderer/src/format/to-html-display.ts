@@ -1,15 +1,9 @@
 import type { LineBase } from '@nunjucks/error-catalog';
-import { classifyFromError, ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
+import { classifyFromError, type HumanTitleInput } from '@nunjucks/error-catalog';
 import { mergeErrorParts } from './presentation/error/error-parts.ts';
 import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import { escapeAttribute, escapeHtml } from './presentation/syntax-highlight/highlight.ts';
-import type { ClassifiedError, ErrorLike, HumanTitleInput, LocationInfo } from './to-html-types.ts';
-import { toText } from './to-text.ts';
-
-const UNDEFINED_OUTPUT_RE = /attempted to output '([^']+)'/u;
-// WHY: imported from the catalog twin — the pattern IS the classify contract; a local
-// literal copy could drift from classification.
-const RESERVED_KEYWORD_RE = ERROR_DEFINITIONS.RESERVED_KEYWORD.pattern;
+import type { ClassifiedError, ErrorLike, LocationInfo } from './to-html-types.ts';
 
 /**
  * Renders an escaped badge chip, or `''` when the text is missing or empty.
@@ -21,60 +15,6 @@ const renderBadge = (variant: string, text?: string | null): string => {
     return '';
   }
   return `<span class="badge ${escapeAttribute(variant)}">${escapeHtml(text)}</span>`;
-};
-
-// WHY: titles render from the catalog's titleTemplate — the single source of truth.
-// A local literal copy could drift from the definition the classifier renders.
-const catalogTitle = (name: keyof typeof ERROR_DEFINITIONS, subject?: string): string | null => {
-  const template = ERROR_DEFINITIONS[name].titleTemplate;
-  if (template === undefined) {
-    return null;
-  }
-  return subject === undefined ? template : template.replaceAll('{name}', subject);
-};
-
-/**
- * Resolves the human-facing title for a classified error, preferring the catalog's
- * `titleTemplate` for known categories; unmatched categories fall back to `fallback`.
- */
-const resolveHumanTitle = ({
-  category,
-  undefinedName,
-  plain,
-  fallback,
-}: HumanTitleInput): string => {
-  const named = undefinedName ?? 'unknown';
-
-  switch (category) {
-    case 'UNDEFINED_VARIABLE':
-      if (!undefinedName) {
-        return fallback;
-      }
-      return catalogTitle('UNDEFINED_VARIABLE', undefinedName) ?? fallback;
-    case 'UNDEFINED_FUNCTION':
-      return catalogTitle('UNDEFINED_FUNCTION', named) ?? fallback;
-    case 'UNDEFINED_FILTER':
-      return catalogTitle('UNDEFINED_FILTER', named) ?? fallback;
-    case 'IMPORT_ERROR':
-      return catalogTitle('IMPORT_ERROR') ?? fallback;
-    case 'FILE_NOT_FOUND':
-      return `Template file not found: ${named}`;
-    case 'SYNTAX_ERROR':
-      return catalogTitle('SYNTAX_ERROR') ?? fallback;
-    case 'VALIDATION_ERROR':
-      return catalogTitle('TEMPLATE_MUST_BE_STRING') ?? fallback;
-    case 'RESERVED_KEYWORD_CONTEXT':
-      return plain;
-    case 'RESERVED_KEYWORD': {
-      const match = plain.match(RESERVED_KEYWORD_RE);
-      if (!match) {
-        return fallback;
-      }
-      return `Cannot use reserved ${match[1]} '${match[2]}'`;
-    }
-    default:
-      return fallback;
-  }
 };
 
 /** Classifies an error via the catalog and merges attached parts into a display view. */
@@ -116,22 +56,6 @@ const resolveErrorLocation = (error: ErrorLike | null, input: ErrorLocationInput
 };
 
 /**
- * Classifies an error and derives its human title, extracting the undefined name from
- * the plain message when the classifier did not provide one.
- */
-const classifyAndBuildTitle = (error: ErrorLike) => {
-  const classified = classifyError(error);
-  const plain = toText(error, { verbosity: 'simple' });
-  const undefinedName = classified.undefinedName ?? plain.match(UNDEFINED_OUTPUT_RE)?.[1] ?? null;
-  return resolveHumanTitle({
-    category: classified.category,
-    undefinedName,
-    plain,
-    fallback: classified.title ?? plain,
-  });
-};
-
-/**
  * Classifies the error and resolves its display path and 1-based coordinates in one pass
  * for the HTML renderers; JS callers get one-based coordinates via `isJsCaller`.
  */
@@ -154,4 +78,5 @@ const buildErrorDisplay = (
   return { classified, displayLine, displayCol, displayPath };
 };
 
-export { buildErrorDisplay, classifyAndBuildTitle, classifyError, renderBadge, resolveHumanTitle };
+export { buildErrorDisplay, classifyError, renderBadge };
+export type { HumanTitleInput };

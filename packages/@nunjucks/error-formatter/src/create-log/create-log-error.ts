@@ -1,3 +1,4 @@
+import { classifyAndBuildTitle } from '@nunjucks/error-catalog';
 import {
   toAnsi,
   toText,
@@ -5,7 +6,6 @@ import {
   createFormatterState,
   buildSourceTrace,
   parseStackFrame,
-  classifyAndBuildTitle,
   type SourceTrace,
 } from '@nunjucks/error-renderer';
 import type { ProjectSourceContent, SourceFileReader } from './create-log-types.ts';

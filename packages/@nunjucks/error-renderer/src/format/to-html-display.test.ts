@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { renderBadge, resolveHumanTitle } from './to-html-display.ts';
+import { resolveHumanTitle } from '@nunjucks/error-catalog';
+import { renderBadge } from './to-html-display.ts';
 
 describe('renderBadge', () => {
   test('returns empty string for null text', () => {

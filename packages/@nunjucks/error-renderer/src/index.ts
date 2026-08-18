@@ -12,4 +12,4 @@ export { DEFAULT_IDE } from './format/presentation/ide-links/defaults.ts';
 export type { SourceTrace } from './format/presentation/source-trace/source-trace.ts';
 export { buildSourceTrace } from './format/presentation/source-trace/source-trace.ts';
 export { parseStackFrame } from './format/presentation/source-trace/stack-parse.ts';
-export { classifyAndBuildTitle } from './format/to-html-display.ts';
+export { classifyAndBuildTitle } from '@nunjucks/error-catalog';
