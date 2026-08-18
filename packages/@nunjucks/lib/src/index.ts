@@ -1,19 +1,44 @@
-export * from './type-guards.ts';
-export * from './read-error-code.ts';
-export * from './gensym.ts';
-export * from './result.ts';
-export * from './pipe-helpers.ts';
-export * from './escape-regex.ts';
-export * from './escape.ts';
-export * from './slice.ts';
-export { createSortComparator } from './compare.ts';
-export * from './attribute-getter.ts';
-export * from './normalize.ts';
-export * from './string-case.ts';
-export * from './match-any-regex.ts';
-export * from './collect-stream.ts';
-export * from './from-iterator.ts';
-export * from './web-readable-stream.ts';
-export * from './stream-coalesce.ts';
-export * from './path-basename.ts';
-export * from './is-digit.ts';
+// WHY: curated barrel — every public name is listed explicitly so a new module export
+// cannot silently widen @nunjucks/lib's API surface; adding a name requires an edit here.
+export {
+  hasOwn,
+  isArray,
+  isFunction,
+  isIterable,
+  isKeyedObject,
+  isNonNullish,
+  isObject,
+  isPlainObject,
+  isResultLike,
+  isString,
+  isThenable,
+  isTypedArray,
+  readNumber,
+  readObject,
+  readString,
+} from './type-guards.ts';
+export { readErrorCode } from './read-error-code.ts';
+export { createGensym } from './gensym.ts';
+export { err, getOrElse, isErr, isOk, ok } from './result.ts';
+export type { Err, Ok, Result } from './result.ts';
+export { replace, slice } from './pipe-helpers.ts';
+export { escapeRegex } from './escape-regex.ts';
+export {
+  escapeAttribute,
+  escapeHtml,
+  escapeScriptString,
+  escapeStyle,
+  escapeUnquotedAttribute,
+} from './escape.ts';
+export { collectBackward, collectForward, normalizeIndex } from './slice.ts';
+export { compareValues, createSortComparator } from './compare.ts';
+export { getAttrGetter } from './attribute-getter.ts';
+export { normalize } from './normalize.ts';
+export { titleCase } from './string-case.ts';
+export { MATCH_ANY_RE } from './match-any-regex.ts';
+export { collectStream, collectString } from './collect-stream.ts';
+export { fromIterator } from './from-iterator.ts';
+export { toWebReadableStream } from './web-readable-stream.ts';
+export { coalesceStream } from './stream-coalesce.ts';
+export { basename } from './path-basename.ts';
+export { isDigit } from './is-digit.ts';

@@ -127,16 +127,13 @@ const asTemplateError = (err: Error | TemplateError): TemplateError => {
 
 // WHY: Object.assign copies only enumerable own props — the descriptor overlay must match or
 // err's non-enumerable message/stack/cause would overwrite the fresh envelope's own.
-const ownEnumerableDescriptors = (source: object): PropertyDescriptorMap => {
-  const descriptors: Partial<Record<PropertyKey, PropertyDescriptor>> = {};
-  for (const key of Reflect.ownKeys(source)) {
-    const descriptor = Object.getOwnPropertyDescriptor(source, key);
-    if (descriptor?.enumerable === true) {
-      descriptors[key] = descriptor;
-    }
-  }
-  return descriptors as PropertyDescriptorMap;
-};
+const ownEnumerableDescriptors = (source: object): PropertyDescriptorMap =>
+  Object.fromEntries(
+    Reflect.ownKeys(source).flatMap((key) => {
+      const descriptor = Object.getOwnPropertyDescriptor(source, key);
+      return descriptor?.enumerable === true ? [[key, descriptor] as const] : [];
+    })
+  );
 
 const withLocation =
   ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) =>
