@@ -23,5 +23,5 @@
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": false
   },
-  "exclude": ["dist/**/*"]
+  "exclude": ["dist/**/*", "nunjucks-original"]
 }
