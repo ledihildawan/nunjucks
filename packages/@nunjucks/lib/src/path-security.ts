@@ -1,21 +1,51 @@
-// WHY: node:path is a pure string-manipulation module (no disk/network I/O).
-// It is the canonical, cross-platform path-normalization utility. Importing it
-// here does not violate the §2 pure-core contract — path-security performs only
-// synchronous string transforms (relative, isAbsolute, normalize). Lib remains
-// side-effect free; this is a standard-runtime dependency, not an I/O boundary.
-import path from 'node:path';
+// WHY: pure string math on purpose — importing node:path here would leak a node:
+// specifier through the @nunjucks/lib barrel into every domain package. Lib is the
+// portability tier (web streams, zero node deps); path containment is achievable
+// with segment comparison alone. Inputs arrive realpath-resolved from the loader,
+// so only canonical absolute paths must hold.
 
 // WHY: a NUL byte in a file name is a cheap first line of defense against path-traversal attempts that smuggle null terminators (e.g. "..\0/") past length-based checks.
 const containsNullByte = (name: string): boolean => name.includes('\0');
 
+const splitPathSegments = (value: string): readonly string[] =>
+  value.split(/[\\/]+/).filter((segment) => segment.length > 0);
+
+const isAbsolutePath = (value: string): boolean =>
+  value.startsWith('/') || value.startsWith('\\') || /^[A-Za-z]:[\\/]/u.test(value);
+
+// WHY: win32 drive roots and UNC hosts compare case-insensitively (matching
+// node:path semantics); POSIX path segments stay case-sensitive.
+const looksLikeWin32Path = (value: string): boolean =>
+  /^[A-Za-z]:[\\/]/u.test(value) || value.includes('\\');
+
 /**
- * Checks whether `fullPath` resolves inside `basePath` by computing the
- * relative path between them: containment holds when the result is empty or
- * neither climbs with leading `..` segments nor escapes as an absolute path.
+ * Checks whether `fullPath` resolves inside `basePath`: containment holds when
+ * both are absolute, share the same root, and every base segment matches in
+ * order. Compared segment-wise (never by string prefix) so sibling directories
+ * sharing a prefix (`/var/www` vs `/var/www2`) cannot pass; non-canonical or
+ * non-absolute inputs fail closed.
  */
 const isWithinBase = (basePath: string, fullPath: string): boolean => {
-  const relative = path.relative(basePath, fullPath);
-  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+  if (!isAbsolutePath(basePath) || !isAbsolutePath(fullPath)) {
+    return false;
+  }
+  const base = splitPathSegments(basePath);
+  const full = splitPathSegments(fullPath);
+  if (base.length === 0 || full.length < base.length) {
+    return false;
+  }
+  // WHY: a `..` segment cannot appear in realpath output — its presence means the
+  // input is not canonical, so containment is refused rather than resolved.
+  if (full.includes('..') || base.includes('..')) {
+    return false;
+  }
+  const ignoreCase = looksLikeWin32Path(basePath) || looksLikeWin32Path(fullPath);
+  const segmentEquals = ignoreCase
+    ? (left: string, right: string) => left.toLowerCase() === right.toLowerCase()
+    : (left: string, right: string) => left === right;
+  // WHY: `full[index] ?? ''` is safe — length was checked, and a filtered segment is
+  // never empty, so the fallback can never equal a real base segment.
+  return base.every((segment, index) => segmentEquals(segment, full[index] ?? ''));
 };
 
 export { containsNullByte, isWithinBase };
