@@ -139,9 +139,7 @@ export const pushToken = (parserContext: ParserContext, tok: Token | null): void
     // parser itself — a programmer bug, not a template error. The internal-invariant
     // brand is deliberately not TEMPLATE_ERROR, so parse()'s boundary contract propagates
     // it as a bug instead of mapping it to a user-facing Result error.
-    throw createInternalInvariantError(
-      'pushToken called while another token is already pushed'
-    );
+    throw createInternalInvariantError('pushToken called while another token is already pushed');
   }
   parserContext.peeked = tok;
 };
