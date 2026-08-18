@@ -106,7 +106,7 @@ const highlightHtml = (code: string): string => {
     return '';
   }
   // WHY: iterative scan — per-chunk tail recursion overflowed the stack on multi-MB
-  // single-line sources; loop exemption: recursion safety (ARCHITECTURE.md).
+  // single-line sources; loop exemption: recursion safety.
   let index = 0;
   let out = '';
   let inTag = false;

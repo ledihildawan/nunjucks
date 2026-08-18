@@ -39,8 +39,7 @@ const processInterpolationChar = (exprChar: string): { depthDelta: number; charT
 
 const parseInterpolation = (initial: LexerState, origin: LexerState): ParseInterpolationResult => {
   // WHY: while loop instead of the previous per-character recursion — long interpolation
-  // bodies overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
-  // ARCHITECTURE.md.
+  // bodies overflowed the native stack. Loop exemption: lexer/tokenizer engine.
   let current = initial;
   let exprDepth = 1;
   let exprContent = '';
@@ -76,9 +75,9 @@ const consumeTemplateLoop = (
   origin: LexerState
 ): { quasis: TemplateQuasi[]; finalCurrent: LexerState } => {
   // WHY: while loop instead of the previous per-character recursion — long template
-  // literals overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
-  // ARCHITECTURE.md. quasis is a locally-owned push accumulator (no per-iteration
-  // spread) so each append stays O(1) and the array never escapes before returning.
+  // literals overflowed the native stack. Loop exemption: lexer/tokenizer engine.
+  // quasis is a locally-owned push accumulator (no per-iteration spread) so each append
+  // stays O(1) and the array never escapes before returning.
   const quasis: TemplateQuasi[] = [];
   let current = initialCurrent;
   let currentStr = '';

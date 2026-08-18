@@ -1,7 +1,7 @@
 // WHY: SSOT for the engine's built-in is test names — consumed by the lexer (keyword
 // tokenization of x is <name> expressions) and drift-pinned against the runtime's
-// BUILTIN_TESTS registry. Mirrors the BUILTIN_FILTER_NAMES pattern (ARCHITECTURE.md §6):
-// the list lives in shared so neither consumer drags the other's barrel weight.
+// BUILTIN_TESTS registry. Mirrors the BUILTIN_FILTER_NAMES pattern: the list lives in
+// shared so neither consumer drags the other's barrel weight.
 const BUILTIN_TEST_NAMES: readonly string[] = Object.freeze([
   'alpha',
   'alphanumeric',

@@ -10,8 +10,7 @@ interface ExtractWhileOptions {
  */
 export const extractWhile = ({ source, start, chars }: ExtractWhileOptions): string => {
   // WHY: while loop instead of the previous per-character recursion — long character
-  // runs overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
-  // ARCHITECTURE.md.
+  // runs overflowed the native stack. Loop exemption: lexer/tokenizer engine.
   let end = start;
   while (end < source.length && chars.includes(source[end] ?? '')) {
     end += 1;
@@ -31,8 +30,7 @@ interface ExtractUntilOptions {
  */
 export const extractUntil = ({ source, start, chars }: ExtractUntilOptions): string => {
   // WHY: while loop instead of the previous per-character recursion — long symbol runs
-  // overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
-  // ARCHITECTURE.md.
+  // overflowed the native stack. Loop exemption: lexer/tokenizer engine.
   let end = start;
   while (end < source.length && !chars.includes(source[end] ?? '')) {
     end += 1;
@@ -53,9 +51,9 @@ interface ParseStringContentOptions {
  */
 export const parseStringContent = ({ source, start, quote }: ParseStringContentOptions): string => {
   // WHY: while loop instead of the previous per-character recursion — long string
-  // literals overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
-  // ARCHITECTURE.md. An escaped character (backslash pair) is skipped wholesale so an
-  // escaped quote does not terminate the content.
+  // literals overflowed the native stack. Loop exemption: lexer/tokenizer engine. An
+  // escaped character (backslash pair) is skipped wholesale so an escaped quote does
+  // not terminate the content.
   let end = start;
   while (end < source.length) {
     const char = source[end] ?? '';

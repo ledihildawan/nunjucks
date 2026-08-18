@@ -16,8 +16,8 @@ interface RawTagOptions {
 
 const skipWhitespace = (state: LexerState): LexerState => {
   // WHY: while loop instead of per-character recursion. Loop exemption: lexer/tokenizer
-  // engine, per ARCHITECTURE.md. Covers the full whitespace family (tabs/newlines) so
-  // `{%\traw %}` and `{% raw\n%}` lex like upstream's `\s*` tag syntax.
+  // engine. Covers the full whitespace family (tabs/newlines) so `{%\traw %}` and
+  // `{% raw\n%}` lex like upstream's `\s*` tag syntax.
   let current = state;
   while (!isFinished(current) && WHITESPACE_CHARS.includes(getChar(current))) {
     current = advance(current);
@@ -32,7 +32,7 @@ const shouldContinueTagName = (current: LexerState): boolean => {
 
 const extractTagName = (state: LexerState): { name: string; current: LexerState } => {
   // WHY: while loop instead of per-character recursion. Loop exemption: lexer/tokenizer
-  // engine, per ARCHITECTURE.md.
+  // engine.
   let current = state;
   let name = '';
   while (shouldContinueTagName(current)) {
@@ -47,7 +47,7 @@ const extractTagName = (state: LexerState): { name: string; current: LexerState 
 // exists; without it the candidate is treated as literal content.
 const findBlockEnd = (state: LexerState, tags: RawTagOptions['tags']): LexerState | null => {
   // WHY: while loop instead of per-character recursion — deep raw-block scans overflowed
-  // the native stack. Loop exemption: lexer/tokenizer engine, per ARCHITECTURE.md.
+  // the native stack. Loop exemption: lexer/tokenizer engine.
   let current = state;
   while (!isFinished(current)) {
     if (matches(current, tags.blockEnd)) {
@@ -119,8 +119,7 @@ const processRawContent = ({
   tags,
 }: ProcessRawContentOptions): RawScanState => {
   // WHY: while loop instead of the previous per-character recursion — a single large raw
-  // body overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
-  // ARCHITECTURE.md.
+  // body overflowed the native stack. Loop exemption: lexer/tokenizer engine.
   let scanState = current;
   let content = '';
   let depth = 1;

@@ -157,7 +157,7 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: '/* Refactor to use env globals or filters instead of direct code execution */',
     fixComment: 'Remove dangerous code from the template',
-    documentationUrl: 'https://github.com/ledihildawan/nunjucks/blob/main/ARCHITECTURE.md',
+    documentationUrl: 'https://github.com/ledihildawan/nunjucks/blob/main/docs/templating.md',
     extraFrom: (groups: RegExpMatchArray) => ({ violations: groups[1] ?? '' }),
   }),
 } as const;

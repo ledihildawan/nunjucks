@@ -30,8 +30,7 @@ export const tokenizeTemplateText: Tokenizer = (state) => {
 
   const { lineno, colno } = state;
   // WHY: while loop instead of the previous per-character recursion — a single large
-  // text run overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
-  // ARCHITECTURE.md.
+  // text run overflowed the native stack. Loop exemption: lexer/tokenizer engine.
   let current = state;
   let text = '';
   while (

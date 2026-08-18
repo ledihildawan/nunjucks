@@ -128,4 +128,3 @@ export const findDangerousValues = (
   });
   return [...new Set(paths)];
 };
-

@@ -51,8 +51,7 @@ export const advance = (state: LexerState, charCount = 1): LexerState => {
 
   // WHY: while loop instead of the previous recursive countLines — a single multi-char
   // advance (long string literal, raw block slice) recursed once per character and
-  // overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
-  // ARCHITECTURE.md.
+  // overflowed the native stack. Loop exemption: lexer/tokenizer engine.
   let scanIndex = index;
   let newLineno = lineno;
   let newColno = colno;

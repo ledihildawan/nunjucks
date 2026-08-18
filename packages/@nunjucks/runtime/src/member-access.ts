@@ -97,7 +97,7 @@ export const memberLookup = (
     // method (`{{ user.missing() }}`) flow through call-wrap, which applies the function and
     // yields undefined instead of crashing; the discriminator guards
     // (isPropertyNotFoundResult) and optionalMemberLookup bridge the same state back into
-    // the value channel for non-call sites. Documented in ARCHITECTURE.md §7 sentinels.
+    // the value channel for non-call sites.
     return createPropertyNotFoundCallable(value, parentName);
   }
 

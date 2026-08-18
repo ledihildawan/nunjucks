@@ -15,7 +15,7 @@ export const tokenizeComment: Tokenizer = (state) => {
 
   const initial = advance(state, state.tags.commentStart.length);
   // WHY: while loop instead of per-character recursion — a large comment body overflowed
-  // the native stack. Loop exemption: lexer/tokenizer engine, per ARCHITECTURE.md.
+  // the native stack. Loop exemption: lexer/tokenizer engine.
   let current = initial;
   let comment = state.tags.commentStart;
   while (!isFinished(current)) {

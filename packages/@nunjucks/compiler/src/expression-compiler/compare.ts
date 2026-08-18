@@ -59,7 +59,7 @@ export const compileIs = (
   if (args) {
     // WHY: imperative index loop — comma placement between emitted fragments is
     // index-sensitive; a map().join() cannot interleave into the shared emit buffer.
-    // Loop exemption: compiler emission path, per ARCHITECTURE.md.
+    // Loop exemption: compiler emission path.
     for (let i = 0; i < args.length; i++) {
       const argument = args[i];
       if (i > 0) {

@@ -43,7 +43,7 @@ const isWhitespace = (char: string | null): boolean =>
 // driven by an internal while loop — the previous per-token `yield*` self-delegation built
 // a delegation chain one frame per token, making every next() traverse O(n) frames
 // (O(n²) total) and growing the native stack O(n). Loop exemption: lexer/tokenizer engine
-// (high-throughput scanner), per ARCHITECTURE.md.
+// (high-throughput scanner).
 const lexGenerator = function* (state: LexerState): Generator<Token, void, unknown> {
   let current = state;
   while (current.index < current.source.length) {

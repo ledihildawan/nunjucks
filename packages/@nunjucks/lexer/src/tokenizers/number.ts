@@ -5,7 +5,7 @@ import type { LexerState, Tokenizer } from '../types.ts';
 
 const parseDigits = (current: LexerState): { num: string; current: LexerState } => {
   // WHY: while loop instead of per-digit recursion — a long digit run overflowed the
-  // native stack. Loop exemption: lexer/tokenizer engine, per ARCHITECTURE.md.
+  // native stack. Loop exemption: lexer/tokenizer engine.
   let scanState = current;
   let num = '';
   while (
