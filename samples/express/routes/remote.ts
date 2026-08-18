@@ -2,6 +2,7 @@ import express, { type NextFunction, type Request, type Response, type Router } 
 import { escapeHtml } from '@nunjucks/lib';
 import { renderTemplate } from '../lib/domain/render-template.ts';
 import { localizedTime } from '../lib/io/clock.ts';
+import { delay } from '../lib/io/delay.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
 import { standardRouteConfig } from '../lib/io/views-path.ts';
 
@@ -30,13 +31,12 @@ router.get('/api/time', (_req: Request, res: Response) => {
   res.type('html').send(`Current time: <strong>${escapeHtml(localizedTime())}</strong>`);
 });
 
-router.get('/api/slow', (req: Request, res: Response) => {
-  setTimeout(() => {
-    if (req.destroyed) {
-      return;
-    }
-    res.type('html').send('<strong>Slow content loaded!</strong>');
-  }, 2000);
+router.get('/api/slow', async (req: Request, res: Response) => {
+  await delay(2000);
+  if (req.destroyed) {
+    return;
+  }
+  res.type('html').send('<strong>Slow content loaded!</strong>');
 });
 
 router.get('/api/error', (_req: Request, res: Response) => {

@@ -1,6 +1,14 @@
 import { type NunjucksConfig, nunjucks } from '@nunjucks/core';
 import type { Result } from '@nunjucks/lib';
 
+/**
+ * WHY (module seam): rendering by template NAME is deliberately I/O-adjacent — name
+ * resolution must reach the filesystem, but only through the `views` config, which is
+ * always shell-injected (routes build configs via views-path.ts); this domain file
+ * therefore stays import-clean of node/express/fs, and inline-source rendering (the
+ * renderDemoTemplate baseline) stays pure.
+ */
+
 interface RenderTemplateOptions {
   context?: Record<string, unknown>;
   config?: NunjucksConfig;

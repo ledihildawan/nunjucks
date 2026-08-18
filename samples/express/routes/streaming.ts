@@ -2,6 +2,7 @@ import express, { type NextFunction, type Request, type Response, type Router } 
 import { dashboardData } from '../lib/domain/dashboard-data.ts';
 import { isoTimestamp } from '../lib/io/clock.ts';
 import { apiNjk, blockingNjk, streamNjk } from '../lib/io/stream-engines.ts';
+import { streamTemplateToResponse } from '../lib/io/stream-wiring.ts';
 
 /**
  * Streaming demo router — progressive HTML streaming with recovery, a blocking
@@ -10,49 +11,22 @@ import { apiNjk, blockingNjk, streamNjk } from '../lib/io/stream-engines.ts';
  */
 const router: Router = express.Router();
 
-// WHY: shared pipeRenderStream guardrails — every streaming route gets the same per-chunk
-// idle timeout and output-size breaker so no route can stream unbounded output.
-const streamIdleTimeoutMs = 10000;
-const streamMaxOutputBytes = 2 * 1024 * 1024;
-
 const dashboardContext = (mode: string): Record<string, unknown> => ({
   ...dashboardData,
   mode,
   timestamp: isoTimestamp(),
 });
 
-// WHY: wires an Express client-disconnect to an AbortSignal so pipeRenderStream can abort the render and cascade-cleanup the moment the browser closes the connection. The `!res.writableEnded` guard avoids a spurious abort after the response has already completed normally. The listener lives for the request lifecycle (GC'd with req) — no leak.
-const createDisconnectSignal = (req: Request, res: Response): AbortSignal => {
-  const controller = new AbortController();
-  req.on('close', () => {
-    if (!res.writableEnded) {
-      controller.abort();
-    }
-  });
-  return controller.signal;
-};
-
 // WHY: streaming route — uses {% extends %} + {% block %} template files. Error recovery + strict mode means missing data (order #2 city, customer bio) produces inline markers. Demonstrates the full production guardrail chain: client-disconnect signal (cascade cleanup), idle per-chunk timeout (timeoutMs), total deadline (executionTimeout), output-size breaker (maxOutputSize), and per-phase error observability (onError). onComplete logs chunk count, error count, total KB.
 router.get('/stream', async (req: Request, res: Response, next: NextFunction) => {
-  const streamResult = await streamNjk.renderToStream(
-    'stream-dashboard.njk',
-    dashboardContext('Streaming')
-  );
-  if (!streamResult.ok) {
-    return next(streamResult.error);
-  }
-  await streamNjk.pipeRenderStream(streamResult, res, {
-    signal: createDisconnectSignal(req, res),
-    timeoutMs: streamIdleTimeoutMs,
-    maxOutputSize: streamMaxOutputBytes,
-    onError: (err, phase) => {
-      console.error(`[stream] ${phase} error: ${err.message}`);
-    },
-    onComplete: (stats) => {
-      console.log(
-        `[stream] ${stats.chunks} chunks, ${stats.errors} errors, ${(stats.bytes / 1024).toFixed(1)}KB`
-      );
-    },
+  await streamTemplateToResponse({
+    engine: streamNjk,
+    template: 'stream-dashboard.njk',
+    context: dashboardContext('Streaming'),
+    req,
+    res,
+    next,
+    label: 'stream',
   });
 });
 
@@ -70,25 +44,15 @@ router.get('/stream-normal', async (req: Request, res: Response, next: NextFunct
 
 // WHY: JSON streaming API — same dashboard data but rendered as JSON. Walrus operator computes derived field inline. NOTE: JSON cannot absorb inline error markers without corrupting the response (a bare {error:...} fragment after a JSON prefix is unparseable), so streamContentType: 'json' makes any mid-stream recoverable sentinel FATAL — the stream aborts to the Tier 3 mid-stream path (onError fires, response ends) rather than emitting a marker. Use html/text if you want per-expression inline recovery.
 router.get('/stream-api', async (req: Request, res: Response, next: NextFunction) => {
-  const streamResult = await apiNjk.renderToStream(
-    '{{ avgOrder := kpi.revenueNum / kpi.orderCount }}{{ { revenue: kpi.revenue, avgOrder: avgOrder, orders: orders, customer: customer } |> tojson }}',
-    dashboardContext('JSON API')
-  );
-  if (!streamResult.ok) {
-    return next(streamResult.error);
-  }
-  await apiNjk.pipeRenderStream(streamResult, res, {
-    signal: createDisconnectSignal(req, res),
-    timeoutMs: streamIdleTimeoutMs,
-    maxOutputSize: streamMaxOutputBytes,
-    onError: (err, phase) => {
-      console.error(`[stream-api] ${phase} error: ${err.message}`);
-    },
-    onComplete: (stats) => {
-      console.log(
-        `[stream-api] ${stats.chunks} chunks, ${stats.errors} errors, ${(stats.bytes / 1024).toFixed(1)}KB`
-      );
-    },
+  await streamTemplateToResponse({
+    engine: apiNjk,
+    template:
+      '{{ avgOrder := kpi.revenueNum / kpi.orderCount }}{{ { revenue: kpi.revenue, avgOrder: avgOrder, orders: orders, customer: customer } |> tojson }}',
+    context: dashboardContext('JSON API'),
+    req,
+    res,
+    next,
+    label: 'stream-api',
   });
 });
 
@@ -97,25 +61,14 @@ router.get('/stream-api', async (req: Request, res: Response, next: NextFunction
 // which renders as a full BLOCK error card (not just an inline icon). The error occupies the
 // full widget area, providing much more visible feedback than an inline marker.
 router.get('/stream-block-error', async (req: Request, res: Response, next: NextFunction) => {
-  const streamResult = await streamNjk.renderToStream(
-    'stream-block-error-demo.njk',
-    dashboardContext('Block Error Demo')
-  );
-  if (!streamResult.ok) {
-    return next(streamResult.error);
-  }
-  await streamNjk.pipeRenderStream(streamResult, res, {
-    signal: createDisconnectSignal(req, res),
-    timeoutMs: streamIdleTimeoutMs,
-    maxOutputSize: streamMaxOutputBytes,
-    onError: (err, phase) => {
-      console.error(`[stream-block-error] ${phase} error: ${err.message}`);
-    },
-    onComplete: (stats) => {
-      console.log(
-        `[stream-block-error] ${stats.chunks} chunks, ${stats.errors} errors, ${(stats.bytes / 1024).toFixed(1)}KB`
-      );
-    },
+  await streamTemplateToResponse({
+    engine: streamNjk,
+    template: 'stream-block-error-demo.njk',
+    context: dashboardContext('Block Error Demo'),
+    req,
+    res,
+    next,
+    label: 'stream-block-error',
   });
 });
 

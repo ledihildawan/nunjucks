@@ -2,6 +2,7 @@ import express, { type NextFunction, type Request, type Response, type Router } 
 import { z } from 'zod';
 import { renderTemplate } from '../lib/domain/render-template.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
+import { readValidatedQuery } from '../lib/io/validated-query.ts';
 import { standardRouteConfig } from '../lib/io/views-path.ts';
 
 /**
@@ -18,10 +19,8 @@ const querySchema = z.object({
 });
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  const parsed = querySchema.safeParse(req.query);
-
-  if (!parsed.success) {
-    res.status(400).json({ ok: false, errors: parsed.error.issues });
+  const query = readValidatedQuery({ schema: querySchema, req, res });
+  if (query === null) {
     return;
   }
 
@@ -30,8 +29,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     next,
     result: await renderTemplate('boundary.njk', {
       context: {
-        name: parsed.data.name,
-        count: parsed.data.count,
+        name: query.name,
+        count: query.count,
       },
       config: standardRouteConfig,
     }),
