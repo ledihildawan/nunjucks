@@ -3,6 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { isErr, isOk } from '@nunjucks/lib';
+import { sanitize } from '@nunjucks/filters/sanitize';
 import { render, renderToStream } from './render.ts';
 import { renderTemplate } from './render-test-helper.ts';
 
@@ -150,15 +151,20 @@ describe('dompurify per-render isolation', () => {
       '{{ x |> sanitize }}',
       { x: '<b>bold</b><i>italic</i>' },
       {
+        filters: { sanitize },
         dompurify: { ALLOWED_TAGS: ['b'] },
       } as Record<string, unknown>
     );
     expect(firstRenderResult).toContain('bold');
     expect(firstRenderResult).not.toContain('<i>');
 
-    const secondRenderResult = await renderTemplate('{{ x |> sanitize }}', {
-      x: '<b>bold</b><i>italic</i>',
-    });
+    const secondRenderResult = await renderTemplate(
+      '{{ x |> sanitize }}',
+      {
+        x: '<b>bold</b><i>italic</i>',
+      },
+      { filters: { sanitize } } as Record<string, unknown>
+    );
     expect(secondRenderResult).toContain('<i>italic</i>');
   });
 });

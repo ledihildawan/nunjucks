@@ -3,7 +3,7 @@ import { ok, type Result } from '@nunjucks/lib';
 import type { SafeString } from '@nunjucks/runtime';
 import type { DomPurifyConfig } from '@nunjucks/shared';
 import DomPurify from 'isomorphic-dompurify';
-import { createFilter, safeString } from '../factory/index.ts';
+import { createFilter, safeString } from './factory/index.ts';
 
 interface SanitizeOptions {
   str: unknown;
@@ -22,5 +22,14 @@ const sanitizeImpl = ({ str, config }: SanitizeOptions): Result<SafeString, Temp
 /**
  * Sanitizes markup through DOMPurify and marks the result `safe`; positional
  * `sanitize(x, cfg)` and kwargs `sanitize(config={...})` both bind.
+ *
+ * Opt-in security shell: this filter lives on the `@nunjucks/filters/sanitize`
+ * subpath (NOT the main barrel) so the jsdom-backed DOMPurify dependency stays
+ * out of the pure filter tier. Register it explicitly:
+ *
+ * ```ts
+ * import { sanitize } from '@nunjucks/filters/sanitize';
+ * nunjucks({ filters: { sanitize } });
+ * ```
  */
 export const sanitize = createFilter(['str', 'config'], sanitizeImpl);

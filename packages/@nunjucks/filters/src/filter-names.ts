@@ -1,7 +1,6 @@
 import * as arrayFilters from './filters/array.ts';
 import * as mathFilters from './filters/math.ts';
 import * as objectFilters from './filters/object.ts';
-import * as sanitizeFilters from './filters/sanitize.ts';
 import * as stringFilters from './filters/string.ts';
 import * as urlEncodeFilters from './filters/url-encode.ts';
 
@@ -20,11 +19,12 @@ const FILTER_ALIASES: Readonly<Record<string, unknown>> = Object.freeze({
  * the 3.x compat aliases; the shared `BUILTIN_FILTER_NAMES` tuple is the
  * drift-pin for the exact key set.
  */
+// WHY: sanitize deliberately absent — it lives on the ./sanitize subpath (opt-in
+// security shell) so the jsdom-backed DOMPurify dependency never enters the barrel.
 const BUILTIN_FILTERS: Readonly<Record<string, unknown>> = Object.freeze({
   ...arrayFilters,
   ...mathFilters,
   ...objectFilters,
-  ...sanitizeFilters,
   ...stringFilters,
   ...urlEncodeFilters,
   ...FILTER_ALIASES,

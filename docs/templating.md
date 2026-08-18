@@ -108,7 +108,7 @@ Registered set (aliases in parentheses). All return `Result` internally; failure
 
 **URL** — `urlencode` (string → `encodeURIComponent`; object/pairs → query string).
 
-**Security** — `escape`, `tojson`, `sanitize(html, config?)` DOMPurify-backed → SafeString; global DOMPurify options via `dompurify` config.
+**Security** — `escape`, `tojson`; `sanitize(html, config?)` (DOMPurify-backed → SafeString) is opt-in: import it from the `@nunjucks/filters/sanitize` subpath and register via `config.filters` — it is not part of the builtin barrel. Global DOMPurify options via `dompurify` config.
 
 **Deviation:** no `safe`, `striptags`, `int`, `float`, `random`, `wordcount`, `urlize`, `center`, `dictsort`, `dump`, `list`, `filesizeformat`, `nl2br`. Supply what you need via `config.filters`.
 

@@ -193,6 +193,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@nunjucks/core": "workspace:*",
+        "@nunjucks/filters": "workspace:*",
         "@nunjucks/integrations": "workspace:*",
         "@nunjucks/lib": "workspace:*",
         "@nunjucks/runtime": "workspace:*",

@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { sanitize } from '@nunjucks/filters/sanitize';
 import { renderTemplate } from './render-test-helper.ts';
 
 describe('string filters', () => {
@@ -370,70 +371,98 @@ describe('filter block', () => {
   });
 });
 
-describe('sanitize filter', () => {
+// WHY: sanitize ships on the opt-in @nunjucks/filters/sanitize subpath — these tests
+// exercise the full pipeline exactly as a host registers it.
+describe('sanitize filter (opt-in registration)', () => {
+  const withSanitize = { filters: { sanitize } };
+
   test('strips <script> tags and their content', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', { x: '<script>alert(1)</script>' });
+    const result = await renderTemplate(
+      '{{ x |> sanitize }}',
+      { x: '<script>alert(1)</script>' },
+      withSanitize
+    );
     expect(result).toBe('');
   });
 
   test('strips onerror event handler but keeps the tag', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', {
-      x: '<img src="x" onerror="alert(1)">',
-    });
+    const result = await renderTemplate(
+      '{{ x |> sanitize }}',
+      {
+        x: '<img src="x" onerror="alert(1)">',
+      },
+      withSanitize
+    );
     expect(result).toContain('<img');
     expect(result).not.toContain('onerror');
   });
 
   test('strips inline event handlers from safe tags', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', {
-      x: '<a href="x" onclick="alert(1)">link</a>',
-    });
+    const result = await renderTemplate(
+      '{{ x |> sanitize }}',
+      {
+        x: '<a href="x" onclick="alert(1)">link</a>',
+      },
+      withSanitize
+    );
     expect(result).not.toContain('onclick');
     expect(result).toContain('link');
   });
 
   test('strips javascript: href', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', {
-      x: '<a href="javascript:alert(1)">x</a>',
-    });
+    const result = await renderTemplate(
+      '{{ x |> sanitize }}',
+      {
+        x: '<a href="javascript:alert(1)">x</a>',
+      },
+      withSanitize
+    );
     expect(result).not.toContain('javascript:');
   });
 
   test('keeps <b>, <i>, <p>', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', {
-      x: '<b>bold</b><i>italic</i><p>para</p>',
-    });
+    const result = await renderTemplate(
+      '{{ x |> sanitize }}',
+      {
+        x: '<b>bold</b><i>italic</i><p>para</p>',
+      },
+      withSanitize
+    );
     expect(result).toContain('<b>bold</b>');
     expect(result).toContain('<p>para</p>');
   });
 
   test('keeps nested safe tags unchanged', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', { x: '<p>Hello <b>world</b></p>' });
+    const result = await renderTemplate(
+      '{{ x |> sanitize }}',
+      { x: '<p>Hello <b>world</b></p>' },
+      withSanitize
+    );
     expect(result).toBe('<p>Hello <b>world</b></p>');
   });
 
   test('leaves plain text untouched', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', { x: 'just text' });
+    const result = await renderTemplate('{{ x |> sanitize }}', { x: 'just text' }, withSanitize);
     expect(result).toBe('just text');
   });
 
   test('empty string yields empty string', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', { x: '' });
+    const result = await renderTemplate('{{ x |> sanitize }}', { x: '' }, withSanitize);
     expect(result).toBe('');
   });
 
   test('null is coerced to the literal string "null"', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', { x: null });
+    const result = await renderTemplate('{{ x |> sanitize }}', { x: null }, withSanitize);
     expect(result).toBe('null');
   });
 
   test('undefined is coerced to the literal string "undefined"', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', { x: undefined });
+    const result = await renderTemplate('{{ x |> sanitize }}', { x: undefined }, withSanitize);
     expect(result).toBe('undefined');
   });
 
   test('number is coerced to its string form', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', { x: 42 });
+    const result = await renderTemplate('{{ x |> sanitize }}', { x: 42 }, withSanitize);
     expect(result).toBe('42');
   });
 });

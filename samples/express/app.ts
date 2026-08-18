@@ -1,5 +1,6 @@
 import { formatError, type SourceFileReader } from '@nunjucks/core';
 import { readProjectSource } from '@nunjucks/core/diagnostics';
+import { sanitize } from '@nunjucks/filters/sanitize';
 import {
   createEngine,
   type ExpressEngineConfig,
@@ -34,6 +35,9 @@ const createApp = (): Express => {
       getYear: () => currentYear(),
     },
     filters: {
+      // WHY: sanitize is opt-in — it ships on the @nunjucks/filters/sanitize subpath so
+      // the DOMPurify security shell stays out of the pure engine barrel.
+      sanitize,
       shout: (v: string) => `${String(v).toUpperCase()}!!!`,
     },
   };
