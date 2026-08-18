@@ -8,6 +8,8 @@ interface UnaryOperatorOptions {
   operator: string;
 }
 
+// WHY: private helper consumed by compileNeg/compilePos — not a dispatch target,
+// so the 4-positional shape is contained and acceptable here.
 const compileUnary = (
   compiler: Compiler,
   node: UnaryOpNode,

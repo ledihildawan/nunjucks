@@ -191,7 +191,15 @@ export const skipValue = (
   return true;
 };
 
-/** Consumes the next token if it is the symbol `symbolName`, pushing it back otherwise. */
+/**
+ * Advances the token stream when the next token is the given symbol, leaving
+ * the stream untouched otherwise — used by statement parsers to consume expected
+ * punctuation (e.g. `endfor`, `endblock`) without throwing on mismatch.
+ *
+ * @param parserContext - The parser state.
+ * @param symbolName - The exact symbol string to skip.
+ * @returns `true` if the symbol was consumed, `false` if the stream was not advanced.
+ */
 export const skipSymbol = (parserContext: ParserContext, symbolName: string): boolean =>
   skipValue(parserContext, TOKEN_SYMBOL, symbolName);
 
