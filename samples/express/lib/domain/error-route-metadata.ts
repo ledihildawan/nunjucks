@@ -1,9 +1,14 @@
 import type { ErrorGroup } from './error-route-types.ts';
 
-// WHY: tier indicates which engine boundary caught the error — tier 1 is a recoverable inline
-// expression failure (template continues), tier 2 is a recoverable render-time failure that
-// aborts the current expression but yields a partial document, tier 3 is fatal and aborts the
-// whole render. The catalog names each entry with what the engine reports, not what the user did.
+/**
+ * Curated catalog of `/errors` demo routes — the single registry that drives the
+ * `/errors` index page, the route audit script, and this module's drift-pin test.
+ * Tier indicates which engine boundary caught the error: tier 1 is a recoverable
+ * inline expression failure (template continues), tier 2 is a recoverable
+ * render-time failure that aborts the current expression but yields a partial
+ * document, tier 3 is fatal and aborts the whole render. Entries name what the
+ * engine reports, not what the user did.
+ */
 export const errorGroups: ErrorGroup[] = [
   {
     name: 'UNDEFINED_VARIABLE',

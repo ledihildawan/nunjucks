@@ -10,6 +10,15 @@ interface RenderTemplateOptions {
 // the demo's `/errors` routes intentionally vary these per scenario, so memoizing the factory would
 // couple unrelated routes' configuration. The cost is acceptable because the factory is cheap and the
 // sample server is single-process for demonstration.
+/**
+ * Renders a template through a freshly built engine — the sample's single render
+ * seam. Returns the engine's `Result` so shell adapters (`sendTemplateResult`)
+ * decide between success output and the central error handler.
+ *
+ * @param template - Template name resolved via `views`, or inline source.
+ * @param options - Render context plus engine config overrides for this call.
+ * @returns Result string, or `Err` carrying the engine's `TemplateError`.
+ */
 const renderTemplate = (
   template: string,
   { context = {}, config = {} }: RenderTemplateOptions = {}
@@ -20,8 +29,15 @@ interface RenderDemoTemplateOptions {
   config?: NunjucksConfig;
 }
 
-// WHY: demo default config shared by the sandbox and undefined-variable route groups — autoescape on, dev on,
-// vscode IDE hints; explicit config overrides merge on top so callers can flip undefined/security modes.
+/**
+ * Renders with the demo's baseline config — autoescape on, `dev` diagnostics on,
+ * vscode IDE links — layering caller overrides on top; the shared base keeps the
+ * sandbox and undefined-variable route groups visually consistent.
+ *
+ * @param template - Template name or inline source (see {@link renderTemplate}).
+ * @param options - Render context plus config overrides merged over the baseline.
+ * @returns Result string, or `Err` carrying the engine's `TemplateError`.
+ */
 const renderDemoTemplate = async (
   template: string,
   { context = {}, config = {} }: RenderDemoTemplateOptions = {}

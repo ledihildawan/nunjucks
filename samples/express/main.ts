@@ -48,7 +48,7 @@ const baseRoutes: readonly RouteEntry[] = [
 
 // WHY: bind loopback only — this demo serves rich dev error pages and project source
 // snippets; exposing it on all interfaces (the default) would leak them to the LAN.
-app.listen(PORT, '127.0.0.1', () => {
+const server = app.listen(PORT, '127.0.0.1', () => {
   const catalog = baseRoutes
     .map((entry) => `  ${entry.path.padEnd(22)} — ${entry.intent}`)
     .join('\n');
@@ -56,4 +56,21 @@ app.listen(PORT, '127.0.0.1', () => {
   console.log('Engine surface at a glance:\n');
   console.log(catalog);
   console.log('\nEvery route renders with `nunjucks(config)` from @nunjucks/core.');
+});
+
+// WHY: graceful shutdown — Ctrl+C / container stop should drain the listener and rip
+// open keep-alive sockets instead of letting in-flight streaming demos die mid-chunk.
+const shutdown = (signal: string): void => {
+  console.log(`\n${signal} received — closing server…`);
+  server.closeAllConnections();
+  server.close(() => {
+    process.exit(0);
+  });
+};
+
+process.on('SIGINT', () => {
+  shutdown('SIGINT');
+});
+process.on('SIGTERM', () => {
+  shutdown('SIGTERM');
 });
