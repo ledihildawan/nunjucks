@@ -58,6 +58,21 @@ describe('context-security', () => {
       expect(findDangerousValues(context, ['safeFn'])).toEqual([]);
     });
 
+    test('allows a named function whose registration key is allowlisted', () => {
+      const formatPrice = function formatPrice(): string {
+        return 'price';
+      };
+      const context = { price: formatPrice };
+      expect(findDangerousValues(context, ['price'])).toEqual([]);
+    });
+
+    test('still flags a top-level function outside the allowlist by its own name', () => {
+      const declaredElsewhere = (): number => 42;
+      const context = { helper: declaredElsewhere };
+      // fnName ('declaredElsewhere') and key ('helper') are both outside ['other'].
+      expect(findDangerousValues(context, ['other'])).toEqual(['helper']);
+    });
+
     test('finds dangerous references within objects', () => {
       const context = {
         window: globalThis,

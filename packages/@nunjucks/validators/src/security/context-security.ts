@@ -55,9 +55,16 @@ const checkValueDangerous = ({
   const fnName = value.name || key;
   // WHY: eval/Function are members of shared's UNIVERSAL_GLOBALS, so isDangerousGlobal
   // already covers them — no special-cased literals here.
+  // WHY: the allowlist matches BOTH the registration key and the function's own name —
+  // hosts allowlist by the context key they registered (`{ greet: function greet() {} }`
+  // with allowedGlobals ['greet']), while named anonymous-fallback scanning keeps
+  // working. Anonymous arrows fall through to the key via `fnName = value.name || key`.
   const dangerous =
     isDangerousGlobal(fnName) ||
-    (!!scan.allowedGlobals && !scan.allowedGlobals.includes(fnName) && !isBuiltIn(fnName));
+    (!!scan.allowedGlobals &&
+      !scan.allowedGlobals.includes(fnName) &&
+      !scan.allowedGlobals.includes(key) &&
+      !isBuiltIn(fnName));
   return dangerous ? [currentPath] : [];
 };
 
@@ -121,3 +128,4 @@ export const findDangerousValues = (
   });
   return [...new Set(paths)];
 };
+
