@@ -143,4 +143,19 @@ describe('createTemplateErrorHandler', () => {
     expect(result).not.toBeNull();
     expect((result as unknown as { lineno: number }).lineno).toBe(5);
   });
+
+  test('enrichError clone cannot be prototype-retargeted by a hostile thrown object', () => {
+    const getState = () => ({ path: 'test.html', includeChain: null });
+    const handler = createTemplateErrorHandler(getState);
+    // WHY: JSON.parse yields a genuine own enumerable "__proto__" data property — the
+    // exact shape [[Set]]-based cloning (Object.assign) would forward to the
+    // Object.prototype prototype setter, retargeting the clone.
+    const hostile = JSON.parse('{"message":"boom","__proto__":{"pwned":true}}');
+    const result = handler.enrichError(hostile as ErrorWithLineInfo);
+    expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
+    expect((result as unknown as Record<string, unknown>)['__proto__']).toStrictEqual({
+      pwned: true,
+    });
+    expect((result as unknown as { path: string }).path).toBe('test.html');
+  });
 });

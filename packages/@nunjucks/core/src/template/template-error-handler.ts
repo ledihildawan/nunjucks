@@ -115,9 +115,14 @@ const createTemplateErrorHandler = (
     if (e.path) {
       return e;
     }
-    return Object.assign(Object.create(Object.getPrototypeOf(e) ?? Error.prototype), e, {
-      path,
-    }) as ErrorWithLineInfo;
+    // WHY: spread + descriptor definition instead of Object.assign — a hostile thrown
+    // object can carry an own enumerable "__proto__" (e.g. via JSON.parse), and
+    // Object.assign's [[Set]] semantics would forward it to the prototype setter and
+    // retarget this clone; DefineOwnProperty cannot be intercepted.
+    return Object.create(
+      Object.getPrototypeOf(e) ?? Error.prototype,
+      Object.getOwnPropertyDescriptors({ ...e, path })
+    ) as ErrorWithLineInfo;
   };
 
   return { enrichError };

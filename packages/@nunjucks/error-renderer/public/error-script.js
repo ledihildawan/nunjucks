@@ -15,6 +15,10 @@
       return;
     }
 
+    // WHY: rows overflowed but the toggle button is absent (custom error markup) —
+    // there is nothing to wire the expansion to.
+    if (!btn) return;
+
     const hiddenRows = allRows.slice(VISIBLE_COUNT);
     hiddenRows.forEach((row) => {
       row.style.display = 'none';
@@ -345,19 +349,17 @@
         if (action === 'collapse') collapseAll(viewer);
         if (action === 'copy') {
           const original = button.textContent;
-          copyText(JSON.stringify(data, null, 2))
-            .then(function () {
+          void (async function () {
+            try {
+              await copyText(JSON.stringify(data, null, 2));
               button.textContent = 'Copied';
-              setTimeout(function () {
-                button.textContent = original;
-              }, 1200);
-            })
-            .catch(function () {
+            } catch {
               button.textContent = 'Copy failed';
-              setTimeout(function () {
-                button.textContent = original;
-              }, 1200);
-            });
+            }
+            setTimeout(function () {
+              button.textContent = original;
+            }, 1200);
+          })();
         }
       });
     });

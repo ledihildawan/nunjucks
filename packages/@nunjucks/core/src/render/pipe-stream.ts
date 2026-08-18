@@ -117,7 +117,10 @@ const redactForLog = (error: TemplateError): TemplateError => {
     return error;
   }
   const clone = new Error(error.message) as TemplateError;
-  Object.assign(clone, error);
+  // WHY: descriptor definition instead of Object.assign — mid-stream errors cross the
+  // throw boundary as `unknown`; an own enumerable "__proto__" on the source would be
+  // forwarded to the prototype setter by [[Set]] and retarget this clone.
+  Object.defineProperties(clone, Object.getOwnPropertyDescriptors({ ...error }));
   clone.stack = error.stack;
   clone.renderContext = undefined;
   return clone;

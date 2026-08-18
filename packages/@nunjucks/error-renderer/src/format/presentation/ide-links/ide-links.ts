@@ -6,6 +6,10 @@ const FILE_PATH_PATTERN =
 const NATIVE_FRAME_RE = /^native$/iu;
 const ANGLE_PREFIX_RE = /^</u;
 
+// WHY: JetBrains deep links only resolve when the IDE registered its `jetbrains://`
+// URL handler; this vendor guide is the documented fallback for machines without one.
+const JETBRAINS_IDE_GUIDE_URL = 'https://www.jetbrains.com/idea/guide/tips/open-in-ide/';
+
 /**
  * Checks whether a string looks like a real file path: non-empty, ending in a known
  * source extension, and not `native` or an internal `<anonymous>`-style frame.
@@ -93,7 +97,7 @@ const resolveIdeLink = (ide: string | IdeLinkFn, target: LinkTarget): string => 
     normalizedIde === 'appcode' ||
     normalizedIde === 'kubectl'
   ) {
-    return 'https://www.jetbrains.com/idea/guide/tips/open-in-ide/';
+    return JETBRAINS_IDE_GUIDE_URL;
   }
 
   if (normalizedIde === 'vscodium') {
