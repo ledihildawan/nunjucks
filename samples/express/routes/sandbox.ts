@@ -110,8 +110,8 @@ const allowlistNjk = nunjucks({
   `);
 });
 
-sandboxSuites.reduce<Router>((acc, suite) => {
-  acc.get(`/${suite.key}`, async (_req: Request, res: Response) => {
+for (const suite of sandboxSuites) {
+  router.get(`/${suite.key}`, async (_req: Request, res: Response) => {
     const table = await runTests({
       tests: suite.tests,
       context: suite.context,
@@ -119,7 +119,6 @@ sandboxSuites.reduce<Router>((acc, suite) => {
     });
     res.type('html').send(renderTable(table, suite));
   });
-  return acc;
-}, router);
+}
 
 export { router as sandboxRouter };

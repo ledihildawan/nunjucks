@@ -1,8 +1,17 @@
+import type { NunjucksConfig } from '@nunjucks/core';
 import { sanitize } from '@nunjucks/filters/sanitize';
 import express, { type NextFunction, type Request, type Response, type Router } from 'express';
 import { renderTemplate } from '../lib/domain/render-template.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
 import { demoRouteConfig, VIEWS } from '../lib/io/views-path.ts';
+
+// WHY: extends the demo-route baseline with the sanitize filter — demo-security.njk pipes
+// raw user input through it, so the config cannot reuse demoRouteConfig as-is.
+const securityDemoRouteConfig: NunjucksConfig = {
+  autoescape: true,
+  views: VIEWS,
+  filters: { sanitize },
+};
 
 /** Language-feature demo router — scope, exec, switch, slot, component, and pipe views. */
 const router: Router = express.Router();
@@ -95,7 +104,7 @@ router.get('/security', async (_req: Request, res: Response, next: NextFunction)
         htmlContent: '<b>Bold</b> & "quoted"',
         attrContent: 'value="with quotes"\'s and stuff',
       },
-      config: { views: VIEWS, autoescape: true, filters: { sanitize } },
+      config: securityDemoRouteConfig,
     }),
   });
 });

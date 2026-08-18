@@ -6,14 +6,16 @@ interface RenderTemplateOptions {
   config?: NunjucksConfig;
 }
 
-// WHY: a fresh engine is built per call so each route's filter/security/limits overrides stay isolated;
-// the demo's `/errors` routes intentionally vary these per scenario, so memoizing the factory would
-// couple unrelated routes' configuration. The cost is acceptable because the factory is cheap and the
-// sample server is single-process for demonstration.
 /**
  * Renders a template through a freshly built engine — the sample's single render
  * seam. Returns the engine's `Result` so shell adapters (`sendTemplateResult`)
  * decide between success output and the central error handler.
+ *
+ * WHY: a fresh engine is built per call so each route's filter/security/limits
+ * overrides stay isolated; the demo's `/errors` routes intentionally vary these
+ * per scenario, so memoizing the factory would couple unrelated routes'
+ * configuration. The cost is acceptable because the factory is cheap and the
+ * sample server is single-process for demonstration.
  *
  * @param template - Template name resolved via `views`, or inline source.
  * @param options - Render context plus engine config overrides for this call.

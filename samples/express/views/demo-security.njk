@@ -48,7 +48,7 @@
   const config = {{ configData |> tojson }};
   const user = {{ userData |> tojson }};
 &lt;/script&gt;</code></pre>
-    <p class="safe">✓ Objects are automatically JSON-encoded (no need for manual tojson filter)</p>
+    <p class="safe">✓ Real &lt;script&gt; contexts auto-JSON-encode objects — the manual <code>|> tojson</code> filter stays valuable for explicit escaping control and for non-script contexts like this literal sample</p>
   </div>
 
   <h2>3. Context-Aware Escaping</h2>

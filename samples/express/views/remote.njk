@@ -49,29 +49,26 @@
 
   <script>
     (function () {
-      var resultBox = document.getElementById('fragment-result');
+      const resultBox = document.getElementById('fragment-result');
 
-      var showState = function (state, text) {
+      const showState = (state, text) => {
         resultBox.className = state;
         resultBox.textContent = text;
       };
 
-      document.querySelectorAll('button[data-endpoint]').forEach(function (button) {
-        button.addEventListener('click', function () {
+      document.querySelectorAll('button[data-endpoint]').forEach((button) => {
+        button.addEventListener('click', async () => {
           showState('loading', 'Loading…');
-          fetch(button.getAttribute('data-endpoint'))
-            .then(function (response) {
-              if (!response.ok) {
-                throw new Error('HTTP ' + response.status);
-              }
-              return response.text();
-            })
-            .then(function (body) {
-              showState('ok', body);
-            })
-            .catch(function (error) {
-              showState('error', 'Failed to load: ' + error.message);
-            });
+          try {
+            const response = await fetch(button.getAttribute('data-endpoint'));
+            if (!response.ok) {
+              throw new Error('HTTP ' + response.status);
+            }
+            const body = await response.text();
+            showState('ok', body);
+          } catch (error) {
+            showState('error', 'Failed to load: ' + error.message);
+          }
         });
       });
     })();

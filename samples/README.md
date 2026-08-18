@@ -8,14 +8,14 @@ Runnable demos of the `@nunjucks/*` engine. Both are workspace packages — run 
 bun run --cwd samples/vanilla-ts start   # or: cd samples/vanilla-ts && bun run start
 ```
 
-Standalone CLI demo. Builds `nunjucks({ views, globals, filters })` and renders six templates (five view files + one inline source) concurrently via `Promise.all`, demonstrating: interpolation, built-in globals (`{{ version }}`), function globals, the pipe operator with keyword arguments (`{{ date |> formatDate(format="long") }}`), object-pattern walrus destructuring, and basic filters.
+Standalone CLI demo. Builds `nunjucks({ views, autoescape, globals, filters })` and renders six templates (five view files + one inline source) concurrently via `Promise.all`, demonstrating: interpolation, built-in globals (`{{ version }}`), function globals, the pipe operator with keyword arguments (`{{ date |> formatDate(format="long") }}`), object-pattern walrus destructuring, and basic filters.
 
 ## express
 
 ```sh
 bun run --cwd samples/express start     # serves http://127.0.0.1:4000
 bun run --cwd samples/express test      # integration test (ephemeral loopback port)
-bun run --cwd samples/express audit:routes  # dev audit: every /errors/:scenario route actually throws its catalogued error
+bun run --cwd samples/express audit:routes  # dev audit: every /errors/:scenario route throws its catalogued error or renders a catalogued recovery marker (NO_ERROR routes are counted, not failed)
 ```
 
 The audit script probes a running server (default `http://localhost:4000`, override with a positional base URL). Pass `--headless` or set `AUDIT_HEADLESS=1` to run it fully in-process instead — no server needed.

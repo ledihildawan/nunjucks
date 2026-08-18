@@ -21,8 +21,8 @@
   <p>Auto-escaping inspects the <em>output context</em> — the same value lands safely in HTML, in an attribute, or as a JS literal. The engine never trusts the context to be what the developer assumed.</p>
 
   <h2>1. Context-aware escaping — HTML</h2>
-  <div class="raw">direct: {{ userInput }}</div>
-  <div class="safe">escaped: {{ userInput |> sanitize }}</div>
+  <div class="raw">escaped (entities): {{ userInput }}</div>
+  <div class="safe">sanitized (allowed HTML): {{ userInput |> sanitize }}</div>
 
   <h2>2. Script context — auto-toJSON</h2>
   <p>Inside <code>&lt;script&gt;</code>, plain values are JSON-encoded automatically. The output is a valid JS literal — no string-injection surface.</p>
@@ -34,8 +34,8 @@
 
   <h2>3. Context-aware escaping — attribute</h2>
   <p>Attribute values get quote-aware escaping.</p>
-  <div class="raw">direct: {{ attrContent }}</div>
-  <div class="safe">in-attr: &lt;div data-value="{{ attrContent }}"&gt;&lt;/div&gt;</div>
+  <div class="raw">escaped (entities): {{ attrContent }}</div>
+  <div class="safe">quote-aware in attr: &lt;div data-value="{{ attrContent }}"&gt;&lt;/div&gt;</div>
 
   <p><a href="/">← Back to index</a></p>
 </body>

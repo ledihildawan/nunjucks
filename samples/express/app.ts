@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { formatError, type SourceFileReader } from '@nunjucks/core';
 import { readProjectSource } from '@nunjucks/core/diagnostics';
 import { sanitize } from '@nunjucks/filters/sanitize';
@@ -44,13 +45,22 @@ const createApp = (): Express => {
       // WHY: sanitize is opt-in — it ships on the @nunjucks/filters/sanitize subpath so
       // the DOMPurify security shell stays out of the pure engine barrel.
       sanitize,
-      shout: (v: string) => `${String(v).toUpperCase()}!!!`,
+      shout: (v: string) => `${v.toUpperCase()}!!!`,
     },
   };
 
   app.set('views', VIEWS);
   app.engine('.njk', createEngine(engineConfig));
   app.set('view engine', 'njk');
+
+  // WHY: baseline hardening for every response — the demo serves no external assets,
+  // so nosniff + no-referrer cost nothing and dampen content-type confusion and
+  // referrer leakage if this app is ever copied onto a public host.
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Referrer-Policy', 'no-referrer');
+    next();
+  });
 
   app.get('/', (_req: Request, res: Response) => {
     res.render('index', { userName: 'Guest' });
@@ -119,15 +129,25 @@ const createApp = (): Express => {
     console.error(
       formatError(stripRenderContext(err), { format: 'ansi', dev: devErrorMode, sourceFileReader })
     );
+    // WHY: the error document is fully self-contained (inline style + script, zero
+    // external fetches), so it can run under the strictest CSP — nonce-gated
+    // style/script, everything else denied. error-renderer threads the nonce onto
+    // the emitted <style>/<script> tags; a per-response nonce keeps it unguessable.
+    const nonce = randomBytes(16).toString('base64');
     res
       .status(500)
       .type('html')
+      .set(
+        'Content-Security-Policy',
+        `default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`
+      )
       .send(
         formatError(err, {
           format: 'html',
           dev: devErrorMode,
           sourceFileReader,
           version: PACKAGE_VERSION,
+          csp: { nonce },
         })
       );
   });

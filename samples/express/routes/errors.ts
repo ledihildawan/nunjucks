@@ -15,16 +15,15 @@ import { devErrorRouteConfig, strictErrorRouteConfig, VIEWS } from '../lib/io/vi
  */
 const router: Router = express.Router();
 
-errorRoutes.reduce<Router>((acc, { path: routePath, template, context }) => {
-  acc.get(`/${routePath}`, async (_req: Request, res: Response, next: NextFunction) => {
+for (const { path: routePath, template, context } of errorRoutes) {
+  router.get(`/${routePath}`, async (_req: Request, res: Response, next: NextFunction) => {
     sendTemplateResult({
       res,
       next,
       result: await renderTemplate(template, { context, config: strictErrorRouteConfig }),
     });
   });
-  return acc;
-}, router);
+}
 
 // WHY: filter-error lives here instead of error-route-data.ts because it needs a THROWING
 // filter — the shell owns the throwing filters; the domain only owns the template + context

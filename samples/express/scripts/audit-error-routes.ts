@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 // WHY: dev-only typed audit tooling for route validation
 
+import { once } from 'node:events';
 import { createServer, type Server } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import { errorGroups } from '../lib/domain/error-route-metadata.ts';
@@ -66,7 +67,7 @@ const discoverRoutes = async (base: string): Promise<string[]> => {
   }
   // WHY: the offline fallback reuses the same errorGroups registry that renders the
   // live /errors index page — regex-scraping routes/errors.ts used to silently miss the
-  // data-driven routes registered via reduce() from error-route-data.ts.
+  // data-driven routes registered from error-route-data.ts.
   return [...new Set(errorGroups.flatMap((group) => group.items.map((item) => item.path)))].sort(
     (a, b) => a.localeCompare(b)
   );
@@ -299,11 +300,8 @@ const silenceConsoleError = <T>(operation: () => Promise<T>): Promise<T> => {
 const runHeadless = async (): Promise<number> => {
   const { createApp } = await import('../app.ts');
   const server: Server = createServer(createApp());
-  await new Promise<void>((resolve) => {
-    server.listen(0, '127.0.0.1', () => {
-      resolve();
-    });
-  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
   const address = server.address();
   if (address === null || typeof address === 'string') {
     throw new Error(`Expected TCP address, received: ${String(address)}`);
@@ -312,11 +310,8 @@ const runHeadless = async (): Promise<number> => {
     return await silenceConsoleError(() => run(`http://127.0.0.1:${address.port}`));
   } finally {
     server.closeAllConnections();
-    await new Promise<void>((resolve) => {
-      server.close(() => {
-        resolve();
-      });
-    });
+    server.close();
+    await once(server, 'close');
   }
 };
 
