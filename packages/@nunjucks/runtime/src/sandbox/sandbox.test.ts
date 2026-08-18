@@ -336,15 +336,15 @@ describe('isAllowedKey', () => {
   });
 
   test('returns false for every key when the allowlist is empty (deny-all)', () => {
-    expect(isAllowedKey('any', [])).toBe(false);
+    expect(isAllowedKey('any', new Set())).toBe(false);
   });
 
   test('returns true when key is in allowlist', () => {
-    expect(isAllowedKey('user', ['user', 'name'])).toBe(true);
+    expect(isAllowedKey('user', new Set(['user', 'name']))).toBe(true);
   });
 
   test('returns false when key is not in allowlist', () => {
-    expect(isAllowedKey('admin', ['user', 'name'])).toBe(false);
+    expect(isAllowedKey('admin', new Set(['user', 'name']))).toBe(false);
   });
 });
 

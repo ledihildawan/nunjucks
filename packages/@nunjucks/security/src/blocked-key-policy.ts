@@ -44,17 +44,21 @@ const CODE_EXECUTION_PATTERNS = toSet(BLOCKED_KEY_CATEGORIES.CODE_EXECUTION);
 /** Checks whether a name matches a known code-execution sink such as `eval` or `exec`. */
 export const isCodeExecutionPattern = (key: string): boolean => CODE_EXECUTION_PATTERNS.has(key);
 
+// WHY: precomputed Sets replace O(n) array.includes() scans on the hot-path sandbox classification.
+const OBJECT_INTRINSICS_SET = new Set(BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS);
+const UNIVERSAL_GLOBALS_SET = new Set(BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS);
+const NODE_GLOBALS_SET = new Set(BLOCKED_KEY_CATEGORIES.NODE_GLOBALS);
+const BROWSER_GLOBALS_SET = new Set(BLOCKED_KEY_CATEGORIES.BROWSER_GLOBALS);
+const DENO_GLOBALS_SET = new Set(BLOCKED_KEY_CATEGORIES.DENO_GLOBALS);
+
 const checkEnvGlobals = (key: string, env: Environment): BlockedKeyCategory | null => {
-  if ((env === 'auto' || env === 'node') && BLOCKED_KEY_CATEGORIES.NODE_GLOBALS.includes(key)) {
+  if ((env === 'auto' || env === 'node') && NODE_GLOBALS_SET.has(key)) {
     return 'node_global';
   }
-  if (
-    (env === 'auto' || env === 'browser') &&
-    BLOCKED_KEY_CATEGORIES.BROWSER_GLOBALS.includes(key)
-  ) {
+  if ((env === 'auto' || env === 'browser') && BROWSER_GLOBALS_SET.has(key)) {
     return 'browser_global';
   }
-  if ((env === 'auto' || env === 'deno') && BLOCKED_KEY_CATEGORIES.DENO_GLOBALS.includes(key)) {
+  if ((env === 'auto' || env === 'deno') && DENO_GLOBALS_SET.has(key)) {
     return 'deno_global';
   }
   return null;
@@ -68,10 +72,10 @@ export const getBlockedKeyCategory = (
   key: string,
   env: Environment = 'auto'
 ): BlockedKeyCategory => {
-  if (BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS.includes(key)) {
+  if (OBJECT_INTRINSICS_SET.has(key)) {
     return 'object_intrinsic';
   }
-  if (BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS.includes(key)) {
+  if (UNIVERSAL_GLOBALS_SET.has(key)) {
     return 'universal_global';
   }
   return checkEnvGlobals(key, env);

@@ -13,33 +13,44 @@ const DANGEROUS_OBJECT_INTRINSICS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Well-known `Symbol.*` intrinsics that are safe to expose in sandboxed contexts.
+ * Identity comparison replaces the string-prefix check to prevent bypass via
+ * forged descriptions like `Symbol('Symbol.iterator')`.  `Symbol.for` and
+ * `Symbol.keyFor` are not well-known symbols themselves — they are the global
+ * symbol registry API — so only the actual well-known symbol values are listed.
+ */
+const WELL_KNOWN_SYMBOLS: ReadonlySet<symbol> = new Set<symbol>([
+  Symbol.iterator,
+  Symbol.toStringTag,
+  Symbol.hasInstance,
+  Symbol.isConcatSpreadable,
+  Symbol.match,
+  Symbol.replace,
+  Symbol.search,
+  Symbol.split,
+  Symbol.asyncIterator,
+]);
+
+/**
  * Narrows to blocked symbols: descriptionless and user symbols are blocked;
- * well-known `Symbol.*` intrinsics are allowed.
+ * well-known `Symbol.*` intrinsics are allowed (identity-matched, not string-prefixed).
  */
 const isBlockedSymbol = (key: symbol): boolean => {
-  const desc = key.description;
-  if (!desc) {
+  if (!key.description) {
     return true;
   }
-  if (desc.startsWith('Symbol.')) {
-    return false;
-  }
-  return true;
+  return !WELL_KNOWN_SYMBOLS.has(key);
 };
 
 // WHY: an absent allowlist (null/undefined) means "allowlist not configured" — blocklist-mode
-// callers pass none, so everything is allowed. An EMPTY array is different: allowlist mode with
+// callers pass none, so everything is allowed. An EMPTY set is different: allowlist mode with
 // nothing allowlisted must DENY ALL (fail-closed), never degrade into allow-everything.
-/**
- * Checks a key against the allowlist, honoring the absent-versus-empty split:
- * no allowlist configured means allow (blocklist mode), while an empty one
- * denies all — fail-closed.
- */
-const isAllowedKey = (key: string, allowlist: readonly string[] | null | undefined): boolean => {
-  if (!(allowlist && Array.isArray(allowlist))) {
+// `ResolvedSandboxOptions.allowlist` is already a `ReadonlySet<string>` after Batch 1 B2.
+const isAllowedKey = (key: string, allowlist: ReadonlySet<string> | null | undefined): boolean => {
+  if (!allowlist) {
     return true;
   }
-  return allowlist.includes(key);
+  return allowlist.has(key);
 };
 
 interface BlockedAtScopeInput {

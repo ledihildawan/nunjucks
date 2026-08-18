@@ -41,12 +41,12 @@ describe('isAllowedKey', () => {
   });
 
   test('denies all keys for an empty allowlist (fail-closed deny-all)', () => {
-    expect(isAllowedKey('anything', [])).toBe(false);
+    expect(isAllowedKey('anything', new Set())).toBe(false);
   });
 
   test('restricts to the allowlist when non-empty', () => {
-    expect(isAllowedKey('a', ['a', 'b'])).toBe(true);
-    expect(isAllowedKey('c', ['a', 'b'])).toBe(false);
+    expect(isAllowedKey('a', new Set(['a', 'b']))).toBe(true);
+    expect(isAllowedKey('c', new Set(['a', 'b']))).toBe(false);
   });
 });
 

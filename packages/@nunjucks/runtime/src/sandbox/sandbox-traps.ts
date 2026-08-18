@@ -16,6 +16,10 @@ import {
   isBlockedSymbol,
   isInternalKey,
 } from './sandbox-predicates.ts';
+import {
+  createValidateDeleteProperty,
+  createValidateDefineProperty,
+} from './sandbox-delete-define.ts';
 
 /** Inputs to `wrapFunctionWithBlocking`: the function, its key, scope, and receiver. */
 interface WrapFunctionBlockingInput {
@@ -68,8 +72,8 @@ const createValidateGet = ({ sandboxEnabled, sandboxOptions, topLevel }: Validat
   const { blockedContextKeys } = sandboxOptions;
 
   const checkBlockedContextKey = (key: string): void => {
-    if (topLevel && blockedContextKeys.includes(key)) {
-      throw blockedKeysError(key, blockedContextKeys);
+    if (topLevel && blockedContextKeys.has(key)) {
+      throw blockedKeysError(key, [...blockedContextKeys]);
     }
   };
 
@@ -217,7 +221,7 @@ const createValidateHas = ({ sandboxOptions, topLevel }: ValidateHasOptions) => 
   };
 };
 
-/** Assembles the validating `get`/`set`/`has` trap set for one sandboxed Proxy. */
+/** Assembles the validating `get`/`set`/`has`/`deleteProperty`/`defineProperty` trap set. */
 const createSandboxTraps = ({
   sandboxEnabled,
   sandboxOptions,
@@ -227,7 +231,13 @@ const createSandboxTraps = ({
   const validateSet = createValidateSet({ sandboxOptions, topLevel });
   const validateHas = createValidateHas({ sandboxOptions, topLevel });
 
-  return { get: validateGet, set: validateSet, has: validateHas };
+  return {
+    get: validateGet,
+    set: validateSet,
+    has: validateHas,
+    deleteProperty: createValidateDeleteProperty({ sandboxOptions, topLevel }),
+    defineProperty: createValidateDefineProperty({ sandboxOptions, topLevel }),
+  };
 };
 
 /** Inputs to `createSandboxedObject`, accepting pre-resolved options for recursion. */
@@ -238,11 +248,15 @@ interface SandboxedValueInput {
   sandboxOptions?: ResolvedSandboxOptions;
 }
 
+/** Memoizes proxy identity so the same target always returns the same proxy. */
+const proxyMemo = new WeakMap<object, unknown>();
+
 /**
  * Proxies an object (or wraps a function) so every nested access is trapped;
  * accepts pre-resolved options so recursion does not re-resolve the config.
+ * Returns a memoized proxy so multiple accesses to the same target yield the
+ * same proxy instance, preserving `===` identity for callers that hold references.
  */
-// WHY: accepts either unresolved SandboxOptions (resolved internally) or pre-resolved ResolvedSandboxOptions (passed through) so internal recursive callers avoid re-resolving the same config on every nested object access.
 const createSandboxedObject = ({
   value,
   sandboxEnabled,
@@ -265,10 +279,16 @@ const createSandboxedObject = ({
       thisArg: null,
     });
   }
-  return new Proxy(
-    value as object,
+  const target = value as object;
+  if (proxyMemo.has(target)) {
+    return proxyMemo.get(target);
+  }
+  const proxy = new Proxy(
+    target,
     createSandboxTraps({ sandboxEnabled, sandboxOptions: resolvedOptions, topLevel: false })
   );
+  proxyMemo.set(target, proxy);
+  return proxy;
 };
 
 export type { SandboxedValueInput, WrapFunctionBlockingInput };
