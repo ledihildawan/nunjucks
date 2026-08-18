@@ -6,6 +6,7 @@ import { renderDemoTemplate } from '../lib/domain/render-template.ts';
 /** Undefined-handling demo router — contrasts the `strict`, `debug`, and `chainable` modes. */
 const router: Router = express.Router();
 
+// WHY: inline HTML for demo brevity; production should use .njk templates with autoescape
 router.get('/', (_req: Request, res: Response) => {
   res.type('html').send(`
 <!DOCTYPE html>
