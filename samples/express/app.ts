@@ -45,7 +45,7 @@ const createApp = (): Express => {
       // WHY: sanitize is opt-in — it ships on the @nunjucks/filters/sanitize subpath so
       // the DOMPurify security shell stays out of the pure engine barrel.
       sanitize,
-      shout: (v: string) => `${v.toUpperCase()}!!!`,
+      shout: (value: string) => `${value.toUpperCase()}!!!`,
     },
   };
 

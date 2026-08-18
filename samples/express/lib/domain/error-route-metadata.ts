@@ -1,5 +1,3 @@
-import type { ErrorGroup } from './error-route-types.ts';
-
 /**
  * Curated catalog of `/errors` demo routes — the single registry that drives the
  * `/errors` index page, the route audit script, and this module's drift-pin test.
@@ -9,7 +7,7 @@ import type { ErrorGroup } from './error-route-types.ts';
  * document, tier 3 is fatal and aborts the whole render. Entries name what the
  * engine reports, not what the user did.
  */
-export const errorGroups: ErrorGroup[] = [
+export const errorGroups = [
   {
     name: 'UNDEFINED_VARIABLE',
     tier: 'tier 1',

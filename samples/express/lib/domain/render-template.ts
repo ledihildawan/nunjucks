@@ -1,5 +1,5 @@
 import { type NunjucksConfig, nunjucks } from '@nunjucks/core';
-import type { Result } from '@nunjucks/lib';
+import { err, type Result } from '@nunjucks/lib';
 
 /**
  * WHY (module seam): rendering by template NAME is deliberately I/O-adjacent — name
@@ -29,10 +29,16 @@ interface RenderTemplateOptions {
  * @param options - Render context plus engine config overrides for this call.
  * @returns Result string, or `Err` carrying the engine's `TemplateError`.
  */
-const renderTemplate = (
+const renderTemplate = async (
   template: string,
   { context = {}, config = {} }: RenderTemplateOptions = {}
-): Promise<Result<string, Error>> => nunjucks(config).render(template, context);
+): Promise<Result<string, Error>> => {
+  try {
+    return await nunjucks(config).render(template, context);
+  } catch (error: unknown) {
+    return err(error instanceof Error ? error : new Error(String(error)));
+  }
+};
 
 // WHY: alias instead of a duplicate interface — the demo wrapper accepts exactly the
 // same options as the seam it layers; a second copy would only drift.
