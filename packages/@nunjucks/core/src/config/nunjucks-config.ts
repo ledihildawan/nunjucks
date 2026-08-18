@@ -72,6 +72,9 @@ interface NunjucksConfig {
   readonly trimBlocks?: boolean;
   readonly lstripBlocks?: boolean;
   readonly ide?: string;
+  // WHY: explicit environment label beats the factory's opportunistic NODE_ENV sniff —
+  // browsers/edge/tests pin the diagnostics label instead of always reading 'development'.
+  readonly environment?: string;
   readonly security?: SecurityConfig;
   readonly limits?: LimitsConfig;
   readonly streaming?: StreamingConfig;

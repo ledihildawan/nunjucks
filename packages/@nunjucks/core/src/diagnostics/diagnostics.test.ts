@@ -51,4 +51,13 @@ describe('wrapWithLog', () => {
     expect(wrapped.message).toContain('blocked');
     expect(wrapped.blockedKeys).toEqual(['secret', 'password']);
   });
+
+  test('threads the explicit environment label from config', async () => {
+    const original = new Error('env probe');
+    const wrapped = await wrapWithLog({
+      error: original,
+      config: { phase: 'render', environment: 'staging' },
+    });
+    expect(wrapped.environment).toBe('staging');
+  });
 });

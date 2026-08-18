@@ -105,6 +105,8 @@ interface TemplateError extends Error {
   documentationUrl?: string | null;
   severity?: ErrorSeverity;
   path?: string | null;
+  environment?: string | null;
+  timestamp?: string | null;
   toJSON?: () => Record<string, unknown>;
   outputOptions?: Omit<OutputOptions, 'format'>;
   includeChain?: IncludeChain;

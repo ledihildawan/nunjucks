@@ -102,7 +102,9 @@ const buildBaseOptions = (config: NunjucksConfig): RenderOptions => {
     ide: config.ide,
     version: PACKAGE_VERSION,
     views: config.views,
-    environment: readRuntimeEnvironment(),
+    // WHY: an explicit config label wins over the NODE_ENV sniff so non-Node hosts
+    // (browsers/edge/tests) can pin what diagnostics display.
+    environment: config.environment ?? readRuntimeEnvironment(),
     sandbox: config.security?.sandbox,
     sandboxMode: config.security?.sandboxMode,
     sandboxAllowlist: config.security?.sandboxAllowlist,
