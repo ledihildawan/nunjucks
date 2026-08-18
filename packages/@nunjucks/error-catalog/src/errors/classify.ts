@@ -15,7 +15,15 @@ interface ReplacePlaceholdersInput {
 // clarity (e.g. "Variable '{name}'" vs "Property '{key}'" vs "template not found:
 // {path}") even though the runtime always extracts one subject value — without the
 // extended set, those spellings leaked unreplaced into user-facing guidance.
-const SUBJECT_PLACEHOLDERS = ['subject', 'target', 'name', 'key', 'path', 'marker', 'attr'] as const;
+const SUBJECT_PLACEHOLDERS = [
+  'subject',
+  'target',
+  'name',
+  'key',
+  'path',
+  'marker',
+  'attr',
+] as const;
 
 const replacePlaceholders = ({
   str,

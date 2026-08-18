@@ -16,10 +16,7 @@ interface ValidateSetOptions {
 }
 
 /** Shared guard: symbol keys are blocked for write operations. */
-const guardBlockedSymbol = (
-  key: string | symbol,
-  sandboxOptions: ResolvedSandboxOptions,
-): void => {
+const guardBlockedSymbol = (key: string | symbol, sandboxOptions: ResolvedSandboxOptions): void => {
   if (typeof key === 'symbol' && isBlockedSymbol(key)) {
     throw sandboxError({ errorDef: ERROR_DEFINITIONS.SANDBOX_SET, key, sandboxOptions });
   }
@@ -30,7 +27,7 @@ const guardBlockedStringKey = (
   key: string,
   target: Record<string | symbol, unknown>,
   sandboxOptions: ResolvedSandboxOptions,
-  topLevel: boolean,
+  topLevel: boolean
 ): void => {
   if (
     isBlockedAtScope({ key, sandboxOptions, topLevel }) &&
@@ -41,14 +38,8 @@ const guardBlockedStringKey = (
 };
 
 /** Throws SANDBOX_ALLOWLIST for a key not in the allowlist. */
-const guardAllowlist = (
-  key: string,
-  sandboxOptions: ResolvedSandboxOptions,
-): void => {
-  if (
-    !sandboxOptions.blocklistMode &&
-    !isAllowedKey(key, sandboxOptions.allowlist)
-  ) {
+const guardAllowlist = (key: string, sandboxOptions: ResolvedSandboxOptions): void => {
+  if (!sandboxOptions.blocklistMode && !isAllowedKey(key, sandboxOptions.allowlist)) {
     throw sandboxError({ errorDef: ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key, sandboxOptions });
   }
 };
@@ -56,7 +47,7 @@ const guardAllowlist = (
 /** Throws SANDBOX_CONTEXT_MODIFY for top-level context mutation. */
 const guardTopLevelContextMutation = (
   key: string,
-  sandboxOptions: ResolvedSandboxOptions,
+  sandboxOptions: ResolvedSandboxOptions
 ): never => {
   throw sandboxError({
     errorDef: ERROR_DEFINITIONS.SANDBOX_CONTEXT_MODIFY,
@@ -70,7 +61,7 @@ const validateStringKeyForWrite = (
   key: string,
   target: Record<string | symbol, unknown>,
   sandboxOptions: ResolvedSandboxOptions,
-  topLevel: boolean,
+  topLevel: boolean
 ): boolean => {
   if (topLevel && isInternalKey(key)) {
     return true;
@@ -84,16 +75,13 @@ const validateStringKeyForWrite = (
 };
 
 /** Builds the Proxy `deleteProperty` trap: internal keys allowed, blocked categories fail-closed. */
-const createValidateDeleteProperty = ({
-  sandboxOptions,
-  topLevel,
-}: ValidateSetOptions) => {
-  return (
-    target: Record<string | symbol, unknown>,
-    key: string | symbol,
-  ): boolean => {
+const createValidateDeleteProperty = ({ sandboxOptions, topLevel }: ValidateSetOptions) => {
+  return (target: Record<string | symbol, unknown>, key: string | symbol): boolean => {
     guardBlockedSymbol(key, sandboxOptions);
-    if (typeof key === 'string' && !validateStringKeyForWrite(key, target, sandboxOptions, topLevel)) {
+    if (
+      typeof key === 'string' &&
+      !validateStringKeyForWrite(key, target, sandboxOptions, topLevel)
+    ) {
       return false;
     }
     return delete target[key];
@@ -101,14 +89,11 @@ const createValidateDeleteProperty = ({
 };
 
 /** Builds the Proxy `defineProperty` trap: blocked categories and top-level writes fail-closed. */
-const createValidateDefineProperty = ({
-  sandboxOptions,
-  topLevel,
-}: ValidateSetOptions) => {
+const createValidateDefineProperty = ({ sandboxOptions, topLevel }: ValidateSetOptions) => {
   return (
     target: Record<string | symbol, unknown>,
     key: string | symbol,
-    descriptor: PropertyDescriptor,
+    descriptor: PropertyDescriptor
   ): boolean => {
     guardBlockedSymbol(key, sandboxOptions);
     if (typeof key === 'string') {

@@ -79,8 +79,7 @@ const resolveHumanTitle = ({
 const classifyAndBuildTitle = (error: ErrorLike): string => {
   const classified = classifyFromError(error);
   const plain = getErrorMessage(error);
-  const undefinedName =
-    classified.undefinedName ?? plain.match(UNDEFINED_OUTPUT_RE)?.[1] ?? null;
+  const undefinedName = classified.undefinedName ?? plain.match(UNDEFINED_OUTPUT_RE)?.[1] ?? null;
   return resolveHumanTitle({
     category: classified.category,
     undefinedName,
