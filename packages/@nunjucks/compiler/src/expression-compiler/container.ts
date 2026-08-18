@@ -199,6 +199,9 @@ const compileAggregate = (
   const children: readonly Node[] = Array.isArray(node)
     ? node
     : ((node as ChildrenNode).children ?? []);
+  // WHY: imperative index loop — comma placement between emitted fragments is
+  // index-sensitive; a map().join() cannot interleave into the shared emit buffer.
+  // Compiler emission exemption.
   for (let i = 0; i < children.length; i++) {
     const child = children[i];
     if (!child) {

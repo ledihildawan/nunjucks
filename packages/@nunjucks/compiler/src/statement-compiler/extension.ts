@@ -69,6 +69,9 @@ const emitExtensionArgs = ({
   }
   const children = args.children;
   const lastIndex = children.length - 1;
+  // WHY: imperative index loop — comma placement between emitted fragments is
+  // index-sensitive and the trailing comma depends on contentArgs; a map().join()
+  // cannot interleave into the shared emit buffer. Compiler emission exemption.
   for (let i = 0; i < children.length; i++) {
     const argument = children[i];
     if (!argument) {
@@ -107,6 +110,9 @@ interface EmitContentArgsInput {
 }
 
 const emitContentArgs = ({ compiler, contentArgs, frame }: EmitContentArgsInput): void => {
+  // WHY: imperative index loop — comma placement between emitted fragments is
+  // index-sensitive; a map().join() cannot interleave into the shared emit buffer.
+  // Compiler emission exemption.
   for (let i = 0; i < contentArgs.length; i++) {
     const argument = contentArgs[i];
     if (i > 0) {

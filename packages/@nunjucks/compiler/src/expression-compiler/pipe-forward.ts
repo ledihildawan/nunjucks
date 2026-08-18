@@ -21,6 +21,9 @@ export const compilePipeForward = (
     `await (async () => { const r = await runtime.runFilter({ env, name: ${JSON.stringify(filterName)}, lineno: ${node.lineno ?? 0}, colno: ${node.colno ?? 0}, context, args: [`
   );
 
+  // WHY: imperative index loop — comma placement between emitted fragments is
+  // index-sensitive; a map().join() cannot interleave into the shared emit buffer.
+  // Compiler emission exemption.
   for (let i = 0; i < args.length; i++) {
     const argument = args[i];
     if (i > 0) {
