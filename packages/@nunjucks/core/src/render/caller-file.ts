@@ -1,27 +1,10 @@
 import type { CallerLocation } from '../diagnostics/error-location-types.ts';
+import { captureCallerStack } from './shell/capture-caller-stack.ts';
 
 const CALLER_INDEX = 3;
 const MAX_CALLER_FRAMES = 6;
 
 export type { CallerLocation };
-
-// WHY: stack capture is the impure shell of this module (it mutates Error.prepareStackTrace to read V8 CallSites). Kept isolated here so the rest of the module stays pure. The try/finally guarantees the global swap is restored even if stack access throws — a leaked override would corrupt every future Error stack capture in the process.
-/** Captures the V8 `CallSite[]`, restoring `prepareStackTrace` in a `finally` block. */
-const captureCallerStack = (): NodeJS.CallSite[] => {
-  const original = Error.prepareStackTrace;
-  let captured: NodeJS.CallSite[] | undefined;
-  try {
-    Error.prepareStackTrace = (_, callsite) => {
-      captured = callsite;
-      return callsite;
-    };
-    void new Error('caller').stack;
-  } finally {
-    Error.prepareStackTrace = original;
-  }
-
-  return captured ?? [];
-};
 
 const isInternalCallerFile = (fileName: string | null | undefined): boolean => {
   if (!fileName) {
