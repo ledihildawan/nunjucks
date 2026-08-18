@@ -45,6 +45,7 @@ describe('emitUndefinedWarning', () => {
     expect(received[0]).toContain("'missing'");
   });
 
+  // WHY: same sanctioned console reassignment pattern as the test above.
   test('a non-array __warnings__ slot also falls back to console.warn', () => {
     const original = console.warn;
     let calls = 0;
