@@ -1,9 +1,9 @@
-import { stripInlineMarkdown } from '@nunjucks/lib';
 import picocolors from 'picocolors';
 import { filter, join, pipe } from 'remeda';
 import { isFilePath, resolveIdeLink } from '../presentation/ide-links/ide-links.ts';
 import { shortenPath } from '../presentation/source-trace/path-shortener.ts';
 import { parseStackFrame } from '../presentation/source-trace/stack-parse.ts';
+import { stripInlineMarkdown } from '../strip-inline-markdown.ts';
 import { createHyperlink } from './hyperlink.ts';
 
 export { createHyperlink } from './hyperlink.ts';

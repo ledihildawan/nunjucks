@@ -4,10 +4,11 @@ import path from 'node:path';
 import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
-import { containsNullByte, err, isWithinBase, ok, type Result } from '@nunjucks/lib';
+import { err, ok, type Result } from '@nunjucks/lib';
 import { isArray } from 'remeda';
 import { createLoader, type Loader } from './base.ts';
 import type { TemplateLoader, TemplateLoaderSource } from './loader-chain.ts';
+import { containsNullByte, isWithinBase } from './path-security.ts';
 import { createSourceMemo } from './source-memo.ts';
 
 const normalizeSearchPaths = (searchPaths: string | string[] | undefined): string[] => {

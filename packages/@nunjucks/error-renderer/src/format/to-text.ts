@@ -1,11 +1,12 @@
 import type { ErrorSeverity } from '@nunjucks/error-catalog';
 import { getErrorMessage } from '@nunjucks/error-catalog';
-import { slice, stripInlineMarkdown } from '@nunjucks/lib';
+import { slice } from '@nunjucks/lib';
 import { filter, join, map, pipe, split } from 'remeda';
 import { mergeErrorParts } from './presentation/error/error-parts.ts';
 import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import { shortenPath } from './presentation/source-trace/path-shortener.ts';
 import { parseStackFrame } from './presentation/source-trace/stack-parse.ts';
+import { stripInlineMarkdown } from './strip-inline-markdown.ts';
 
 /**
  * Options for plain-text rendering; the stack is a dev diagnostic and is omitted unless

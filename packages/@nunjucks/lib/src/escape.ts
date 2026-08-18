@@ -1,3 +1,7 @@
+// WHY: Lib-tier placement — these encoders are pure, stateless, and multi-consumer
+// (runtime escaping, filters, error-renderer, samples). Relocating them into runtime
+// would force every non-runtime consumer to depend on the runtime package (a DAG
+// inversion), so the context-aware encoding policy stays in the portability tier.
 /**
  * Escapes `&`, `<`, `>`, `"`, `'`, and `\` into HTML entities for text and
  * quoted-attribute markup contexts. Not safe for unquoted attribute values —

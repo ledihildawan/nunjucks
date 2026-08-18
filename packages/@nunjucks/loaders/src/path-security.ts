@@ -1,8 +1,8 @@
-// WHY: pure string math on purpose — importing node:path here would leak a node:
-// specifier through the @nunjucks/lib barrel into every domain package. Lib is the
-// portability tier (web streams, zero node deps); path containment is achievable
-// with segment comparison alone. Inputs arrive realpath-resolved from the loader,
-// so only canonical absolute paths must hold.
+// WHY: pure string math on purpose — containment is achievable with segment
+// comparison alone (node:path adds nothing here). Inputs arrive realpath-resolved
+// from the loader, so only canonical absolute paths must hold. Colocated with its
+// sole consumer (the fs loader) rather than @nunjucks/lib, keeping the lib barrel
+// free of loader-domain policy.
 
 // WHY: a NUL byte in a file name is a cheap first line of defense against path-traversal attempts that smuggle null terminators (e.g. "..\0/") past length-based checks.
 const containsNullByte = (name: string): boolean => name.includes('\0');
