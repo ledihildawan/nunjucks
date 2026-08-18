@@ -1,3 +1,4 @@
+import { createInternalInvariantError } from '@nunjucks/error-catalog';
 import { isKeyedObject } from '@nunjucks/lib';
 import { handleError } from './handle-error.ts';
 import { isFatalStreamError } from './stream-fatal-codes.ts';
@@ -35,7 +36,7 @@ const streamError = function (
   }
   // WHY: handleError never returns (return type: never) — this assignment silences TypeScript's unreachable-code error while preserving the intent that this line is truly unreachable.
   const unreachableMarker: never = (() => {
-    throw new Error('unreachable: handleError always throws');
+    throw createInternalInvariantError('handleError always throws');
   })();
   return unreachableMarker as StreamErrorSentinel;
 };

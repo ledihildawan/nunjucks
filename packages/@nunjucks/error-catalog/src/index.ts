@@ -1,5 +1,7 @@
 export { ERROR_CODES } from './error-codes.ts';
 export { TEMPLATE_ERROR } from './branding.ts';
+export { INTERNAL_INVARIANT, createInternalInvariantError, isInternalInvariantError } from './internal-invariant.ts';
+export type { InternalInvariantError } from './internal-invariant.ts';
 export type {
   Classification,
   ErrorDefinition,

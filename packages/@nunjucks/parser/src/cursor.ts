@@ -1,3 +1,4 @@
+import { createInternalInvariantError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Delimiters, Token } from '@nunjucks/lexer';
 import {
@@ -135,10 +136,12 @@ export const peekTokenOrNull = (parserContext: ParserContext): Token | null => {
 export const pushToken = (parserContext: ParserContext, tok: Token | null): void => {
   if (parserContext.peeked) {
     // WHY: pushing over an already-peeked token is an invariant violation inside the
-    // parser itself — a programmer bug, not a template error. It deliberately throws
-    // UNBRANDED so parse()'s boundary contract propagates it as a bug instead of mapping
-    // it to a user-facing Result error.
-    throw new Error('parser bug: pushToken called while another token is already pushed');
+    // parser itself — a programmer bug, not a template error. The internal-invariant
+    // brand is deliberately not TEMPLATE_ERROR, so parse()'s boundary contract propagates
+    // it as a bug instead of mapping it to a user-facing Result error.
+    throw createInternalInvariantError(
+      'pushToken called while another token is already pushed'
+    );
   }
   parserContext.peeked = tok;
 };
