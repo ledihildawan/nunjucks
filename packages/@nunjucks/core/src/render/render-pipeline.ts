@@ -190,19 +190,23 @@ const createDangerousContextError = async ({
   const firstPath = dangerousValuePaths[0] ?? '';
   const callerFrames = config.callerFrames ?? [];
   const framePositions = await Promise.all(
-    callerFrames.map((frame) =>
-      frame.fileName !== 'unknown' && firstPath
-        ? findContextKeyPosition({
-            sourceFile: frame.fileName,
-            callLine: frame.lineNumber ?? 1,
-            dangerousPath: firstPath,
-          })
-            .then((pos) => (pos ? { ...pos, fileName: frame.fileName } : null))
-            // WHY: enrichment is best-effort — a failed lookup must never turn the never-rejecting
-            // render() contract into an unexpected rejection.
-            .catch(() => null)
-        : Promise.resolve(null)
-    )
+    callerFrames.map(async (frame) => {
+      if (frame.fileName === 'unknown' || !firstPath) {
+        return null;
+      }
+      // WHY: enrichment is best-effort — a failed lookup must never turn the never-rejecting
+      // render() contract into an unexpected rejection.
+      try {
+        const pos = await findContextKeyPosition({
+          sourceFile: frame.fileName,
+          callLine: frame.lineNumber ?? 1,
+          dangerousPath: firstPath,
+        });
+        return pos ? { ...pos, fileName: frame.fileName } : null;
+      } catch {
+        return null;
+      }
+    })
   );
   const contextPos =
     framePositions.find(

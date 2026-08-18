@@ -125,13 +125,36 @@ const asTemplateError = (err: Error | TemplateError): TemplateError => {
   });
 };
 
+// WHY: Object.assign copies only enumerable own props — the descriptor overlay must match or
+// err's non-enumerable message/stack/cause would overwrite the fresh envelope's own.
+const ownEnumerableDescriptors = (source: object): PropertyDescriptorMap => {
+  const descriptors: Partial<Record<PropertyKey, PropertyDescriptor>> = {};
+  for (const key of Reflect.ownKeys(source)) {
+    const descriptor = Object.getOwnPropertyDescriptor(source, key);
+    if (descriptor?.enumerable === true) {
+      descriptors[key] = descriptor;
+    }
+  }
+  return descriptors as PropertyDescriptorMap;
+};
+
 const withLocation =
   ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) =>
-  (err: TemplateError): TemplateError =>
-    Object.assign(createErrorEnvelope(err.message, err), err, {
-      templateName: err.templateName ?? path ?? null,
-      ...(includeChain ? { includeChain } : {}),
-    });
+  (err: TemplateError): TemplateError => {
+    // WHY: descriptor spread + Object.create instead of Object.assign — err crosses the raw
+    // thrown-object boundary, and an own enumerable "__proto__" (e.g. via JSON.parse) would
+    // ride Object.assign's [[Set]] semantics into the prototype setter and retarget the
+    // clone; DefineOwnProperty cannot be intercepted. Descriptor-map spread (not assign)
+    // keeps the merge itself on CreateDataProperty semantics for the same reason.
+    return Object.create(Object.getPrototypeOf(err) ?? Error.prototype, {
+      ...Object.getOwnPropertyDescriptors(createErrorEnvelope(err.message, err)),
+      ...ownEnumerableDescriptors(err),
+      ...Object.getOwnPropertyDescriptors({
+        templateName: err.templateName ?? path ?? null,
+        ...(includeChain ? { includeChain } : {}),
+      }),
+    }) as TemplateError;
+  };
 
 const stripInternals =
   (path?: string) =>

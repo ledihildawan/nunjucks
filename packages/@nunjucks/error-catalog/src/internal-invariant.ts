@@ -12,10 +12,11 @@ interface InternalInvariantError extends Error {
   readonly [INTERNAL_INVARIANT]: true;
 }
 
+// WHY: `in` narrowing types the symbol-keyed access, so no cast is needed — the guard
+// reads the brand directly off the narrowed record.
 /** Narrows to the internal-invariant branded error. */
 const isInternalInvariantError = (value: unknown): value is InternalInvariantError =>
-  isRecord(value) &&
-  (value as unknown as { [INTERNAL_INVARIANT]?: unknown })[INTERNAL_INVARIANT] === true;
+  isRecord(value) && INTERNAL_INVARIANT in value && value[INTERNAL_INVARIANT] === true;
 
 // WHY: one audited construction site keeps `throw new Error` out of the domain core —
 // invariant failures carry their own brand so they stay greppable and separable from

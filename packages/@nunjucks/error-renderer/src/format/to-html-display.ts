@@ -2,7 +2,7 @@ import type { LineBase } from '@nunjucks/error-catalog';
 import { classifyFromError, ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { mergeErrorParts } from './presentation/error/error-parts.ts';
 import { toDisplayLocation } from './presentation/source-trace/location.ts';
-import { escapeHtml } from './presentation/syntax-highlight/highlight.ts';
+import { escapeAttribute, escapeHtml } from './presentation/syntax-highlight/highlight.ts';
 import type { ClassifiedError, ErrorLike, HumanTitleInput, LocationInfo } from './to-html-types.ts';
 import { toText } from './to-text.ts';
 
@@ -11,12 +11,16 @@ const UNDEFINED_OUTPUT_RE = /attempted to output '([^']+)'/u;
 // literal copy could drift from classification.
 const RESERVED_KEYWORD_RE = ERROR_DEFINITIONS.RESERVED_KEYWORD.pattern;
 
-/** Renders an escaped badge chip, or `''` when the text is missing or empty. */
+/**
+ * Renders an escaped badge chip, or `''` when the text is missing or empty.
+ * `variant` interpolates into the class attribute, so it is escaped in
+ * attribute context like every other dynamic attribute value.
+ */
 const renderBadge = (variant: string, text?: string | null): string => {
   if (!text) {
     return '';
   }
-  return `<span class="badge ${variant}">${escapeHtml(text)}</span>`;
+  return `<span class="badge ${escapeAttribute(variant)}">${escapeHtml(text)}</span>`;
 };
 
 // WHY: titles render from the catalog's titleTemplate — the single source of truth.

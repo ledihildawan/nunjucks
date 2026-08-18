@@ -126,21 +126,18 @@ const guardSingleConsumer = (inner: AsyncGenerator<string>): AsyncGenerator<stri
     [Symbol.asyncIterator](): AsyncGenerator<string> {
       return iterator as AsyncGenerator<string>;
     },
-    next(value?: unknown): Promise<IteratorResult<string>> {
+    async next(value?: unknown): Promise<IteratorResult<string>> {
       if (finished) {
-        return Promise.reject(
-          createLog('error', {
-            def: ERROR_DEFINITIONS.STREAM_ALREADY_CONSUMED,
-            context: { phase: 'render' },
-          })
-        );
+        throw createLog('error', {
+          def: ERROR_DEFINITIONS.STREAM_ALREADY_CONSUMED,
+          context: { phase: 'render' },
+        });
       }
-      return inner.next(value).then((result) => {
-        if (result.done) {
-          finished = true;
-        }
-        return result;
-      });
+      const result = await inner.next(value);
+      if (result.done) {
+        finished = true;
+      }
+      return result;
     },
     return(value?: unknown): Promise<IteratorResult<string>> {
       finished = true;
