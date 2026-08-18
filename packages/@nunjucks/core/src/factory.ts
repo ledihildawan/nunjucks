@@ -149,10 +149,17 @@ const buildDefaultPipeOptions = (config: NunjucksConfig): PipeRenderStreamOption
   dev: config.dev ?? false,
 });
 
-// WHY: the base factory — closes over shared config (filters, globals, security, limits, loader path, etc.) and
-// returns an engine whose per-call methods only need the template + context + minimal overrides. The public
-// `nunjucks(config)` entry (in index.ts) is a thin wrapper over this; the split mirrors the betterAuth
-// createBetterAuth/betterAuth pattern, leaving room for a future init/context param if a real purpose emerges.
+/**
+ * Builds the base engine factory — closes over shared config (filters, globals,
+ * security, limits, loader path, etc.) and returns an engine whose per-call methods
+ * only need the template + context + minimal overrides. The public `nunjucks(config)`
+ * entry (in index.ts) is a thin wrapper over this; the split mirrors the betterAuth
+ * createBetterAuth/betterAuth pattern, leaving room for a future init/context param
+ * if a real purpose emerges.
+ *
+ * @param config - Shared engine configuration applied to every render call.
+ * @returns The engine exposing Result-based render/renderToStream/pipeRenderStream.
+ */
 const createNunjucks = (config: NunjucksConfig = {}): NunjucksEngine => {
   const baseOptions = buildBaseOptions(config);
   const defaultPipeOptions = buildDefaultPipeOptions(config);

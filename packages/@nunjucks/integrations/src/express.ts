@@ -56,16 +56,21 @@ const createEngine = (config: NunjucksConfig = {}): ExpressEngineFunction => {
   ): void {
     const renderContext = sanitizeExpressOptions(options);
     const renderOptions = { views: path.dirname(filePath), templatePath: filePath };
-    engine
-      .render(path.basename(filePath), renderContext, renderOptions)
-      .then((result) => {
+    // WHY: Express mandates a sync-void engine signature — the async render runs in a
+    // fire-and-forget IIFE so every outcome lands in `callback`, never as a floating
+    // rejection.
+    void (async () => {
+      try {
+        const result = await engine.render(path.basename(filePath), renderContext, renderOptions);
         if (isOk(result)) {
           callback(null, result.value);
         } else {
           callback(result.error);
         }
-      })
-      .catch((err: unknown) => callback(err instanceof Error ? err : new Error(String(err))));
+      } catch (err: unknown) {
+        callback(err instanceof Error ? err : new Error(String(err)));
+      }
+    })();
   };
 };
 
