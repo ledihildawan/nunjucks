@@ -24,10 +24,9 @@ const renderTemplate = (
   { context = {}, config = {} }: RenderTemplateOptions = {}
 ): Promise<Result<string, Error>> => nunjucks(config).render(template, context);
 
-interface RenderDemoTemplateOptions {
-  context?: Record<string, unknown>;
-  config?: NunjucksConfig;
-}
+// WHY: alias instead of a duplicate interface — the demo wrapper accepts exactly the
+// same options as the seam it layers; a second copy would only drift.
+type RenderDemoTemplateOptions = RenderTemplateOptions;
 
 /**
  * Renders with the demo's baseline config — autoescape on, `dev` diagnostics on,

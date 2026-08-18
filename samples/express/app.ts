@@ -20,6 +20,12 @@ import { streamingRouter } from './routes/streaming.ts';
 import { undefinedRouter } from './routes/undefined.ts';
 import { warningsRouter } from './routes/warnings.ts';
 
+/**
+ * Builds the Express demo app — engine registration, route mounts, and the central
+ * error middleware (ANSI console + dev-gated HTML error pages).
+ *
+ * @returns The configured Express instance, unlistened.
+ */
 const createApp = (): Express => {
   const app: Express = express();
 

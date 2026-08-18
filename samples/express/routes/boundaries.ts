@@ -10,9 +10,11 @@ import { standardRouteConfig } from '../lib/io/views-path.ts';
  */
 const router: Router = express.Router();
 
+// WHY: upper bounds model production hygiene — `name` flows into the render context
+// and `count` into markup, so unbounded query strings must not ride past the edge.
 const querySchema = z.object({
-  name: z.string().min(1),
-  count: z.coerce.number().int().positive(),
+  name: z.string().min(1).max(200),
+  count: z.coerce.number().int().positive().max(1_000_000),
 });
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
