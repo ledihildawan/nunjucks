@@ -1,6 +1,17 @@
 import { describe, expect, test } from 'bun:test';
 import { getOrElse, isErr, isOk } from '@nunjucks/lib';
-import { first, last, lengthFilter, reverse, slice, sort, sum } from './array.ts';
+import {
+  batch,
+  first,
+  last,
+  lengthFilter,
+  list,
+  random,
+  reverse,
+  slice,
+  sort,
+  sum,
+} from './array.ts';
 
 describe('filters/array', () => {
   describe('first', () => {
@@ -313,6 +324,119 @@ describe('filters/array', () => {
       const result = sort(items, { keywords: true, attr: 'age', reversed: true });
       expect(isOk(result)).toBe(true);
       expect(getOrElse(result, null)).toEqual([{ age: 30 }, { age: 20 }, { age: 10 }]);
+    });
+  });
+
+  describe('batch', () => {
+    test('splits an array into fixed-size rows', () => {
+      const result = batch([1, 2, 3, 4, 5], 2);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([[1, 2], [3, 4], [5]]);
+    });
+
+    test('pads the final short row with fillWith', () => {
+      const result = batch([1, 2, 3, 4, 5], 2, 'x');
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([
+        [1, 2],
+        [3, 4],
+        [5, 'x'],
+      ]);
+    });
+
+    test('a falsy fillWith opts out of padding', () => {
+      const result = batch([1, 2, 3], 2, null);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([[1, 2], [3]]);
+    });
+
+    test('returns an empty array for an empty input', () => {
+      const result = batch([], 3);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([]);
+    });
+
+    test('returns error when linecount is not a positive integer', () => {
+      const zeroResult = batch([1, 2], 0);
+      expect(isErr(zeroResult)).toBe(true);
+      const fractionalResult = batch([1, 2], 1.5);
+      expect(isErr(fractionalResult)).toBe(true);
+      const negativeResult = batch([1, 2], -1);
+      expect(isErr(negativeResult)).toBe(true);
+    });
+
+    test('returns error when input is not an array', () => {
+      const result = batch('not array', 2);
+      expect(isErr(result)).toBe(true);
+    });
+  });
+
+  describe('list', () => {
+    test('splits a string into characters', () => {
+      const result = list('abc');
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual(['a', 'b', 'c']);
+    });
+
+    test('passes arrays through', () => {
+      const result = list([1, 2, 3]);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([1, 2, 3]);
+    });
+
+    test('converts a plain object to key/value entries', () => {
+      const result = list({ b: 2, a: 1 });
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([
+        { key: 'b', value: 2 },
+        { key: 'a', value: 1 },
+      ]);
+    });
+
+    test('materializes other iterables', () => {
+      const setResult = list(new Set([1, 2]));
+      expect(isOk(setResult)).toBe(true);
+      expect(getOrElse(setResult, null)).toEqual([1, 2]);
+      const mapResult = list(new Map([['a', 1]]));
+      expect(getOrElse(mapResult, null)).toEqual([['a', 1]]);
+    });
+
+    test('returns error for non-iterable input', () => {
+      const numberResult = list(42);
+      expect(isErr(numberResult)).toBe(true);
+      const nullResult = list(null);
+      expect(isErr(nullResult)).toBe(true);
+      const boolResult = list(true);
+      expect(isErr(boolResult)).toBe(true);
+    });
+  });
+
+  describe('random', () => {
+    test('returns a member of the array', () => {
+      const values = [1, 2, 3];
+      for (let i = 0; i < 20; i++) {
+        expect(values).toContain(getOrElse(random(values), null) as number);
+      }
+    });
+
+    test('returns a character of a string', () => {
+      const text = 'abc';
+      for (let i = 0; i < 20; i++) {
+        expect([...text]).toContain(getOrElse(random(text), null) as string);
+      }
+    });
+
+    test('returns undefined for an empty array', () => {
+      const result = random([]);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBeUndefined();
+    });
+
+    test('returns error when input is neither array nor string', () => {
+      const numberResult = random(42);
+      expect(isErr(numberResult)).toBe(true);
+      const nullResult = random(null);
+      expect(isErr(nullResult)).toBe(true);
     });
   });
 });

@@ -1,5 +1,5 @@
-import { BUILTIN_FILTER_NAMES } from '@nunjucks/shared';
 import { describe, expect, test } from 'bun:test';
+import { BUILTIN_FILTER_NAMES } from '@nunjucks/shared';
 import { BUILTIN_FILTERS } from './filter-names.ts';
 
 // WHY: BUILTIN_FILTER_NAMES lives in @nunjucks/shared as a static list so validators can

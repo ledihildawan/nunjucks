@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { getOrElse, isErr, isOk } from '@nunjucks/lib';
-import { groupby } from './object.ts';
+import { dictsort, dump, groupby } from './object.ts';
 
 describe('filters/object', () => {
   describe('groupby', () => {
@@ -85,6 +85,99 @@ describe('filters/object', () => {
         { user: { team: 'red' }, name: 'c' },
       ]);
       expect(grouped.blue).toEqual([{ user: { team: 'blue' }, name: 'b' }]);
+    });
+  });
+
+  describe('dictsort', () => {
+    test('sorts entries as [key, value] pairs by key', () => {
+      const result = dictsort({ b: 1, a: 2 });
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([
+        ['a', 2],
+        ['b', 1],
+      ]);
+    });
+
+    test('sorts keys case-insensitively by default', () => {
+      const result = dictsort({ B: 1, a: 2 });
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([
+        ['a', 2],
+        ['B', 1],
+      ]);
+    });
+
+    test('sorts keys case-sensitively when caseSensitive is set', () => {
+      const result = dictsort({ B: 1, a: 2 }, true);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([
+        ['B', 1],
+        ['a', 2],
+      ]);
+    });
+
+    test('sorts by value when by="value"', () => {
+      const result = dictsort({ a: 2, b: 1 }, false, 'value');
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([
+        ['b', 1],
+        ['a', 2],
+      ]);
+    });
+
+    test('returns error when by is neither key nor value', () => {
+      const result = dictsort({ a: 1 }, false, 'nope');
+      expect(isErr(result)).toBe(true);
+    });
+
+    test('returns error when input is not a plain object', () => {
+      const arrayResult = dictsort([1, 2]);
+      expect(isErr(arrayResult)).toBe(true);
+      const stringResult = dictsort('nope');
+      expect(isErr(stringResult)).toBe(true);
+      const nullResult = dictsort(null);
+      expect(isErr(nullResult)).toBe(true);
+    });
+  });
+
+  describe('dump', () => {
+    test('serializes compactly by default', () => {
+      const result = dump({ a: 1, b: 'two' });
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBe('{"a":1,"b":"two"}');
+    });
+
+    test('serializes arrays and primitives', () => {
+      expect(getOrElse(dump([1, 2, 3]), null)).toBe('[1,2,3]');
+      expect(getOrElse(dump('hi'), null)).toBe('"hi"');
+      expect(getOrElse(dump(null), null)).toBe('null');
+    });
+
+    test('indents with the spaces argument', () => {
+      const result = dump({ a: 1 }, 2);
+      expect(getOrElse(result, null)).toBe('{\n  "a": 1\n}');
+    });
+
+    test('substitutes "undefined" for values JSON cannot encode', () => {
+      expect(getOrElse(dump(undefined), null)).toBe('undefined');
+      expect(
+        getOrElse(
+          dump(() => 1),
+          null
+        )
+      ).toBe('undefined');
+    });
+
+    test('returns error on cyclic references', () => {
+      const cyclic: Record<string, unknown> = {};
+      cyclic.self = cyclic;
+      const result = dump(cyclic);
+      expect(isErr(result)).toBe(true);
+    });
+
+    test('binds obj and spaces from keyword arguments', () => {
+      const result = dump({ keywords: true, obj: { a: 1 }, spaces: 2 });
+      expect(getOrElse(result, null)).toBe('{\n  "a": 1\n}');
     });
   });
 });

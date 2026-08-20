@@ -1,20 +1,28 @@
 import { describe, expect, test } from 'bun:test';
-import { getOrElse, isErr, isOk, isSafeString } from '@nunjucks/lib';
+import { getOrElse, isErr, isOk, isSafeString, markSafe } from '@nunjucks/lib';
 import { createKeywordArgs } from '@nunjucks/runtime';
 import {
   capitalize,
+  center,
   // biome-ignore lint/suspicious/noShadowRestrictedNames: `escape` is the public name of this Nunjucks filter; renaming it would break every template that uses it.
   escape,
   fallback,
+  forceescape,
   indent,
   join as joinFilter,
   lower,
+  nl2br,
   replace,
+  safe,
+  string as stringFilter,
+  striptags,
   title,
   tojson,
   trim,
   truncate,
   upper,
+  urlize,
+  wordcount,
 } from './string.ts';
 
 describe('filters/string', () => {
@@ -280,6 +288,205 @@ describe('filters/string', () => {
     });
   });
 
+  describe('center', () => {
+    test('pads evenly within the width', () => {
+      const result = center('foo', 7);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBe('  foo  ');
+    });
+
+    test('biases the extra space right for odd padding', () => {
+      expect(getOrElse(center('foo', 6), null)).toBe(' foo  ');
+    });
+
+    test('returns the input unchanged when already at or beyond the width', () => {
+      expect(getOrElse(center('foobar', 4), null)).toBe('foobar');
+    });
+
+    test('defaults to a width of 80', () => {
+      const result = String(getOrElse(center('foo'), null));
+      expect(result).toHaveLength(80);
+      expect(result.trim()).toBe('foo');
+    });
+
+    test('preserves safeness', () => {
+      const result = center(markSafe('<b>'), 9);
+      expect(isSafeString(getOrElse(result, null))).toBe(true);
+      expect(String(getOrElse(result, null))).toBe('   <b>   ');
+    });
+  });
+
+  describe('safe', () => {
+    test('marks plain strings safe without escaping', () => {
+      const result = safe('<b>');
+      expect(isOk(result)).toBe(true);
+      expect(isSafeString(getOrElse(result, null))).toBe(true);
+      expect(String(getOrElse(result, null))).toBe('<b>');
+    });
+
+    test('passes SafeStrings through unchanged', () => {
+      const marked = markSafe('x');
+      expect(getOrElse(safe(marked), null)).toBe(marked);
+    });
+
+    test('marks the empty string for nullish input', () => {
+      const result = safe(null);
+      expect(isOk(result)).toBe(true);
+      expect(String(getOrElse(result, null))).toBe('');
+      expect(isSafeString(getOrElse(result, null))).toBe(true);
+    });
+  });
+
+  describe('forceescape', () => {
+    test('escapes plain input and marks the result safe', () => {
+      const result = forceescape('<b>&');
+      expect(isOk(result)).toBe(true);
+      expect(isSafeString(getOrElse(result, null))).toBe(true);
+      expect(String(getOrElse(result, null))).toBe('&lt;b&gt;&amp;');
+    });
+
+    test('escapes even SafeString inputs', () => {
+      const result = forceescape(markSafe('<b>&'));
+      expect(isSafeString(getOrElse(result, null))).toBe(true);
+      expect(String(getOrElse(result, null))).toBe('&lt;b&gt;&amp;');
+    });
+
+    test('escapes nullish input to the empty string', () => {
+      const result = forceescape(null);
+      expect(String(getOrElse(result, null))).toBe('');
+      expect(isSafeString(getOrElse(result, null))).toBe(true);
+    });
+  });
+
+  describe('nl2br', () => {
+    test('replaces newlines with <br /> (including CRLF)', () => {
+      const result = nl2br('a\nb\r\nc');
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBe('a<br />\nb<br />\nc');
+    });
+
+    test('keeps plain string input unmarked so autoescape still applies', () => {
+      const result = nl2br('a\nb');
+      expect(isSafeString(getOrElse(result, null))).toBe(false);
+    });
+
+    test('propagates safeness from SafeString input (escape |> nl2br idiom)', () => {
+      const result = nl2br(markSafe('a&lt;b\nc'));
+      expect(isSafeString(getOrElse(result, null))).toBe(true);
+      expect(String(getOrElse(result, null))).toBe('a&lt;b<br />\nc');
+    });
+
+    test('returns empty string for nullish input', () => {
+      expect(getOrElse(nl2br(null), null)).toBe('');
+      expect(getOrElse(nl2br(undefined), null)).toBe('');
+    });
+  });
+
+  describe('string', () => {
+    test('converts values to their string form', () => {
+      expect(getOrElse(stringFilter(42), null)).toBe('42');
+      expect(getOrElse(stringFilter(-1.5), null)).toBe('-1.5');
+    });
+
+    test('returns the empty string for nullish input', () => {
+      expect(getOrElse(stringFilter(null), null)).toBe('');
+      expect(getOrElse(stringFilter(undefined), null)).toBe('');
+    });
+
+    test('preserves SafeString marking and content', () => {
+      const marked = markSafe('<b>');
+      const result = stringFilter(marked);
+      expect(isSafeString(getOrElse(result, null))).toBe(true);
+      expect(String(getOrElse(result, null))).toBe('<b>');
+    });
+
+    test('returns error for symbol input', () => {
+      const result = stringFilter(Symbol('x'));
+      expect(isErr(result)).toBe(true);
+    });
+  });
+
+  describe('striptags', () => {
+    test('strips tags and collapses whitespace', () => {
+      const result = striptags('<p>Hello  <b>World</b></p>');
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBe('Hello World');
+    });
+
+    test('strips HTML comments', () => {
+      expect(getOrElse(striptags('a<!-- hidden -->b'), null)).toBe('ab');
+    });
+
+    test('collapses all whitespace to single spaces without preserveLinebreaks', () => {
+      expect(getOrElse(striptags('a\n\nb   c'), null)).toBe('a b c');
+    });
+
+    test('keeps line structure with preserveLinebreaks', () => {
+      expect(getOrElse(striptags('<p>a</p>\n\n\n<p>b</p>', true), null)).toBe('a\n\nb');
+    });
+
+    test('normalizes CRLF and squashes spaces with preserveLinebreaks', () => {
+      expect(getOrElse(striptags('a \r\n b', true), null)).toBe('a\nb');
+    });
+
+    test('preserves safeness', () => {
+      const result = striptags(markSafe('<b>hi</b>'));
+      expect(isSafeString(getOrElse(result, null))).toBe(true);
+      expect(String(getOrElse(result, null))).toBe('hi');
+    });
+  });
+
+  describe('urlize', () => {
+    test('links http and https URLs', () => {
+      const result = urlize('see https://example.com now');
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBe(
+        'see <a href="https://example.com">https://example.com</a> now'
+      );
+    });
+
+    test('links www. hosts via http://', () => {
+      expect(getOrElse(urlize('go www.example.com'), null)).toBe(
+        'go <a href="http://www.example.com">www.example.com</a>'
+      );
+    });
+
+    test('links email addresses via mailto', () => {
+      expect(getOrElse(urlize('mail foo.bar@example.com'), null)).toBe(
+        'mail <a href="mailto:foo.bar@example.com">foo.bar@example.com</a>'
+      );
+    });
+
+    test('truncates the display text at length but keeps the full href', () => {
+      const result = urlize('https://example.com/longpath', 10);
+      expect(getOrElse(result, null)).toBe('<a href="https://example.com/longpath">https://ex</a>');
+    });
+
+    test('adds rel="nofollow" when nofollow is true', () => {
+      const result = urlize('https://example.com', undefined, true);
+      expect(getOrElse(result, null)).toBe(
+        '<a href="https://example.com" rel="nofollow">https://example.com</a>'
+      );
+    });
+
+    test('leaves plain words untouched', () => {
+      expect(getOrElse(urlize('just words here'), null)).toBe('just words here');
+    });
+  });
+
+  describe('wordcount', () => {
+    test('counts words', () => {
+      expect(getOrElse(wordcount('hello  world foo'), null)).toBe(3);
+      expect(getOrElse(wordcount('one'), null)).toBe(1);
+    });
+
+    test('counts zero for empty and nullish input', () => {
+      expect(getOrElse(wordcount(''), null)).toBe(0);
+      expect(getOrElse(wordcount(null), null)).toBe(0);
+      expect(getOrElse(wordcount(undefined), null)).toBe(0);
+    });
+  });
+
   describe('result wrapping', () => {
     test('every unified filter returns an ok result', () => {
       expect(isOk(capitalize('hello'))).toBe(true);
@@ -293,6 +500,14 @@ describe('filters/string', () => {
       expect(isOk(escape('<b>'))).toBe(true);
       expect(isOk(indent('a\nb'))).toBe(true);
       expect(isOk(replace('foo', 'f', 'b'))).toBe(true);
+      expect(isOk(center('foo', 7))).toBe(true);
+      expect(isOk(safe('<b>'))).toBe(true);
+      expect(isOk(forceescape('<b>'))).toBe(true);
+      expect(isOk(nl2br('a\nb'))).toBe(true);
+      expect(isOk(stringFilter(42))).toBe(true);
+      expect(isOk(striptags('<b>x</b>'))).toBe(true);
+      expect(isOk(urlize('https://example.com'))).toBe(true);
+      expect(isOk(wordcount('a b'))).toBe(true);
     });
   });
 });

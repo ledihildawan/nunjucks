@@ -1,6 +1,7 @@
 import * as arrayFilters from './filters/array.ts';
 import * as mathFilters from './filters/math.ts';
 import * as objectFilters from './filters/object.ts';
+import * as selectFilters from './filters/select.ts';
 import * as stringFilters from './filters/string.ts';
 import * as urlEncodeFilters from './filters/url-encode.ts';
 
@@ -25,6 +26,7 @@ const BUILTIN_FILTERS: Readonly<Record<string, unknown>> = Object.freeze({
   ...arrayFilters,
   ...mathFilters,
   ...objectFilters,
+  ...selectFilters,
   ...stringFilters,
   ...urlEncodeFilters,
   ...FILTER_ALIASES,

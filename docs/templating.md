@@ -98,19 +98,21 @@ Registered set (aliases in parentheses). All return `Result` internally; failure
 
 > **Note on parameter names below:** signatures use the positional/upstream-nunjucks style for readability. The registered keyword-argument names differ in a few filters (e.g. `indent` registers `indentfirst`, `truncate` registers `length`, `replace` registers `newValue`/`maxCount`, `fallback` registers `val`/`def`/`bool`). Passing an **unknown** kwarg throws a catalogued `UNKNOWN_FILTER_KWARG` error — prefer positional arguments to sidestep the naming mismatch entirely.
 
-**String** — `capitalize`, `escape` (`e`) HTML-escape → SafeString, `fallback` (`default`, `d`) `(value, fallback, useFalsy=false)`, `indent(width=4, first=false)`, `lower`, `upper`, `trim`, `title`, `replace(old, new, max=-1)` (string or RegExp needle; an **omitted** `new` deletes the needle), `truncate(len=255, killwords=false, end='...')`, `tojson` (XSS-safe JSON → SafeString; script-safe, and attribute-safe under autoescape — attribute contexts entity-encode the SafeString so quotes cannot break out).
+**String** — `capitalize`, `escape` (`e`) HTML-escape → SafeString, `fallback` (`default`, `d`) `(value, fallback, useFalsy=false)`, `indent(width=4, first=false)`, `lower`, `upper`, `trim`, `title`, `replace(old, new, max=-1)` (string or RegExp needle; an **omitted** `new` deletes the needle), `truncate(len=255, killwords=false, end='...')`, `center(width=80)`, `string` (string form, safeness preserved), `safe` (mark SafeString), `forceescape` (escape even SafeStrings), `nl2br` (safeness-preserving — pair with `escape` so the `<br />` markup survives), `striptags(preserveLinebreaks=false)` (regex approximation), `urlize(length, nofollow=false)`, `wordcount`, `tojson` (XSS-safe JSON → SafeString; script-safe, and attribute-safe under autoescape — attribute contexts entity-encode the SafeString so quotes cannot break out).
 
-**Array** — `first`, `last`, `length` / `lengthFilter` (both names callable — the internal function name is registered alongside its upstream-compat alias), `reverse`, `join(delim='', attr)` (array input; errors on non-arrays), `slice(n, fill)` (n near-equal columns), `sort`, `sum(attr?, start=0)`.
+**Array** — `first`, `last`, `length` / `lengthFilter` (both names callable — the internal function name is registered alongside its upstream-compat alias), `reverse`, `join(delim='', attr)` (array input; errors on non-arrays), `slice(n, fill)` (n near-equal columns), `batch(linecount, fill)` (fixed-size rows), `list` (string → chars, object → `[{key, value}]`, other iterables → array), `random` (array element or string character), `sort`, `sum(attr?, start=0)`.
 
-**Object** — `groupby(attr)` → `Record<key, items[]>`.
+**Selection** — `select(test='truthy', arg)`, `reject(test='truthy', arg)` (tests resolve through the same builtin registry as `is`, custom tests via the env), `selectattr(attr)`, `rejectattr(attr)` (attribute truthiness; items lacking `attr` are filtered, not errors).
 
-**Math** — `abs`, `round(precision=0, method='round'|'ceil'|'floor')`.
+**Object** — `groupby(attr)` → `Record<key, items[]>`, `dictsort(caseSensitive=false, by='key'|'value')` → `[key, value]` pairs (own keys only), `dump(spaces)` (JSON; catalogued error on cyclic values).
+
+**Math** — `abs`, `round(precision=0, method='round'|'ceil'|'floor')`, `float(default)` and `int(default, base=10)` (parse numbers/numeric strings, fall back to `default` on NaN; other input types error).
 
 **URL** — `urlencode` (string → `encodeURIComponent`; object/pairs → query string).
 
 **Security** — `escape`, `tojson`; `sanitize(html, config?)` (DOMPurify-backed → SafeString) is opt-in: import it from the `@nunjucks/filters/sanitize` subpath and register via `config.filters` — it is not part of the builtin barrel. Global DOMPurify options via `dompurify` config.
 
-**Deviation:** no `safe`, `striptags`, `int`, `float`, `random`, `wordcount`, `urlize`, `center`, `dictsort`, `dump`, `list`, `filesizeformat`, `nl2br`. Supply what you need via `config.filters`.
+**Deviation:** no `filesizeformat`. Supply what you need via `config.filters`.
 
 ## Tests (`is`)
 

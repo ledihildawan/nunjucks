@@ -1,10 +1,12 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: the string module is one cohesive upstream-parity group sharing createStringFilter/normalize/preserveSafe conventions; splitting it would scatter the SafeString threading every filter here repeats
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { err, getAttrGetter, ok, type Result } from '@nunjucks/lib';
+import { err, escapeHtml, getAttrGetter, markSafe, ok, type Result } from '@nunjucks/lib';
 import { defaultTo, join as joinRemeda, map, pipe, split } from 'remeda';
 import type { SafeString } from '../factory/index.ts';
 import {
   createFilter,
+  createFilterError,
   createMacroFilter,
   createStringFilter,
   isArray,
@@ -272,17 +274,180 @@ const truncate = createFilter(['input', 'length', 'killwords', 'end'], truncateI
 /** Uppercases the string form of the input value. */
 const upper = createStringFilter((s: string): string => s.toUpperCase());
 
+interface CenterOptions {
+  str: unknown;
+  width?: number;
+}
+
+const DEFAULT_CENTER_WIDTH = 80;
+
+const centerImpl = ({ str, width }: CenterOptions): Result<string | SafeString, TemplateError> => {
+  const text = normalize(str, '');
+  const targetWidth = defaultTo(width, DEFAULT_CENTER_WIDTH);
+  if (text.length >= targetWidth) {
+    return ok(preserveSafe(str, text));
+  }
+  const spaces = targetWidth - text.length;
+  // WHY: exact floor/remainder split — upstream's loop-based repeat yields
+  // width-1 output for odd padding; keeping pre + text + post === width is
+  // the invariant the filter's name promises.
+  const pre = Math.floor(spaces / 2);
+  const post = spaces - pre;
+  return ok(preserveSafe(str, `${' '.repeat(pre)}${text}${' '.repeat(post)}`));
+};
+
+/** Centers the string form in a field of `width` (default 80) spaces. */
+const center = createFilter(['str', 'width'], centerImpl);
+
+/**
+ * Marks the string form of the input safe so autoescape passes it through
+ * verbatim; `SafeString` inputs pass through unchanged.
+ */
+const safe = (str: unknown): Result<SafeString, TemplateError> => ok(safeString(str));
+
+/**
+ * HTML-escapes even `SafeString` inputs — unlike `escape`, no safeness
+ * passthrough — returning a fresh safe-wrapped escape of the raw text.
+ */
+const forceescape = (str: unknown): Result<SafeString, TemplateError> => {
+  const text = str === null || str === undefined ? '' : String(str);
+  return ok(markSafe(escapeHtml(text)));
+};
+
+// WHY: safeness-preserving (upstream copySafeness), NOT unconditionally markSafe —
+// plain-text input stays autoescaped so hostile markup cannot ride nl2br into raw
+// output; the documented idiom is `text |> escape |> nl2br`, where the escaped
+// SafeString keeps the inserted <br /> verbatim.
+const nl2br = (str: unknown): Result<string | SafeString, TemplateError> => {
+  if (str === null || str === undefined) {
+    return ok('');
+  }
+  return ok(preserveSafe(str, String(str).replaceAll(/\r\n|\n/g, '<br />\n')));
+};
+
+/** Converts a value to its string form, preserving any SafeString marking. */
+const string = (obj: unknown): Result<string | SafeString, TemplateError> => {
+  // WHY: String(Symbol) throws a raw TypeError — surface it as a catalogued
+  // filter error like every other contract breach instead.
+  if (typeof obj === 'symbol') {
+    return err(
+      createFilterError({
+        errorDef: undefined,
+        params: { type: 'symbol' },
+        subject: 'symbol',
+        fallbackMessage: 'string: symbol values cannot be converted to a string',
+      })
+    );
+  }
+  return ok(preserveSafe(obj, normalize(obj, '')));
+};
+
+const STRIP_TAGS_RE = /<\/?([a-z][a-z0-9]*)\b[^>]*>|<!--[\s\S]*?-->/gi;
+
+interface StriptagsOptions {
+  input: unknown;
+  preserveLinebreaks?: boolean | string;
+}
+
+const isTruthyKwarg = (value: boolean | string | undefined): boolean =>
+  value === true || value === 'true';
+
+const striptagsImpl = ({
+  input,
+  preserveLinebreaks,
+}: StriptagsOptions): Result<string | SafeString, TemplateError> => {
+  // WHY: regex approximation (upstream's exact approach) — stripping tags
+  // without a DOM parser misses malformed/nested edge cases; pairing with
+  // `escape` (or the opt-in sanitize filter) is the safe pattern.
+  const trimmed = normalize(input, '').replace(STRIP_TAGS_RE, '').trim();
+  const result = isTruthyKwarg(preserveLinebreaks)
+    ? trimmed
+        .replace(/^ +| +$/gm, '')
+        .replace(/ +/g, ' ')
+        .replace(/\r\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+    : trimmed.replace(/\s+/gi, ' ');
+  return ok(preserveSafe(input, result));
+};
+
+/** Strips HTML tags (regex-based) and collapses whitespace; optionally keeps linebreaks. */
+const striptags = createFilter(['input', 'preserveLinebreaks'], striptagsImpl);
+
+const PUNC_RE = /^(?:\(|<|&lt;)?(.*?)(?:\.|,|\)|\n|&gt;)?$/;
+const EMAIL_RE = /^[\w.!#$%&'*+\-/=?^`{|}~]+@[a-z\d-]+(\.[a-z\d-]+)+$/i;
+const HTTP_HTTPS_RE = /^https?:\/\/.*$/;
+const WWW_RE = /^www\./;
+const TLD_RE = /\.(?:org|net|com)(?::|\/|$)/;
+
+interface UrlizeOptions {
+  str: unknown;
+  length?: number;
+  nofollow?: boolean;
+}
+
+const urlizeImpl = ({ str, length, nofollow }: UrlizeOptions): Result<string, TemplateError> => {
+  // WHY: NaN/missing length means "no truncation" (upstream isNaN check) —
+  // Infinity slices cleanly in String.prototype.slice.
+  const maxLength =
+    typeof length === 'number' && !Number.isNaN(length) ? length : Number.POSITIVE_INFINITY;
+  const noFollowAttr = nofollow === true ? ' rel="nofollow"' : '';
+  const words = normalize(str, '')
+    .split(/(\s+)/)
+    .filter((word) => word.length > 0)
+    .map((word) => {
+      // WHY: puncRe peels surrounding punctuation/angle brackets off the word so
+      // "see (example.com)" links example.com while the parens stay plain text.
+      const possibleUrl = word.match(PUNC_RE)?.[1] ?? word;
+      const shortUrl = possibleUrl.slice(0, maxLength);
+      if (HTTP_HTTPS_RE.test(possibleUrl)) {
+        return `<a href="${possibleUrl}"${noFollowAttr}>${shortUrl}</a>`;
+      }
+      if (WWW_RE.test(possibleUrl)) {
+        return `<a href="http://${possibleUrl}"${noFollowAttr}>${shortUrl}</a>`;
+      }
+      if (EMAIL_RE.test(possibleUrl)) {
+        return `<a href="mailto:${possibleUrl}">${possibleUrl}</a>`;
+      }
+      if (TLD_RE.test(possibleUrl)) {
+        return `<a href="http://${possibleUrl}"${noFollowAttr}>${shortUrl}</a>`;
+      }
+      return word;
+    });
+  return ok(words.join(''));
+};
+
+/**
+ * Converts bare URLs, `www.` hosts, and emails in the text into anchor tags,
+ * truncating display text beyond `length`; `nofollow=true` adds `rel="nofollow"`.
+ */
+const urlize = createFilter(['str', 'length', 'nofollow'], urlizeImpl);
+
+/**
+ * Counts whitespace-delimited words; an empty input is 0, not upstream's
+ * null (the port reports 0 for length-like metrics — see `lengthFilter`).
+ */
+const wordcount = (str: unknown): Result<number, TemplateError> =>
+  ok(normalize(str, '').match(/\w+/g)?.length ?? 0);
+
 export {
   capitalize,
+  center,
   escape,
   fallback,
+  forceescape,
   indent,
   join,
   lower,
+  nl2br,
   replace,
+  safe,
+  string,
+  striptags,
   title,
   tojson,
   trim,
   truncate,
   upper,
+  urlize,
+  wordcount,
 };

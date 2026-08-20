@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { getOrElse, isOk } from '@nunjucks/lib';
-import { abs, round } from './math.ts';
+import { getOrElse, isErr, isOk } from '@nunjucks/lib';
+import { abs, float, int, round } from './math.ts';
 
 describe('filters/math', () => {
   describe('abs', () => {
@@ -78,6 +78,75 @@ describe('filters/math', () => {
       expect(isOk(stringInputResult)).toBe(false);
       const nullInputResult = round(null);
       expect(isOk(nullInputResult)).toBe(false);
+    });
+  });
+
+  describe('float', () => {
+    test('parses numeric strings', () => {
+      expect(getOrElse(float('1.5'), null)).toBe(1.5);
+      expect(getOrElse(float('-2.25'), null)).toBe(-2.25);
+    });
+
+    test('passes finite numbers through', () => {
+      expect(getOrElse(float(1.5), null)).toBe(1.5);
+      expect(getOrElse(float(3), null)).toBe(3);
+    });
+
+    test('falls back to default on unparseable strings', () => {
+      expect(getOrElse(float('abc', 0), null)).toBe(0);
+      expect(getOrElse(float('abc'), null)).toBeUndefined();
+    });
+
+    test('falls back to default on NaN input', () => {
+      expect(getOrElse(float(Number.NaN, 0), null)).toBe(0);
+    });
+
+    test('returns error for non-parseable types', () => {
+      const nullResult = float(null);
+      expect(isErr(nullResult)).toBe(true);
+      const boolResult = float(true);
+      expect(isErr(boolResult)).toBe(true);
+      const objectResult = float({ a: 1 });
+      expect(isErr(objectResult)).toBe(true);
+    });
+
+    test('binds value and default from keyword arguments', () => {
+      const result = float({ keywords: true, value: 'abc', default: 1.5 });
+      expect(getOrElse(result, null)).toBe(1.5);
+    });
+  });
+
+  describe('int', () => {
+    test('parses integer strings', () => {
+      expect(getOrElse(int('42'), null)).toBe(42);
+      expect(getOrElse(int('-7'), null)).toBe(-7);
+    });
+
+    test('truncates number inputs toward zero', () => {
+      expect(getOrElse(int(1.7), null)).toBe(1);
+      expect(getOrElse(int(-1.7), null)).toBe(-1);
+    });
+
+    test('honors a custom base', () => {
+      expect(getOrElse(int('ff', undefined, 16), null)).toBe(255);
+      expect(getOrElse(int('101', undefined, 2), null)).toBe(5);
+    });
+
+    test('falls back to default on unparseable strings', () => {
+      expect(getOrElse(int('abc', 0), null)).toBe(0);
+      expect(getOrElse(int('abc'), null)).toBeUndefined();
+    });
+
+    test('returns error for non-parseable types', () => {
+      const nullResult = int(null);
+      expect(isErr(nullResult)).toBe(true);
+      const boolResult = int(false);
+      expect(isErr(boolResult)).toBe(true);
+    });
+
+    test('binds value, default, and base from keyword arguments', () => {
+      const result = int({ keywords: true, value: '10', base: 2 });
+      expect(getOrElse(result, null)).toBe(2);
     });
   });
 });

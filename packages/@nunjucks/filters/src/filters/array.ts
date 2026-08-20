@@ -1,14 +1,17 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: every array filter shares the array-contract helpers (requireArrayError/LIST_FILTER funneling, attr-path validation); splitting would scatter that single contract across files
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import {
   createSortComparator,
   err,
+  fromIterator,
   getAttrGetter,
+  isIterable,
   isSafeString,
   ok,
   type Result,
 } from '@nunjucks/lib';
-import { isPlainObject, keys, range, sum as sumValues } from 'remeda';
+import { entries, isPlainObject, keys, range, sum as sumValues } from 'remeda';
 import {
   createFilter,
   createFilterError,
@@ -163,6 +166,102 @@ const sliceImpl = ({
  * `fill`; positional `slice(3, 'x')` and kwargs `slice(3, fill='x')` both bind.
  */
 export const slice = createFilter(['values', 'slices', 'fill'], sliceImpl);
+
+interface BatchOptions {
+  arr: unknown;
+  linecount: number;
+  fillWith?: unknown;
+}
+
+const batchImpl = ({
+  arr,
+  linecount,
+  fillWith,
+}: BatchOptions): Result<unknown[][], TemplateError> => {
+  if (!isArray(arr)) {
+    return err(requireArrayError(arr, ERROR_DEFINITIONS.LIST_FILTER));
+  }
+  if (!Number.isInteger(linecount) || linecount < 1) {
+    return err(
+      createFilterError({
+        errorDef: undefined,
+        params: { count: String(linecount) },
+        subject: String(linecount),
+        fallbackMessage: 'batch: linecount must be a positive integer',
+      })
+    );
+  }
+  // WHY: fixed-size slicing reproduces upstream's i % linecount batching exactly —
+  // every chunk holds linecount items except (at most) a trailing partial one, and
+  // the partial tail is dropped when empty (upstream's `if (tmp.length)` guard).
+  const chunks: unknown[][] = [];
+  for (let start = 0; start < arr.length; start += linecount) {
+    chunks.push(arr.slice(start, start + linecount));
+  }
+  const lastChunk = chunks.at(-1);
+  // WHY: truthy fillWith only — upstream pads with `if (fillWith)`, so falsy fill
+  // values (0, '', null) opt out of padding instead of appending literal falses.
+  if (fillWith && lastChunk && lastChunk.length < linecount) {
+    lastChunk.push(...Array.from({ length: linecount - lastChunk.length }, () => fillWith));
+  }
+  return ok(chunks);
+};
+
+/**
+ * Batches an array into `linecount`-sized rows, optionally padding the final
+ * short row with `fillWith`.
+ */
+export const batch = createFilter(['arr', 'linecount', 'fillWith'], batchImpl);
+
+/**
+ * Converts a value to an array: strings split into characters, arrays pass
+ * through, plain objects become `[{ key, value }]` entries, and other
+ * iterables (Set/Map/generators) are materialized; everything else fails.
+ */
+export const list = (val: unknown): Result<unknown[], TemplateError> => {
+  // WHY: a SafeString IS its string content — upstream would run it through the
+  // object branch and yield [] (its marks are non-enumerable); reading it as a
+  // string preserves what the template author sees.
+  if (typeof val === 'string' || isSafeString(val)) {
+    return ok([...String(val)]);
+  }
+  if (isArray(val)) {
+    return ok(val);
+  }
+  if (isPlainObject(val)) {
+    return ok(entries(val).map(([key, value]) => ({ key, value })));
+  }
+  if (isIterable(val)) {
+    return ok(fromIterator(val) as unknown[]);
+  }
+  return err(
+    createFilterError({
+      errorDef: ERROR_DEFINITIONS.LIST_FILTER,
+      params: { type: typeof val },
+      subject: typeof val,
+      fallbackMessage: 'list: type not iterable',
+    })
+  );
+};
+
+/** Returns a uniformly random element (or character, for strings). */
+export const random = (values: unknown): Result<unknown, TemplateError> => {
+  const pickAt = (length: number): number => Math.floor(Math.random() * length);
+  if (isArray(values)) {
+    return ok(values[pickAt(values.length)]);
+  }
+  if (typeof values === 'string') {
+    return ok(values[pickAt(values.length)]);
+  }
+  return err(
+    createFilterError({
+      errorDef: ERROR_DEFINITIONS.LIST_FILTER,
+      params: { type: typeof values },
+      subject: typeof values,
+      fallbackMessage: `Expected array or string but got ${typeof values}`,
+    })
+  );
+};
 
 interface SumWithAttributeInput {
   items: unknown[];

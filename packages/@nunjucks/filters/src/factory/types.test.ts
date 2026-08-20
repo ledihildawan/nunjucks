@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { isArray, isSafeString } from './types.ts';
 import { markSafe } from '@nunjucks/lib';
+import { isArray, isSafeString } from './types.ts';
 
 describe('isArray', () => {
   type IsArrayCase = {

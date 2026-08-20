@@ -44,3 +44,60 @@ const roundImpl = ({ value, precision, method }: RoundOptions): Result<number, T
  * `round(1.234, 2)` and kwargs `round(precision=2, method="ceil")` both bind.
  */
 export const round = createFilter(['value', 'precision', 'method'], roundImpl);
+
+// WHY: numbers and numeric strings parse (upstream semantics — that is the filter's
+// documented job), every other type is a catalogued contract error rather than a
+// silent NaN-fallback, matching the strictness abs/round already enforce.
+const isParseable = (value: unknown): value is number | string =>
+  typeof value === 'number' || typeof value === 'string';
+
+interface FloatOptions {
+  value: unknown;
+  default?: unknown;
+}
+
+const floatImpl = ({ value, default: fallback }: FloatOptions): Result<unknown, TemplateError> => {
+  if (!isParseable(value)) {
+    return err(requireNumberError(value, ERROR_DEFINITIONS.MATH_FILTER));
+  }
+  // WHY: number inputs skip the string round-trip — parseFloat(1.5) is 1.5 either
+  // way, but NaN number inputs must fall back like unparseable strings do.
+  const parsed = typeof value === 'number' ? value : Number.parseFloat(value);
+  return ok(Number.isNaN(parsed) ? fallback : parsed);
+};
+
+/**
+ * Parses a number or numeric string to a float, substituting `default` when
+ * the parse yields NaN; other input types fail the numeric contract.
+ */
+export const float = createFilter(['value', 'default'], floatImpl);
+
+interface IntOptions {
+  value: unknown;
+  default?: unknown;
+  base?: number;
+}
+
+const intImpl = ({
+  value,
+  default: fallback,
+  base,
+}: IntOptions): Result<unknown, TemplateError> => {
+  if (!isParseable(value)) {
+    return err(requireNumberError(value, ERROR_DEFINITIONS.MATH_FILTER));
+  }
+  // WHY: parseInt truncates number inputs toward zero (parseInt(1.7) === 1) —
+  // Math.trunc reproduces that without the string round-trip.
+  const parsed =
+    typeof value === 'number'
+      ? Math.trunc(value)
+      : Number.parseInt(value, typeof base === 'number' ? base : 10);
+  return ok(Number.isNaN(parsed) ? fallback : parsed);
+};
+
+/**
+ * Parses a number or numeric string to an integer in `base` (default 10),
+ * substituting `default` when the parse yields NaN; other input types fail
+ * the numeric contract.
+ */
+export const int = createFilter(['value', 'default', 'base'], intImpl);
