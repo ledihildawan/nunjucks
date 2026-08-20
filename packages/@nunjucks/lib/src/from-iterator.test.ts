@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { fromIterator } from './from-iterator.ts';
 
 describe('fromIterator', () => {

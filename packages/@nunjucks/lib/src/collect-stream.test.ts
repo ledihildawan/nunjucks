@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { Readable } from 'node:stream';
-import { collectString, collectStream } from './collect-stream.ts';
+import { collectStream, collectString } from './collect-stream.ts';
 
 describe('collectString', () => {
   test('concatenates all yielded chunks of a node readable', async () => {

@@ -1,5 +1,5 @@
-import { describe, test, expect } from 'bun:test';
-import { escapeHtml, escapeAttribute, escapeScriptString, escapeStyle } from './escape.ts';
+import { describe, expect, test } from 'bun:test';
+import { escapeAttribute, escapeHtml, escapeScriptString, escapeStyle } from './escape.ts';
 
 describe('escapeHtml', () => {
   test('escapes HTML metacharacters', () => {

@@ -54,4 +54,4 @@ const collectBackward = ({ source, start, stop, step }: SliceCollectInput): read
   return collected;
 };
 
-export { normalizeIndex, collectForward, collectBackward };
+export { collectBackward, collectForward, normalizeIndex };

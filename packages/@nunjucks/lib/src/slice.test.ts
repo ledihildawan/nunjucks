@@ -1,5 +1,5 @@
-import { describe, test, expect } from 'bun:test';
-import { normalizeIndex, collectForward, collectBackward } from './slice.ts';
+import { describe, expect, test } from 'bun:test';
+import { collectBackward, collectForward, normalizeIndex } from './slice.ts';
 
 describe('normalizeIndex', () => {
   test('clamps explicit indices to the given length', () => {

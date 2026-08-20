@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import { ok, err, isOk, isErr, getOrElse } from './result.ts';
+import { describe, expect, test } from 'bun:test';
 import type { Result } from './result.ts';
+import { err, getOrElse, isErr, isOk, ok } from './result.ts';
 
 describe('ok', () => {
   test('constructs a success result carrying the value', () => {

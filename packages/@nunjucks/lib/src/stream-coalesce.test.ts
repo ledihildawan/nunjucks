@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { coalesceStream } from './stream-coalesce.ts';
 
 const sourceOf = async function* (chunks: readonly string[]): AsyncGenerator<string> {

@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { toWebReadableStream } from './web-readable-stream.ts';
 
 const sourceOf = async function* (chunks: readonly string[]): AsyncGenerator<string> {

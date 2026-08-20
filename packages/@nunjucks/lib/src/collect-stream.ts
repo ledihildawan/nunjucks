@@ -24,4 +24,4 @@ const collectStream = async (
   }
 };
 
-export { collectString, collectStream };
+export { collectStream, collectString };

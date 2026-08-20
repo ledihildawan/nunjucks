@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { MATCH_ANY_RE } from './match-any-regex.ts';
 
 describe('MATCH_ANY_RE', () => {

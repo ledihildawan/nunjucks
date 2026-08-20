@@ -41,5 +41,5 @@ const isErr = <T, E>(result: Result<T, E>): result is Err<T, E> => !result.ok;
 const getOrElse = <T, E>(result: Result<T, E>, fallback: T): T =>
   result.ok ? result.value : fallback;
 
-export { ok, err, isOk, isErr, getOrElse };
-export type { Ok, Err, Result };
+export type { Err, Ok, Result };
+export { err, getOrElse, isErr, isOk, ok };
