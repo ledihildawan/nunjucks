@@ -195,7 +195,6 @@ const createFromRawData = (
     message: rawLogData.message,
     rawLogData,
     info: warningInfo,
-    type,
   });
 
   if (type === 'error') {

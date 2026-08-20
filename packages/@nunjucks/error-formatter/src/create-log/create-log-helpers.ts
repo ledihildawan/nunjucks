@@ -4,13 +4,11 @@ import type {
   ErrorContext,
   ErrorDefinitionEntry,
   ErrorInfo,
-  LogType,
   NormalizedErrorContext,
   NormalizedWarningContext,
   RawLogData,
   TemplateError,
   WarningContext,
-  WarningInfo,
 } from './create-log-types.ts';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
 
@@ -85,36 +83,25 @@ const isErrorDefinitionEntry = (candidate: unknown): candidate is ErrorDefinitio
 interface CreateBaseMetadataOptions {
   message: string;
   rawLogData: RawLogData;
-  info: ErrorInfo | WarningInfo;
-  type: LogType;
+  info: ErrorInfo;
 }
 
 /**
- * Builds the shared metadata object from a message, `RawLogData` location,
- * and `info` fields; for `'warning'` it also resolves `varName` and defaults
- * `undefinedMode`, matching the `TemplateWarning` payload shape.
+ * Builds the shared metadata object from a message, `RawLogData` location, and
+ * the common `ErrorInfo` fields (code, subject, phase, template name, line
+ * base). Warning-only fields (`varName`, `undefinedMode`) stay with the caller,
+ * which reads them off `WarningInfo` directly.
  */
-const createBaseMetadata = ({ message, rawLogData, info, type }: CreateBaseMetadataOptions) => {
-  const baseMetadata = {
-    message,
-    lineno: rawLogData.lineno ?? null,
-    colno: rawLogData.colno ?? null,
-    code: info.code ?? null,
-    subject: info.subject ?? null,
-    phase: info.phase ?? null,
-    templateName: info.templateName ?? null,
-    lineBase: info.lineBase ?? null,
-  };
-  if (type === 'warning') {
-    const warningInfo = info as WarningInfo;
-    return {
-      ...baseMetadata,
-      varName: warningInfo.varName ?? null,
-      undefinedMode: warningInfo.undefinedMode ?? DEFAULT_UNDEFINED_MODE,
-    };
-  }
-  return baseMetadata;
-};
+const createBaseMetadata = ({ message, rawLogData, info }: CreateBaseMetadataOptions) => ({
+  message,
+  lineno: rawLogData.lineno ?? null,
+  colno: rawLogData.colno ?? null,
+  code: info.code ?? null,
+  subject: info.subject ?? null,
+  phase: info.phase ?? null,
+  templateName: info.templateName ?? null,
+  lineBase: info.lineBase ?? null,
+});
 
 // WHY: module-level Set — hoisted out of the per-error call so the exclusion check
 // is a single O(1) has() instead of rebuilding the key list per invocation.
