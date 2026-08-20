@@ -82,6 +82,9 @@ const scanForDangerousValues = ({
   if (!isKeyedObject(context) || scan.seen.has(context) || depth >= MAX_SCAN_DEPTH) {
     return [];
   }
+  // WHY: security scanners inherently require mutable cycle-tracking — WeakSet mutation
+  // is confined to the scan call-stack and enables O(1) cycle detection without
+  // polluting the returned array. This is an intentional exemption from the no-mutation rule.
   scan.seen.add(context);
 
   const record = context as Record<string, unknown>;
@@ -126,5 +129,5 @@ export const findDangerousValues = (
     value: context,
     depth: 0,
   });
-  return Array.from(new Set(paths));
+  return [...new Set(paths)];
 };

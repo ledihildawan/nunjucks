@@ -62,4 +62,35 @@ describe('scanTemplateForDangerousCode', () => {
     const violations = scanTemplateForDangerousCode(template);
     expect(violations[0]!.name).toBe('eval');
   });
+
+  test('does not flag dangerous code inside string literals', () => {
+    const template = '{{ "eval(1)" }}';
+    const violations = scanTemplateForDangerousCode(template);
+    expect(violations).toEqual([]);
+  });
+
+  test('does not flag dangerous code inside single-quoted strings', () => {
+    const template = '{{ \'Function("return 1")\' }}';
+    const violations = scanTemplateForDangerousCode(template);
+    expect(violations).toEqual([]);
+  });
+
+  test('does not flag dangerous code inside template literals', () => {
+    const template = '`require("fs")`';
+    const violations = scanTemplateForDangerousCode(template);
+    expect(violations).toEqual([]);
+  });
+
+  test('does not flag dangerous code inside HTML comments', () => {
+    const template = '<!-- eval("x") -->';
+    const violations = scanTemplateForDangerousCode(template);
+    expect(violations).toEqual([]);
+  });
+
+  test('still detects dangerous code outside string literals', () => {
+    const template = '{{ "eval(1)" }} {{ eval("x") }}';
+    const violations = scanTemplateForDangerousCode(template);
+    expect(violations.length).toBe(1);
+    expect(violations[0]!.name).toBe('eval');
+  });
 });

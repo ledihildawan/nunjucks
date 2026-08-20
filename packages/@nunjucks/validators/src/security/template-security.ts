@@ -17,6 +17,9 @@ const DANGEROUS_PATTERNS: ReadonlyArray<{ pattern: RegExp; message: string }> = 
   { pattern: /\bimport\s+\(/u, message: 'dynamic import() is not allowed' },
 ];
 
+const STRING_LITERAL_RE = /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`/gu;
+const HTML_COMMENT_RE = /<!--[\s\S]*?-->/g;
+
 const IDENTIFIER_PATTERN = /[a-zA-Z_$][\w$]*/u;
 
 const getLineColFromIndex = (content: string, index: number): { line: number; col: number } => {
@@ -44,19 +47,26 @@ const toViolation = ({
   return { message, pattern: pattern.source, line, col, name };
 };
 
+const removeStringLiteralsAndComments = (template: string): string => {
+  return template.replace(STRING_LITERAL_RE, '""').replace(HTML_COMMENT_RE, '');
+};
+
 /**
  * Scans raw template source for code-execution calls (`eval`, `Function`,
  * `require`, dynamic `import`) and returns every match with position info.
  * Regex-based and therefore heuristic — it runs before compilation, not on
- * the parsed AST.
+ * the parsed AST. String literals and HTML comments are stripped before
+ * scanning to avoid false positives from content inside strings.
  */
-const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeViolation[] =>
-  DANGEROUS_PATTERNS.flatMap(({ pattern, message }) => {
+const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeViolation[] => {
+  const scrubbed = removeStringLiteralsAndComments(templateContent);
+  return DANGEROUS_PATTERNS.flatMap(({ pattern, message }) => {
     const regex = new RegExp(pattern.source, 'gu');
-    const matches = [...templateContent.matchAll(regex)];
+    const matches = [...scrubbed.matchAll(regex)];
     return matches.map((match) =>
       toViolation({ match, pattern, message, source: templateContent })
     );
   });
+};
 
 export { scanTemplateForDangerousCode };
