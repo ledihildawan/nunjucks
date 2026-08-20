@@ -1,20 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import { createGetExported } from './template-exporter.ts';
-import { createFallbackEnv } from './template-source.ts';
+import { createSourceTemplateState } from './template-test-helper.ts';
 
 describe('createGetExported', () => {
   test('returns empty exported when rootRenderFunc is null', async () => {
-    const getState = () => ({
-      env: createFallbackEnv(),
-      path: 'test.html',
-      includeChain: null,
-      status: 'source' as const,
-      tmplStr: 'Hello',
-      tmplProps: null,
-      blocks: {},
-      blockMeta: {},
-      rootRenderFunc: null,
-    });
+    const getState = () => createSourceTemplateState();
     const getExported = createGetExported(getState, { safeCompile: async () => {} });
     const result = await getExported();
     expect(result).toEqual({});
@@ -27,17 +17,7 @@ describe('createGetExported', () => {
         compileCalled = true;
       },
     };
-    const getState = () => ({
-      env: createFallbackEnv(),
-      path: 'test.html',
-      includeChain: null,
-      status: 'source' as const,
-      tmplStr: 'Hello',
-      tmplProps: null,
-      blocks: {},
-      blockMeta: {},
-      rootRenderFunc: null,
-    });
+    const getState = () => createSourceTemplateState();
     const getExported = createGetExported(getState, compiler);
     await getExported();
     expect(compileCalled).toBe(true);
@@ -49,17 +29,7 @@ describe('createGetExported', () => {
         throw new Error('compile failed');
       },
     };
-    const getState = () => ({
-      env: createFallbackEnv(),
-      path: 'test.html',
-      includeChain: null,
-      status: 'source' as const,
-      tmplStr: 'Hello',
-      tmplProps: null,
-      blocks: {},
-      blockMeta: {},
-      rootRenderFunc: null,
-    });
+    const getState = () => createSourceTemplateState();
     const getExported = createGetExported(getState, compiler);
     await expect(getExported()).rejects.toThrow();
   });

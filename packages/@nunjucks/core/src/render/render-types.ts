@@ -1,5 +1,5 @@
 import type { LineBase } from '@nunjucks/error-catalog';
-import type { TemplateError } from '@nunjucks/error-formatter';
+import type { TemplateError, TemplateWarning } from '@nunjucks/error-formatter';
 import type { Result } from '@nunjucks/lib';
 import type { TemplateLoader } from '@nunjucks/loaders';
 import type { Env, SandboxOptions } from '@nunjucks/runtime';
@@ -10,7 +10,7 @@ import type {
   UndefinedMode,
 } from '@nunjucks/shared';
 import type { ExpressionSecurityConfig } from '@nunjucks/validators';
-import type { SandboxMode } from '../config/global.ts';
+import type { GlobalConfig, SandboxMode } from '../config/global.ts';
 import type { CompiledCodeCache } from '../template/template-cache.ts';
 import type { CallerLocation } from './caller-file.ts';
 
@@ -87,7 +87,7 @@ interface CompileResult {
 interface PreparedTemplate {
   readonly code: string;
   readonly sandboxedCtx: Record<string, unknown>;
-  readonly warningsCollector: import('@nunjucks/error-formatter').TemplateWarning[];
+  readonly warningsCollector: TemplateWarning[];
   readonly templateName: string;
   readonly resolvedConfig: RenderConfig;
   readonly templateSource: string;
@@ -97,7 +97,7 @@ interface PreparedTemplate {
 }
 
 /** Loose input bag for the internal render entry points — defaults over `GlobalConfig`. */
-interface RenderOptions extends Partial<import('../config/global.ts').GlobalConfig> {
+interface RenderOptions extends Partial<GlobalConfig> {
   context?: Record<string, unknown>;
   streamContentType?: ContentType;
 }

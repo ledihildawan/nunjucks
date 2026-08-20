@@ -174,7 +174,11 @@ const createNunjucks = (config: NunjucksConfig = {}): NunjucksEngine => {
   // so two factories with the same views path get ISOLATED loader instances — no hidden cross-instance sharing.
   // Resolved per effective views (factory-time views OR a per-call override, e.g. Express's dirname(filePath)),
   // so a per-call views change creates/caches a loader within this factory only. GC'd when the factory is.
+  // WHY: bounded LRU mirroring template-cache.ts — overrides.views is caller-controlled, so an unbounded
+  // key set would grow with every distinct views string; insertion order of the Map IS the recency list.
   const loaderCache = new Map<string, FileSystemLoader>();
+  // WHY: mirrors template-cache.ts's default maxEntries cap so both engine caches evict at the same scale.
+  const LOADER_CACHE_MAX_ENTRIES = 100;
   // WHY: JSON.stringify cache key — unambiguous identity for both a single path string and
   // a multi-root array (join with any separator could collide with that separator in a path).
   const loaderCacheKey = (views: string | string[]): string =>
@@ -186,10 +190,20 @@ const createNunjucks = (config: NunjucksConfig = {}): NunjucksEngine => {
     const cacheKey = loaderCacheKey(views);
     const cached = loaderCache.get(cacheKey);
     if (cached) {
+      // LRU touch: re-insert so the key moves to the freshest position.
+      loaderCache.delete(cacheKey);
+      loaderCache.set(cacheKey, cached);
       return cached;
     }
     const loader = createFileSystemLoader(views);
     loaderCache.set(cacheKey, loader);
+    while (loaderCache.size > LOADER_CACHE_MAX_ENTRIES) {
+      const oldest = loaderCache.keys().next().value;
+      if (oldest === undefined) {
+        return loader;
+      }
+      loaderCache.delete(oldest);
+    }
     return loader;
   };
 

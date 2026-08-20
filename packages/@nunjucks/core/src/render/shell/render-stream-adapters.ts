@@ -1,4 +1,5 @@
 // WHY: consumer-side streaming helpers. renderToStream yields a plain AsyncGenerator<string>; these adapters convert it into the stream shapes real HTTP/runtimes expect, and enforce a per-chunk timeout so a stalled render cannot hang a response indefinitely.
+// WHY: lives under render/shell/ (not render/) because withStreamTimeout/withStreamDeadline schedule host timers (setTimeout) — timer scheduling is a shell concern and stays out of the pure render domain.
 
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { createLog, type TemplateError } from '@nunjucks/error-formatter';

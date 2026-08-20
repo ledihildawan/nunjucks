@@ -23,13 +23,17 @@ interface FoldedPlugins {
   readonly dompurify: DomPurifyConfig | undefined;
 }
 
-const emptyFold: FoldedPlugins = {
-  filters: {},
-  globals: {},
-  tests: {},
-  extensions: {},
+// WHY: fresh FROZEN folds per call — a module-level shared `emptyFold` let one consumer's
+// mutation of `folded.filters` poison every later foldPlugins result (shared mutable
+// state across calls). Freshness isolates calls; freezing turns an accidental mutation
+// into a loud failure instead of silent cross-call contamination.
+const createEmptyFold = (): FoldedPlugins => ({
+  filters: Object.freeze({}),
+  globals: Object.freeze({}),
+  tests: Object.freeze({}),
+  extensions: Object.freeze({}),
   dompurify: undefined,
-};
+});
 
 // WHY: drop malformed (null/undefined) extension values at fold time rather than letting them surface as
 // a runtime cast failure during render. Filters/tests must be callables (enforced by config validation);
@@ -44,10 +48,10 @@ const mergeExtensions = (
   if (!incoming) {
     return folded;
   }
-  const merged = { ...folded, ...incoming };
-  return Object.fromEntries(
-    Object.entries(merged).filter(([, value]) => isUsableExtensionValue(value))
+  const merged = Object.fromEntries(
+    Object.entries({ ...folded, ...incoming }).filter(([, value]) => isUsableExtensionValue(value))
   );
+  return Object.freeze(merged);
 };
 
 // WHY: fold plugins left-to-right so a later plugin overrides an earlier one's same-named filter/global/etc.
@@ -55,7 +59,8 @@ const mergeExtensions = (
 // on top of this folded result, which in turn sit above the built-in default filter bundle.
 /**
  * Folds plugins left-to-right into one bundle — a later plugin overrides an
- * earlier one's same-named entry; malformed values drop at fold time.
+ * earlier one's same-named entry; malformed values drop at fold time. Every
+ * returned map is fresh and frozen per call.
  */
 const foldPlugins = (plugins: readonly NunjucksPlugin[] = []): FoldedPlugins =>
   plugins.reduce<FoldedPlugins>(
@@ -66,7 +71,7 @@ const foldPlugins = (plugins: readonly NunjucksPlugin[] = []): FoldedPlugins =>
       extensions: mergeExtensions(folded.extensions, plugin.extensions),
       dompurify: plugin.dompurify ?? folded.dompurify,
     }),
-    emptyFold
+    createEmptyFold()
   );
 
 export type { FoldedPlugins, NunjucksPlugin };

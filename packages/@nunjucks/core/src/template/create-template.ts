@@ -3,13 +3,13 @@ import { normalizeErrorMetadata, prettifyError } from '@nunjucks/error-formatter
 import type { Env } from '@nunjucks/runtime';
 import type { CompiledTemplateExports } from '@nunjucks/shared';
 import { extractCompiledBlocks } from './compiled-blocks.ts';
-import { createTemplateCompiler } from './template-compiler';
-import { createTemplateErrorHandler } from './template-error-handler';
-import { createGetExported } from './template-exporter';
-import { createTemplateRenderer } from './template-renderer';
-import { initTemplateState, loadSource } from './template-source';
-import type { TemplateObject, TemplateSource, TemplateState } from './types';
-import { Template } from './types';
+import { createTemplateCompiler } from './template-compiler.ts';
+import { createTemplateErrorHandler } from './template-error-handler.ts';
+import { createGetExported } from './template-exporter.ts';
+import { createTemplateRenderer } from './template-renderer.ts';
+import { initTemplateState, loadSource } from './template-source.ts';
+import type { TemplateObject, TemplateSource, TemplateState } from './types.ts';
+import { Template } from './types.ts';
 
 // WHY: adopts pre-computed compiled exports into the template state machine — the
 // same 'compiled' shape commit() produces, minus the eval (the exports object was

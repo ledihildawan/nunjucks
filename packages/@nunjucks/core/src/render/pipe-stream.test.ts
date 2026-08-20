@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { nunjucks, type PipeSink } from '@nunjucks/core';
+import { nunjucks } from '../index.ts';
+import type { PipeSink } from './pipe-stream.ts';
 
 const njk = nunjucks({});
 const strictNjk = nunjucks({ undefined: 'strict' });

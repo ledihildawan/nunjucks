@@ -4,9 +4,9 @@ import { createLog } from '@nunjucks/error-formatter';
 import { formatError } from '@nunjucks/error-formatter/format';
 import { isErr } from '@nunjucks/lib';
 import type { ContentType } from '@nunjucks/shared';
-import { formatErrorMarker } from './render.ts';
-import { coalesceStream, withStreamTimeout } from './render-stream-adapters.ts';
+import { formatErrorMarker } from './render-stream.ts';
 import type { RenderMarkerError, RenderStreamResult } from './render-types.ts';
+import { coalesceStream, withStreamTimeout } from './shell/render-stream-adapters.ts';
 
 // WHY: structural sink interface matching Express Response shape — res.status(), res.setHeader(), res.write(), res.end(), res.flushHeaders(). Express res satisfies this directly; Bun/Deno/Web can adapt (flushHeaders is optional — without it, chunks may buffer but still arrive). `off` mirrors EventEmitter.off/removeListener and is used by waitForDrain to detach its one-shot drain listener (anti-leak); Express res provides it natively.
 interface PipeSink {

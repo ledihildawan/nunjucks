@@ -1,5 +1,4 @@
 import type { IncludeChain } from '@nunjucks/error-formatter';
-import { defaultTo } from 'remeda';
 
 export { buildErrorMessage, createTemplateErrorHandler, extractFrameDetails };
 
@@ -76,7 +75,9 @@ const extractFrameDetails = ({
     return null;
   }
 
-  const errColno = defaultTo(e.colno, 0);
+  // WHY: plain ?? — remeda's defaultTo returns the fallback only for null/undefined,
+  // exactly the nullish coalescing operator's contract; remeda purged from the template domain.
+  const errColno = e.colno ?? 0;
   const finalColno = resolveColno(sourceColno, errColno);
   const templateLocation = `${currentPath}:${sourceLineno}:${finalColno}`;
   const message = buildErrorMessage({ currentPath, sourceLineno, finalColno, e });

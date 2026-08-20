@@ -20,14 +20,14 @@ import type { ContentType } from '@nunjucks/shared';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
 import { serializeErrorPayload } from './pipe-stream.ts';
 import { buildExecutionEnv } from './render-env.ts';
+import type { PreparedTemplate, RenderMarkerError } from './render-types.ts';
+import type { DisplaySeverity } from './severity-levels.ts';
+import { getSeverity } from './severity-levels.ts';
 import {
   coerceChunk,
   createStreamTimeoutError,
   withStreamDeadline,
-} from './render-stream-adapters.ts';
-import type { PreparedTemplate, RenderMarkerError } from './render-types.ts';
-import type { DisplaySeverity } from './severity-levels.ts';
-import { getSeverity } from './severity-levels.ts';
+} from './shell/render-stream-adapters.ts';
 
 interface SentinelChunkInput {
   sentinel: StreamErrorSentinel;

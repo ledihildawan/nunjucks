@@ -1,10 +1,10 @@
 import { getError } from '@nunjucks/error-catalog';
 import type { IncludeChain } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
+import { isPlainObject, isString } from '@nunjucks/lib';
 import { createDefaultEnv, type Env } from '@nunjucks/runtime';
 import { isCompiledTemplateExports } from '@nunjucks/shared';
-import { isPlainObject, isString } from 'remeda';
-import type { TemplateSource, TemplateState, TemplateStateBase } from './types';
+import type { TemplateSource, TemplateState, TemplateStateBase } from './types.ts';
 
 export { createFallbackEnv, initTemplateState, loadSource };
 
@@ -54,6 +54,9 @@ const initTemplateState = ({
   blockMeta: {},
 });
 
+// WHY: lib's guards are remeda's verbatim (lib/src/type-guards.ts re-exports them), so
+// isPlainObject keeps literal-created-object semantics (prototype === Object.prototype
+// or null) — behavior-identical to the previous direct remeda import.
 /** Loads src into the state machine — string or `TemplateSource`; throws on bad shapes. */
 const loadSource = (base: TemplateStateBase, src: string | TemplateSource): TemplateState => {
   if (isPlainObject(src)) {

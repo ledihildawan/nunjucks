@@ -5,9 +5,9 @@ import { injectWarningsScript } from '@nunjucks/error-renderer';
 import { collectStream } from '@nunjucks/lib';
 import { createContext, createFrame, type Frame } from '@nunjucks/runtime';
 import { WARNINGS_CONTEXT_KEY } from '@nunjucks/shared';
-import { createRuntimeWithContext } from './runtime-factory';
-import type { ErrorWithLineInfo } from './template-error-handler';
-import type { TemplateState } from './types';
+import { createRuntimeWithContext } from './runtime-factory.ts';
+import type { ErrorWithLineInfo } from './template-error-handler.ts';
+import type { TemplateState } from './types.ts';
 
 export { createRenderFrame, createTemplateRenderer };
 

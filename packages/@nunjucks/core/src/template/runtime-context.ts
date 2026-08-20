@@ -9,7 +9,6 @@ import type {
   SuppressValueOptions,
 } from '@nunjucks/runtime';
 import type { Phase } from '@nunjucks/shared';
-import type { keys } from 'remeda';
 
 /**
  * The runtime contract object handed to compiled templates — every helper
@@ -52,7 +51,10 @@ interface RuntimeContext {
   fromIterator: (iterable: unknown) => unknown;
   inOperator: (input: InOperatorOptions) => boolean;
   runTest: (env: unknown, name: string, target: unknown, ...args: unknown[]) => boolean;
-  keys: typeof keys;
+  // WHY: structural type replaces the former `typeof remeda.keys` — the compiler emits
+  // `runtime.keys(obj)` with plain objects, whose remeda return type resolves to the
+  // enumerable string keys (ObjectKeys<T>); the data-first shape below is that contract.
+  keys: (data: object) => string[];
   __warnings__: unknown[];
   logContext: {
     templateName: string;

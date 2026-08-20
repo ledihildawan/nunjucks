@@ -3,11 +3,10 @@ import { createLog, normalizeErrorMetadata, prettifyError } from '@nunjucks/erro
 import { err, isErr, ok, type Result } from '@nunjucks/lib';
 import type { ParseOptions } from '@nunjucks/parser';
 import { HOOK_EVENTS, loadCompiledCode } from '@nunjucks/runtime';
-import type { UndefinedMode } from '@nunjucks/shared';
 import { type CompiledTemplateExports, isCompiledTemplateExports } from '@nunjucks/shared';
 import { compileToCode } from '../compile-pipeline.ts';
 import { extractCompiledBlocks } from './compiled-blocks.ts';
-import type { TemplateState } from './types';
+import type { TemplateState } from './types.ts';
 
 export { createTemplateCompiler };
 
@@ -28,7 +27,13 @@ const createTemplateCompiler = ({ getState, commit }: TemplateStateCell) => {
     const codeResult = compileToCode({
       source: state.tmplStr,
       templateName: state.path ?? '',
-      undefinedMode: state.env.opts.undefined as UndefinedMode | undefined,
+      // WHY: no cast — Env.opts.undefined is statically UndefinedMode (runtime's Env
+      // contract) and compileToCode accepts UndefinedMode | undefined.
+      undefinedMode: state.env.opts.undefined,
+      // WHY: cast rides on the upstream validation guarantee — every Env reaching the
+      // state machine is built by render-env.ts from a RenderConfig already narrowed by
+      // validateConfig (factory) / validateRender, so opts fields consumed by ParseOptions
+      // (autoescape) are well-typed; absent lexer fields fall back to parser defaults.
       parseOpts: state.env.opts as ParseOptions,
     });
     if (isErr(codeResult)) {

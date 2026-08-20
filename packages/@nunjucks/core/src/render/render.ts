@@ -3,7 +3,7 @@ import { injectWarningsScript } from '@nunjucks/error-renderer';
 import { err, isErr, ok, type Result } from '@nunjucks/lib';
 import { createFileSystemLoader, type TemplateLoader } from '@nunjucks/loaders';
 import { createFrame, type ExecuteConfig, execute } from '@nunjucks/runtime';
-import { getDefaultConfig } from '../config/global.ts';
+import { type GlobalConfig, getDefaultConfig } from '../config/global.ts';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
 import { defaultFilterBundle } from '../filter-bundle.ts';
 import { getCallerFrames } from './caller-file.ts';
@@ -17,7 +17,6 @@ import {
   TEMPLATE_FILE_EXTENSION_RE,
 } from './render-pipeline.ts';
 import { createRenderStream, formatErrorMarker } from './render-stream.ts';
-import { guardSingleConsumer } from './render-stream-adapters.ts';
 import type {
   PreparedTemplate,
   RenderConfig,
@@ -25,10 +24,9 @@ import type {
   RenderStreamResult,
 } from './render-types.ts';
 import { validateRender, validateTemplateSource } from './render-validation.ts';
+import { guardSingleConsumer } from './shell/render-stream-adapters.ts';
 
-const setupRenderConfig = (
-  options: Partial<import('../config/global.ts').GlobalConfig>
-): Result<RenderConfig, TemplateError> => {
+const setupRenderConfig = (options: Partial<GlobalConfig>): Result<RenderConfig, TemplateError> => {
   const defaults = getDefaultConfig(defaultFilterBundle);
   const filtersResult = buildCallableMap(
     { ...defaults.filters, ...(options.filters || {}) },

@@ -1,8 +1,8 @@
 import { normalizeErrorMetadata, prettifyError } from '@nunjucks/error-formatter';
 import { collectStream, isKeyedObject } from '@nunjucks/lib';
 import { type Context, createContext, createFrame, type Frame } from '@nunjucks/runtime';
-import { createRuntimeWithContext } from './runtime-factory';
-import type { TemplateState } from './types';
+import { createRuntimeWithContext } from './runtime-factory.ts';
+import type { TemplateState } from './types.ts';
 
 export { createGetExported };
 

@@ -1,5 +1,15 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { mkdir, mkdtemp, open, rm, stat, symlink, utimes, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  open,
+  rename,
+  rm,
+  stat,
+  symlink,
+  utimes,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { isOk } from '@nunjucks/lib';
@@ -280,6 +290,13 @@ describe('descriptor-pinned read (TOCTOU closure)', () => {
     expect(result !== null && isOk(result) && result.value.src === 'identity probe').toBe(true);
   });
 
+  // WHY: residual gap, win32 — creating a file symlink requires Developer Mode or admin on
+  // Windows, so the realpath-containment rejection and the `swapped: true` fd-identity
+  // mismatch it can trigger are exercised end-to-end only on Linux CI. On win32 the
+  // identity test directly below covers the part Windows actually relies on: O_NOFOLLOW is
+  // undefined there (noFollowFlags falls back to a plain open), making the dev/ino check
+  // in readThroughHandle the only swap detector — its signal (distinct ino across a
+  // rename-replace) and the fd-pinned fresh read are asserted there.
   test.skipIf(process.platform === 'win32')(
     'a symlink inside the root pointing outside is rejected at validation',
     async () => {
@@ -294,6 +311,27 @@ describe('descriptor-pinned read (TOCTOU closure)', () => {
       expect(await loader.getSource('escape.njk')).toBeNull();
     }
   );
+
+  test('rename-replace installs a new (dev, ino) identity and the fd-pinned read serves the fresh bytes', async () => {
+    // WHY: win32-runnable swap-detector coverage — an atomic rename-replace (editor save)
+    // installs a NEW inode at the same path while dev stays the volume id; the loader's
+    // validation-stat vs fd-fstat identity compare keys on exactly this difference. With
+    // memo disabled, every getSource re-validates and reads through its own descriptor,
+    // so the replacement's bytes must surface without any mtime change being involved.
+    const dir = await makeDir();
+    const file = join(dir, 'swap.njk');
+    await writeFile(file, 'aaaa');
+    const before = await stat(file);
+    const replacement = join(dir, 'swap.replacement.njk');
+    await writeFile(replacement, 'bbbb');
+    await rename(replacement, file);
+    const after = await stat(file);
+    expect(after.ino).not.toBe(before.ino);
+
+    const loader = createFileSystemLoader(dir, { memo: false });
+    const result = await loader.getSource('swap.njk');
+    expect(result !== null && isOk(result) && result.value.src === 'bbbb').toBe(true);
+  });
 });
 
 describe('watch', () => {

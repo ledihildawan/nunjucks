@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import type { Frame } from '@nunjucks/runtime';
 import { createRenderFrame, createTemplateRenderer } from './template-renderer.ts';
 import { createFallbackEnv } from './template-source.ts';
-import type { RootRenderFunc, TemplateState } from './types.ts';
+import { createSourceTemplateState } from './template-test-helper.ts';
+import type { RootRenderFunc } from './types.ts';
 
 describe('createRenderFrame', () => {
   test('creates frame with topLevel true when no parent', () => {
@@ -19,18 +20,7 @@ describe('createRenderFrame', () => {
 
 describe('createTemplateRenderer', () => {
   test('throws when rootRenderFunc is missing', async () => {
-    const env = createFallbackEnv();
-    const getState = () => ({
-      env,
-      path: 'test.html',
-      includeChain: null,
-      status: 'source' as const,
-      tmplStr: 'Hello',
-      tmplProps: null,
-      blocks: {},
-      blockMeta: {},
-      rootRenderFunc: null,
-    });
+    const getState = () => createSourceTemplateState();
     const compiler = { safeCompile: async () => {} };
     const errorHandler = { enrichError: (e: Error) => e };
     const renderer = createTemplateRenderer({ getState, compiler, errorHandler });
@@ -39,31 +29,19 @@ describe('createTemplateRenderer', () => {
 
   test('safeCompile is called before render', async () => {
     let compileCalled = false;
-    const env = createFallbackEnv();
-    const getState = () => ({
-      env,
-      path: 'test.html',
-      includeChain: null,
-      status: 'source' as const,
-      tmplStr: 'Hello',
-      tmplProps: null,
-      blocks: {},
-      blockMeta: {},
-      rootRenderFunc: async function* () {
-        yield 'ok';
-      } as unknown as RootRenderFunc,
-    });
+    const getState = () =>
+      createSourceTemplateState({
+        rootRenderFunc: async function* () {
+          yield 'ok';
+        } as unknown as RootRenderFunc,
+      });
     const compiler = {
       safeCompile: async () => {
         compileCalled = true;
       },
     };
     const errorHandler = { enrichError: (e: Error) => e };
-    const renderer = createTemplateRenderer({
-      getState: getState as unknown as () => TemplateState,
-      compiler,
-      errorHandler,
-    });
+    const renderer = createTemplateRenderer({ getState, compiler, errorHandler });
     await renderer.render({});
     expect(compileCalled).toBe(true);
   });
@@ -74,26 +52,16 @@ describe('createTemplateRenderer', () => {
       renderingTemplates: Set<string>;
     };
     env.renderingTemplates = renderingTemplates;
-    const getState = () => ({
-      env,
-      path: 'test.html',
-      includeChain: null,
-      status: 'source' as const,
-      tmplStr: 'Hello',
-      tmplProps: null,
-      blocks: {},
-      blockMeta: {},
-      rootRenderFunc: async function* () {
-        yield 'ok';
-      } as unknown as RootRenderFunc,
-    });
+    const getState = () =>
+      createSourceTemplateState({
+        env,
+        rootRenderFunc: async function* () {
+          yield 'ok';
+        } as unknown as RootRenderFunc,
+      });
     const compiler = { safeCompile: async () => {} };
     const errorHandler = { enrichError: (e: Error) => e };
-    const renderer = createTemplateRenderer({
-      getState: getState as unknown as () => TemplateState,
-      compiler,
-      errorHandler,
-    });
+    const renderer = createTemplateRenderer({ getState, compiler, errorHandler });
     await expect(renderer.render({})).rejects.toThrow(/Circular include/);
   });
 
@@ -103,26 +71,16 @@ describe('createTemplateRenderer', () => {
       renderingTemplates: Set<string>;
     };
     env.renderingTemplates = renderingTemplates;
-    const getState = () => ({
-      env,
-      path: 'test.html',
-      includeChain: null,
-      status: 'source' as const,
-      tmplStr: 'Hello',
-      tmplProps: null,
-      blocks: {},
-      blockMeta: {},
-      rootRenderFunc: async function* () {
-        yield 'ok';
-      } as unknown as RootRenderFunc,
-    });
+    const getState = () =>
+      createSourceTemplateState({
+        env,
+        rootRenderFunc: async function* () {
+          yield 'ok';
+        } as unknown as RootRenderFunc,
+      });
     const compiler = { safeCompile: async () => {} };
     const errorHandler = { enrichError: (e: Error) => e };
-    const renderer = createTemplateRenderer({
-      getState: getState as unknown as () => TemplateState,
-      compiler,
-      errorHandler,
-    });
+    const renderer = createTemplateRenderer({ getState, compiler, errorHandler });
     await renderer.render({});
     expect(renderingTemplates.has('test.html')).toBe(false);
   });

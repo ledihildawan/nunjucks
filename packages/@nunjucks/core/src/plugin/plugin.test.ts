@@ -63,4 +63,22 @@ describe('foldPlugins', () => {
     expect(folded.globals.no).toBe(false);
     expect('nil' in folded.globals).toBe(false);
   });
+
+  test('returned folds are frozen — mutation fails and cannot poison later foldPlugins calls', () => {
+    // WHY: regression guard — the fold was previously a module-level shared object, so a
+    // consumer mutating folded.filters poisoned EVERY later foldPlugins result. Reflect.set
+    // returns false (instead of throwing like an assignment in strict mode) so the frozen
+    // surface itself is asserted, not just silence.
+    const empty = foldPlugins();
+    expect(Object.isFrozen(empty.filters)).toBe(true);
+    expect(Reflect.set(empty.filters, 'injected', () => 'poison')).toBe(false);
+
+    const merged = foldPlugins([{ name: 'p', filters: { keep: () => 'ok' } }]);
+    expect(Object.isFrozen(merged.filters)).toBe(true);
+    expect(Reflect.set(merged.filters, 'injected', () => 'poison')).toBe(false);
+
+    const next = foldPlugins([{ name: 'q', filters: { other: () => 'fine' } }]);
+    expect('injected' in next.filters).toBe(false);
+    expect(next.filters).not.toBe(merged.filters);
+  });
 });
