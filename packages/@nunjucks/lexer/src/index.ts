@@ -1,5 +1,5 @@
 export type { Delimiters } from './delimiters.ts';
-export { COMPOUND_ASSIGNMENT_OPS } from './delimiters.ts';
+export { COMPOUND_ASSIGNMENT_OP_SET, COMPOUND_ASSIGNMENT_OPS } from './delimiters.ts';
 export { createTokenizer } from './lexer.ts';
 export { isTestKeyword } from './predicate-definitions.ts';
 export type { Token } from './token-types.ts';

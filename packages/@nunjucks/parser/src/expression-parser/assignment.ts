@@ -2,7 +2,7 @@ import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Token } from '@nunjucks/lexer';
 import {
-  COMPOUND_ASSIGNMENT_OPS,
+  COMPOUND_ASSIGNMENT_OP_SET,
   TOKEN_COMMA,
   TOKEN_OPERATOR,
   TOKEN_PIPEFORWARD,
@@ -129,7 +129,7 @@ const handleCompoundAssignment = (
 
 const isCompoundAssignmentOp = (tok: Token): boolean =>
   (tok.type === TOKEN_OPERATOR && tok.value === '|>=') ||
-  COMPOUND_ASSIGNMENT_OPS.includes(String(tok.value));
+  COMPOUND_ASSIGNMENT_OP_SET.has(String(tok.value));
 
 const parseWalrusAssignment = (
   parserContext: ParserContext,

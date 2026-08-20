@@ -102,6 +102,11 @@ export const COMPOUND_ASSIGNMENT_OPS: readonly string[] = [
   '%=',
 ];
 
+// WHY: membership twin of the array above — the parser probes it per operator
+// token, so O(1) has() replaces the O(N) includes() scan (same pattern as
+// COMPLEX_OPERATOR_SET and the delimiter Sets).
+export const COMPOUND_ASSIGNMENT_OP_SET: ReadonlySet<string> = new Set(COMPOUND_ASSIGNMENT_OPS);
+
 /**
  * Fully resolved tag delimiters: plain forms plus the fixed whitespace-strip variants
  * (`{%-`, `-%}`, `{{-`, `-}}`) used to detect strip-flagged tags.

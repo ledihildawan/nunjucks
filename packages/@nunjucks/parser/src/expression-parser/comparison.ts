@@ -31,7 +31,18 @@ import { parseSignature } from '../node-parser/signature.ts';
 import { parseConcat } from './arithmetic.ts';
 import type { BinNodeFn } from './binary-helpers.ts';
 
-const COMPARE_OPS = ['==', '===', '!=', '!==', '<', '>', '<=', '>='];
+// WHY: module-level membership Set — the comparison loop probes it once per token,
+// so O(1) has() replaces the O(N) array scan (mirrors the lexer's delimiter Sets).
+const COMPARE_OP_SET: ReadonlySet<string> = new Set([
+  '==',
+  '===',
+  '!=',
+  '!==',
+  '<',
+  '>',
+  '<=',
+  '>=',
+]);
 
 const parseCompare = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const exprR = parseConcat(parserContext);
@@ -50,7 +61,7 @@ const parseCompare = (parserContext: ParserContext): Result<Node, TemplateError>
     }
     const tok = tokR.value;
 
-    if (!COMPARE_OPS.includes(String(tok.value))) {
+    if (!COMPARE_OP_SET.has(String(tok.value))) {
       pushToken(parserContext, tok);
       break;
     }
