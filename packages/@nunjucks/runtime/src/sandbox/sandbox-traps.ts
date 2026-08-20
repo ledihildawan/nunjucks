@@ -256,6 +256,9 @@ const proxyMemo = new WeakMap<object, unknown>();
  * accepts pre-resolved options so recursion does not re-resolve the config.
  * Returns a memoized proxy so multiple accesses to the same target yield the
  * same proxy instance, preserving `===` identity for callers that hold references.
+ *
+ * @param options - Value to proxy, sandbox toggle, and options.
+ * @returns A sandboxed proxy, wrapped function, or the original value.
  */
 const createSandboxedObject = ({
   value,

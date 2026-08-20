@@ -121,7 +121,13 @@ describe('Context', () => {
   test('getSuper throws when block not found', () => {
     const ctx = createContext({ env: fakeEnv });
     expect(() =>
-      ctx.getSuper({ envObj: fakeEnv, name: 'main', block: () => {}, frame: null, runtime: null })
+      ctx.getSuper({
+        environment: fakeEnv,
+        name: 'main',
+        block: () => {},
+        frame: null,
+        runtime: null,
+      })
     ).toThrow();
   });
 
@@ -129,7 +135,7 @@ describe('Context', () => {
     const fn = () => {};
     const ctx = createContext({ blocks: { main: fn }, env: fakeEnv });
     expect(() =>
-      ctx.getSuper({ envObj: fakeEnv, name: 'main', block: fn, frame: null, runtime: null })
+      ctx.getSuper({ environment: fakeEnv, name: 'main', block: fn, frame: null, runtime: null })
     ).toThrow('No super block available');
   });
 
@@ -139,7 +145,7 @@ describe('Context', () => {
 
     try {
       ctx.getSuper({
-        envObj: fakeEnv,
+        environment: fakeEnv,
         name: 'main',
         block: fn,
         frame: null,
@@ -166,7 +172,7 @@ describe('Context', () => {
     let ctx = createContext({ blocks: { main: childBlock }, env: fakeEnv });
     ctx = ctx.addBlock('main', parentBlock);
     const result = await ctx.getSuper({
-      envObj: fakeEnv,
+      environment: fakeEnv,
       name: 'main',
       block: childBlock,
       frame: null,
@@ -229,7 +235,7 @@ describe('prototype-escape guards (RCE pins)', () => {
     const ctx = createContext({ env: fakeEnv });
     expect(() =>
       ctx.getSuper({
-        envObj: fakeEnv,
+        environment: fakeEnv,
         name: 'constructor',
         block: () => {},
         frame: null,

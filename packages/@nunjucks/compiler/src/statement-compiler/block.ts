@@ -61,7 +61,7 @@ export const compileSuper = (
   // sloppy mode, so an undeclared assignment would leak an implicit global and let
   // concurrently-rendering templates clobber each other's super content at await points.
   compiler.emitLine(
-    `let ${id} = await context.getSuper({ envObj: env, name: ${JSON.stringify(name)}, block: b_${name}, frame, runtime, lineno: ${node.lineno}, colno: ${node.colno} });`
+    `let ${id} = await context.getSuper({ environment: env, name: ${JSON.stringify(name)}, block: b_${name}, frame, runtime, lineno: ${node.lineno}, colno: ${node.colno} });`
   );
   compiler.emitLine(`${id} = runtime.markSafe(${id});`);
   compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(id)}, value: ${id} });`);

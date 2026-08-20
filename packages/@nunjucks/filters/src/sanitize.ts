@@ -1,6 +1,5 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { ok, type Result } from '@nunjucks/lib';
-import type { SafeString } from '@nunjucks/runtime';
+import { ok, type Result, type SafeString } from '@nunjucks/lib';
 import type { DomPurifyConfig } from '@nunjucks/shared';
 import DomPurify from 'isomorphic-dompurify';
 import { createFilter, safeString } from './factory/index.ts';

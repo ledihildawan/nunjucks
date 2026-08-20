@@ -61,7 +61,13 @@ const resolveUndefined = (
   return 'undefined';
 };
 
-/** Resolves a not-found property sentinel, reporting the access path and its parent object. */
+/**
+ * Resolves a not-found property sentinel, reporting the access path and its parent object.
+ *
+ * @param value - The property-not-found sentinel with access path and parent info.
+ * @param options - Runtime context, position, undefined mode, and template info.
+ * @returns The string `'undefined'` or throws in strict mode.
+ */
 export const resolveUndefinedProperty = (
   value: PropertyNotFoundResult,
   options: ResolveUndefinedOptions
@@ -81,7 +87,13 @@ export const resolveUndefinedProperty = (
   });
 };
 
-/** Resolves a null-access sentinel, reporting the path that was dereferenced off null. */
+/**
+ * Resolves a null-access sentinel, reporting the path that was dereferenced off null.
+ *
+ * @param value - The null-access sentinel with access path and parent info.
+ * @param options - Runtime context, position, undefined mode, and template info.
+ * @returns The string `'undefined'` or throws in strict mode.
+ */
 export const resolveNullAccess = (
   value: NullAccessResult,
   options: ResolveUndefinedOptions
@@ -98,7 +110,12 @@ export const resolveNullAccess = (
   });
 };
 
-/** Resolves a raw nullish value, choosing the variable or value error definition by name presence. */
+/**
+ * Resolves a raw nullish value, choosing the variable or value error definition by name presence.
+ *
+ * @param options - Runtime context, position, undefined mode, and template info.
+ * @returns The string `'undefined'` or throws in strict mode.
+ */
 export const resolveUndefinedValue = (options: ResolveUndefinedOptions): 'undefined' => {
   const { varName } = options;
   const errorDef: ErrorDefinitionEntry = varName

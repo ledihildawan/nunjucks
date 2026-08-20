@@ -68,7 +68,7 @@ export function createComponent<A extends unknown[], R>({
       // upstream names like `new`/`first` were ignored while the registered names are
       // `newValue`/`indentfirst`). `keywords` is the envelope marker, exempt.
       const allowedNames = new Set([...argNames, ...kwargNames, 'keywords']);
-      const unknownKwarg = Object.keys(kwargs).find((key) => !allowedNames.has(key));
+      const unknownKwarg = Object.entries(kwargs).find(([key]) => !allowedNames.has(key))?.[0];
       if (unknownKwarg !== undefined) {
         throwUnknownKwargError({ name: unknownKwarg, accepted: [...argNames, ...kwargNames] });
       }

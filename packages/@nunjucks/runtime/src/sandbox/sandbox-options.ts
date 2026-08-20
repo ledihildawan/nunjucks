@@ -26,6 +26,11 @@ type ResolvedSandboxOptions = {
 // (blocklistMode: false), not a "no allowlist" pass-through. Blocklist mode never consults
 // the allowlist, so the empty Set default is inert there. This keeps `sandboxMode: 'allowlist'`
 // without entries fail-closed at the resolution boundary (config validation stays permissive).
+/**
+ * Resolves sandbox options with fail-closed defaults.
+ * @param options - Optional sandbox configuration.
+ * @returns Resolved options with required fields and O(1) Set-based lookups.
+ */
 const resolveSandboxOptions = (options: SandboxOptions = {}): ResolvedSandboxOptions => ({
   allowlist: new Set(options.allowlist ?? []),
   blocklistMode: options.blocklistMode ?? true,

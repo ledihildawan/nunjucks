@@ -94,6 +94,11 @@ export interface SuppressValueOptions extends LocationOptions {
  * inputs to `''`, applies context-appropriate escaping under autoescape
  * (including the script-context JSON and attribute-escaping rules for
  * `SafeString`s), and passes `SafeString`s through for body output.
+ *
+ * @param this - Runtime context carrying template name and phase.
+ * @param value - The value to suppress/escape.
+ * @param options - Autoescape flag, target HTML context, and source position.
+ * @returns The suppressed/escaped value, `''` for nullish, or a Promise for async values.
  */
 export function suppressValue(
   this: unknown,

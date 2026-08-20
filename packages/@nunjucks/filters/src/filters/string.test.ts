@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { getOrElse, isErr, isOk } from '@nunjucks/lib';
-import { createKeywordArgs, isSafeString } from '@nunjucks/runtime';
+import { getOrElse, isErr, isOk, isSafeString } from '@nunjucks/lib';
+import { createKeywordArgs } from '@nunjucks/runtime';
 import {
   capitalize,
   // biome-ignore lint/suspicious/noShadowRestrictedNames: `escape` is the public name of this Nunjucks filter; renaming it would break every template that uses it.

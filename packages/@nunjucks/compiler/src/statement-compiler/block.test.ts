@@ -75,7 +75,7 @@ describe('compileSuper', () => {
     });
     expect(emitted[0]).toBe('lineno = 2; colno = 4;');
     expect(emitted[1]).toContain(
-      'context.getSuper({ envObj: env, name: "content", block: b_content, frame, runtime, lineno: 2, colno: 4 })'
+      'context.getSuper({ environment: env, name: "content", block: b_content, frame, runtime, lineno: 2, colno: 4 })'
     );
     expect(emitted[2]).toContain('runtime.markSafe(super)');
     expect(setCalls).toEqual([['super', 'super']]);

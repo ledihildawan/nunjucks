@@ -25,6 +25,12 @@ export interface EnsureDefinedOptions {
  * (not-found callables, null-access objects) and raw nullish values through
  * the mode's rule — `'undefined'` string, warning, or throw — and passes
  * defined values through untouched.
+ *
+ * @param this - Runtime context carrying template name and phase.
+ * @param value - The value to resolve.
+ * @param options - Source position, variable name, and undefined mode.
+ * @returns The resolved value, `'undefined'` string, or throws in strict mode.
+ * @throws {Error} In strict mode when value is nullish or a miss sentinel.
  */
 export function ensureDefined(
   this: unknown,

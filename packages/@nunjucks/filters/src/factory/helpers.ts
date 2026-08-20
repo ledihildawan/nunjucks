@@ -1,7 +1,8 @@
 import type { ErrorDefinitionEntry, TemplateError } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
 import { err, escapeHtml, MATCH_ANY_RE, normalize, ok, type Result } from '@nunjucks/lib';
-import { copySafeness, getLogContext, isSafeString, markSafe } from '@nunjucks/runtime';
+import { copySafeness, isSafeString, markSafe } from '@nunjucks/lib';
+import { getLogContext } from '@nunjucks/runtime';
 import { isNonNullish } from 'remeda';
 import type { FilterContext, SafeString } from './types.ts';
 

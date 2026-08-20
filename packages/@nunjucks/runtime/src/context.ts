@@ -42,7 +42,7 @@ interface ContextMetadata {
 type BlockFn = (...args: unknown[]) => unknown;
 
 interface GetSuperOptions {
-  envObj: unknown;
+  environment: unknown;
   name: string;
   block: BlockFn;
   frame: unknown;
@@ -97,6 +97,10 @@ interface ContextState {
 }
 
 /** Canonical bare `Env`: `dev: false`, `autoescape: true`, `undefined: 'default'`. */
+/**
+ * Creates the canonical bare Env with safe defaults: dev=false, autoescape=true, undefined='default'.
+ * @returns A default environment configuration.
+ */
 const createDefaultEnv = (): Env => ({
   opts: { dev: false, autoescape: true, undefined: 'default' },
   getFilter: () => null,
@@ -199,7 +203,7 @@ const createContextFromState = (state: ContextState): Context => {
     },
 
     getSuper({
-      envObj,
+      environment,
       name,
       block,
       frame,
@@ -219,7 +223,10 @@ const createContextFromState = (state: ContextState): Context => {
       }
       // WHY: Option C — block functions are async generators; drain the super block into a string so it can be markSafe'd and used as a value. BlockFn is typed `=> unknown` (loose); the runtime guarantee is AsyncGenerator, hence the narrowing cast.
       return collectString(
-        (parentBlock as BlockFn)(envObj, context, frame, runtime) as AsyncGenerator<string, unknown>
+        (parentBlock as BlockFn)(environment, context, frame, runtime) as AsyncGenerator<
+          string,
+          unknown
+        >
       );
     },
 

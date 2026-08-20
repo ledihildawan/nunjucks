@@ -28,6 +28,9 @@ interface SandboxedContextInput {
  * Wraps the render context object in a top-level sandboxed Proxy — passing the
  * value through untouched when sandboxing is off or the context is not an
  * object — so template variable reads are policed from the first access.
+ *
+ * @param options - Context value, sandbox toggle, and sandbox options.
+ * @returns The original context, or a sandboxed Proxy if enabled.
  */
 const createSandboxedContext = ({
   context,
@@ -133,6 +136,10 @@ interface WrapMemberAccessInput {
  * null targets and missing own properties, wraps functions with blocking, and
  * recursively proxies object values. Sandboxing-off falls back to plain
  * lookup semantics with the same RCE guard.
+ *
+ * @param options - Target, key, sandbox toggle, options, and parent display name.
+ * @returns The accessed value, a miss sentinel, or a sandboxed proxy.
+ * @throws {Error} When a blocked or non-allowed key is accessed.
  */
 const wrapMemberAccess = ({
   target,

@@ -32,6 +32,9 @@ const isErrResult = (value: unknown): value is { ok: false; error: unknown } =>
  * Invokes a user-supplied filter and settles whatever it returns — values,
  * thenables, or `Result` envelopes — into a single `Result`, confining any
  * thrown value to the error channel.
+ *
+ * @param options - Environment, filter name, position, context, and arguments.
+ * @returns A Promise resolving to a `Result` with the filter's output or error.
  */
 const runFilter = async (options: RunFilterOptions): Promise<Result<unknown, unknown>> => {
   const { env, name, lineno, colno, context } = options;

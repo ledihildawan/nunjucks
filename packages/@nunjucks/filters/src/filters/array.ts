@@ -1,7 +1,6 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { createSortComparator, err, ok, type Result } from '@nunjucks/lib';
-import { isSafeString } from '@nunjucks/runtime';
+import { createSortComparator, err, isSafeString, ok, type Result } from '@nunjucks/lib';
 import { isPlainObject, keys, range, sum as sumValues } from 'remeda';
 import {
   createFilter,

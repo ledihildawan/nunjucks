@@ -13,7 +13,13 @@ interface SlotContext {
   has: (name: string) => boolean;
 }
 
-/** Resolves slot content by name, preferring provided slots over fallbacks. */
+/**
+ * Resolves slot content by name, preferring provided slots over fallbacks.
+ *
+ * @param fallbacks - Default slot functions keyed by name.
+ * @param provided - Optional slot functions that override fallbacks.
+ * @returns A callable SlotContext with a `has` method to check slot presence.
+ */
 const createSlotContext = (
   fallbacks: Record<string, SlotFn>,
   provided?: Record<string, SlotFn>

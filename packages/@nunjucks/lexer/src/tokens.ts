@@ -18,6 +18,9 @@ interface CreateTokenOptions {
 /**
  * Creates a `Token` at the given position, setting `stripLeft`/`stripRight` only when
  * the corresponding strip flag is truthy so absent flags stay off the token.
+ * WHY: the `as Token` cast is sound because the return type is a token-shaped object
+ * that TS cannot verify against the Token discriminated union due to the indexed
+ * mapped type limitation — all callers pass correctly-typed {type, value} pairs.
  */
 export const createToken = ({ type, value, lineno, colno, strip }: CreateTokenOptions): Token =>
   ({

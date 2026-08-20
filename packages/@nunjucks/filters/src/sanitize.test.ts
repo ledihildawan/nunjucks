@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { getOrElse, isOk } from '@nunjucks/lib';
-import { isSafeString } from '@nunjucks/runtime';
+import { getOrElse, isOk, isSafeString } from '@nunjucks/lib';
 import { sanitize } from './sanitize.ts';
 
 describe('sanitize filter', () => {

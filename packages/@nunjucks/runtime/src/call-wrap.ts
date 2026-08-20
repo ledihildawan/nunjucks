@@ -24,6 +24,13 @@ export interface CallWrapOptions {
  * reserved context names (`super`), null receivers (raw values or null-access
  * sentinels), and non-function targets; `Reflect.apply` keeps null-prototype
  * callables invocable, and `this` is an unknown pass-through for enrichment.
+ *
+ * @param this - Runtime context carrying template name and phase.
+ * @param target - The object to invoke the method on.
+ * @param name - The method name to invoke.
+ * @param options - Display name, context, args, and source position.
+ * @returns The result of the function call.
+ * @throws {Error} When target is not a function, is null/undefined, or name is reserved.
  */
 function callWrap(this: unknown, target: unknown, name: string, options: CallWrapOptions): unknown {
   const { displayName, context, args, lineno, colno } = options;
@@ -76,6 +83,11 @@ export interface InOperatorOptions {
  * Implements template `in` checks: membership for arrays and strings and
  * own-property presence for plain objects — mirroring `memberLookup`'s
  * not-found semantics instead of the JS `in` operator's prototype-chain walk.
+ *
+ * @param this - Runtime context carrying template name and phase.
+ * @param options - The key to check, the container value, and source position.
+ * @returns `true` if the key is found in the container.
+ * @throws {Error} When value is not an array, string, or plain object.
  */
 function inOperator(
   this: unknown,

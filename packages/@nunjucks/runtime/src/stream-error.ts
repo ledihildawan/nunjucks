@@ -14,13 +14,28 @@ interface StreamErrorSentinel {
   readonly colno: number;
 }
 
-/** Narrows to the stream-error sentinel (`__nunjucks_stream_error__`). */
+/**
+ * Narrows to the stream-error sentinel (`__nunjucks_stream_error__`).
+ *
+ * @param value - The value to check.
+ * @returns `true` if the value is a stream error sentinel.
+ */
 const isStreamErrorSentinel = (value: unknown): value is StreamErrorSentinel =>
   isKeyedObject(value) &&
   (value as { __nunjucks_stream_error__?: unknown }).__nunjucks_stream_error__ === true;
 
-// WHY: streamError is the per-expression error recovery for streaming mode. Called from compiled template code's per-expression try/catch, it enriches the error (via handleError) but does NOT throw — instead returning a sentinel that createRenderStream detects and formats as an inline marker. The generator then continues to the next expression. handleError always throws (return type: never), so the catch is the only exit path.
-// WHY: fatal codes (security/structural/system — see FATAL_STREAM_CODES) re-throw instead of becoming a sentinel. The throw escapes the compiled catch block, propagates up the async generator, and rides the existing mid-stream fatal path (createRenderStream catch → wrapWithLog → pipe-stream mid-stream handler). Recoverable codes still yield an inline marker and let the page continue.
+/**
+ * Per-expression error recovery for streaming renders. Enriches the error via
+ * handleError but does NOT throw — returns a sentinel that createRenderStream
+ * detects and formats as an inline marker. Fatal codes (security/structural/system)
+ * re-throw and abort the stream; recoverable codes yield an inline marker.
+ *
+ * @param this - Runtime context carrying template name and phase.
+ * @param error - The error caught during expression evaluation.
+ * @param options - Source line and column position.
+ * @returns A stream error sentinel for recoverable errors.
+ * @throws {Error} For fatal error codes (security/structural/system).
+ */
 const streamError = function (
   this: unknown,
   error: unknown,

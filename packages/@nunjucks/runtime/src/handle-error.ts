@@ -12,6 +12,14 @@ interface HandleErrorLocation {
 }
 
 // WHY: handleError is the single re-throw funnel for errors raised by compiled template code; it is wired into generated code and must propagate via throw to the imperative-shell boundary that owns error reporting.
+/**
+ * The single re-throw funnel for errors raised by compiled template code.
+ * @param this - Runtime context for error enrichment.
+ * @param error - The error to handle and re-throw with catalog enrichment.
+ * @param location - Source position ({ lineno, colno }).
+ * @returns Never (always throws).
+ * @throws Always throws an enriched TemplateError.
+ */
 function handleError(this: unknown, error: unknown, { lineno, colno }: HandleErrorLocation): never {
   const ctx = getLogContext(this);
   const metadata = normalizeErrorMetadata(error, {
