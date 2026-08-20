@@ -49,8 +49,8 @@ const DEFAULT_CAUSES = [
   'Compare with the **documentation** examples',
 ];
 
-const inferCauses = (msg: string): string[] => {
-  const lower = msg.toLowerCase();
+const inferCauses = (message: string): string[] => {
+  const lower = message.toLowerCase();
   return find(CAUSE_PATTERNS, (pattern) => pattern.check(lower))?.causes ?? DEFAULT_CAUSES;
 };
 
@@ -72,8 +72,8 @@ const FIX_PATTERNS: Array<{ check: (lower: string) => boolean; fix: string }> = 
 
 const DEFAULT_FIX = 'Check template syntax around the error location';
 
-const inferFix = (msg: string): string => {
-  const lower = msg.toLowerCase();
+const inferFix = (message: string): string => {
+  const lower = message.toLowerCase();
   return find(FIX_PATTERNS, (pattern) => pattern.check(lower))?.fix ?? DEFAULT_FIX;
 };
 

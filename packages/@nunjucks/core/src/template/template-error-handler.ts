@@ -79,15 +79,15 @@ const extractFrameDetails = ({
   const errColno = defaultTo(e.colno, 0);
   const finalColno = resolveColno(sourceColno, errColno);
   const templateLocation = `${currentPath}:${sourceLineno}:${finalColno}`;
-  const msg = buildErrorMessage({ currentPath, sourceLineno, finalColno, e });
+  const message = buildErrorMessage({ currentPath, sourceLineno, finalColno, e });
   const renderLine = `at ${e.getterName ?? 'root'} (${templateLocation})`;
-  const newError = Object.assign(new Error(msg), {
+  const newError = Object.assign(new Error(message), {
     name: e.name ?? 'Template render error',
     lineno: sourceLineno,
     colno: finalColno,
     lineBase: 'zero',
     includeChain: e.includeChain ?? null,
-    stack: `${msg}\n    ${renderLine}\n    at Environment.render`,
+    stack: `${message}\n    ${renderLine}\n    at Environment.render`,
   }) as ErrorWithLineInfo;
   return newError;
 };

@@ -12,11 +12,11 @@ describe('buildErrorSections', () => {
   test('returns all required sections', () => {
     const error = createFakeError();
     const result = buildErrorSections({ error });
-    expect(result.header).toBeDefined();
-    expect(result.body).toBeDefined();
-    expect(result.footer).toBeDefined();
-    expect(result.wrapped).toBeDefined();
-    expect(result.message).toBeDefined();
+    for (const section of [result.header, result.body, result.footer, result.wrapped]) {
+      expect(typeof section).toBe('string');
+      expect(section.length).toBeGreaterThan(0);
+    }
+    expect(result.message).toBe('Test error message');
   });
 
   test('returns error severity by default', () => {
@@ -36,7 +36,7 @@ describe('buildErrorSections', () => {
   test('uses templatePath from options when provided', () => {
     const error = createFakeError();
     const result = buildErrorSections({ error, templatePath: 'test.html' });
-    expect(result.displayPath).toBeDefined();
+    expect(result.displayPath).toContain('test.html');
   });
 
   test('canLinkLocation is true for absolute file paths', () => {

@@ -9,7 +9,7 @@
   "dependencies": {
     "remeda": "^2.39.0"
   },
-  "description": "Domain-agnostic technical utilities - pure algorithms, I/O wrappers, and data formatters with zero business rules.",
+  "description": "Domain-agnostic technical utilities - pure algorithms, type guards, and data formatters with zero business rules and zero I/O.",
   "private": true,
   "license": "BSD-2-Clause",
   "keywords": [

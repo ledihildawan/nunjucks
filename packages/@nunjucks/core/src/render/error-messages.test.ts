@@ -94,7 +94,10 @@ describe('error - causes in code from registry', () => {
 
   test('parser errors have causes', async () => {
     const err = (await renderTemplate('{% if foo %}', {}).catch((e) => e)) as TemplateError;
+    const text = formatError(err, { format: 'text', verbosity: 'full' });
     expect(err.code).toBeTruthy();
+    expect(err.causes?.length ?? 0).toBeGreaterThan(0);
+    expect(text).toContain('Possible Causes:');
   });
 
   test('syntax error produces humanized output', async () => {
