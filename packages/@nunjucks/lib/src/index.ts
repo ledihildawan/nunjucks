@@ -30,6 +30,8 @@ export {
   escapeStyle,
   escapeUnquotedAttribute,
 } from './escape.ts';
+export type { HtmlContext } from './escape-context.ts';
+export { createHtmlContextTracker, escapeForContext } from './escape-context.ts';
 export { collectBackward, collectForward, normalizeIndex } from './slice.ts';
 export { compareValues, createSortComparator } from './compare.ts';
 export { getAttrGetter } from './attribute-getter.ts';
@@ -42,4 +44,10 @@ export { toWebReadableStream } from './web-readable-stream.ts';
 export { coalesceStream } from './stream-coalesce.ts';
 export { basename } from './path-basename.ts';
 export { isDigit } from './is-digit.ts';
-export type { TemplateLoader, TemplateLoaderSource } from './loader-types.ts';
+export {
+  copySafeness,
+  createSafeString,
+  isSafeString,
+  markSafe,
+  type SafeString,
+} from './safe-string.ts';

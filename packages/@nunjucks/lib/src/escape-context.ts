@@ -4,9 +4,12 @@ import {
   escapeScriptString,
   escapeStyle,
   escapeUnquotedAttribute,
-} from '@nunjucks/lib';
+} from './escape.ts';
 
-/** The output context a value is being interpolated into, governing its escaper. */
+/**
+ * The output context a value is being interpolated into, governing its escaper.
+ * @type {'html' | 'attribute' | 'unquoted-attribute' | 'script' | 'style' | 'comment'}
+ */
 type HtmlContext = 'html' | 'attribute' | 'unquoted-attribute' | 'script' | 'style' | 'comment';
 
 /**
@@ -31,18 +34,19 @@ const escapeForContext = (str: string, context: HtmlContext): string => {
     case 'comment':
       // WHY: both HTML-spec abrupt-close sequences terminate comments — `-->` and the
       // legacy `--!>`; escaping only the first leaves the second as a comment breakout.
+      // The rest of the payload stays verbatim: `<`/`&` are inert inside comment bodies.
       return str.replaceAll('-->', '--&gt;').replaceAll('--!>', '--!&gt;');
     default:
       return escapeHtml(str);
   }
 };
 
-interface ScriptStyleScan {
-  context: HtmlContext;
-  lastOpen: number;
-  lastClose: number;
-}
-
+const SCRIPT_OPEN_RE = /<script[\s>]/gi;
+const SCRIPT_CLOSE_RE = /<\/script\s*>/gi;
+const STYLE_OPEN_RE = /<style[\s>]/gi;
+const STYLE_CLOSE_RE = /<\/style\s*>/gi;
+const COMMENT_OPEN_RE = /<!--/g;
+const COMMENT_CLOSE_RE = /-->/g;
 const UNCLOSED_OPEN_TAG_RE = /<[a-zA-Z][a-zA-Z0-9]*(?:\s+[^>]*)?$/i;
 // WHY: global — the LAST `=` in the open tag governs the pending interpolation, not
 // the first. With `<a class="btn" href={{v}}` the first `=` belongs to `class`;
@@ -55,57 +59,94 @@ const UNCLOSED_OPEN_TAG_RE = /<[a-zA-Z][a-zA-Z0-9]*(?:\s+[^>]*)?$/i;
 const ATTRIBUTE_EQUALS_RE = /[=][\s]*/g;
 const QUOTE_CHARS = ['"', "'", '`'];
 
+// WHY: last-match lookup runs a bounded exec loop over the full source instead of
+// slicing the prefix and materializing every match ([...matchAll]) only to keep the
+// last one — zero string copies, zero intermediate arrays per interpolation site.
+// Module-level /g regexes with an explicit lastIndex reset keep the scan reusable.
 const lastMatch = (re: RegExp, text: string): RegExpExecArray | undefined => {
-  const matches = [...text.matchAll(re)];
-  return matches[matches.length - 1];
+  re.lastIndex = 0;
+  let found: RegExpExecArray | undefined;
+  for (let match = re.exec(text); match !== null; match = re.exec(text)) {
+    found = match;
+  }
+  return found;
 };
 
-const lastMatchEnd = (re: RegExp, text: string): number => {
-  const matchResult = lastMatch(re, text);
-  return matchResult ? matchResult.index + (matchResult[0]?.length ?? 0) : -1;
+const lastMatchEndBefore = (re: RegExp, source: string, bound: number): number => {
+  re.lastIndex = 0;
+  let last = -1;
+  let match = re.exec(source);
+  while (match !== null) {
+    const end = match.index + match[0].length;
+    // WHY: /g matches advance monotonically — once one ends past the bound, no later
+    // match can precede it, so the walk stops early.
+    if (end > bound) {
+      break;
+    }
+    last = end;
+    match = re.exec(source);
+  }
+  return last;
 };
 
-const lastMatchStart = (re: RegExp, text: string): number => {
-  const matchResult = lastMatch(re, text);
-  return matchResult ? matchResult.index : -1;
+const lastMatchStartBefore = (re: RegExp, source: string, bound: number): number => {
+  re.lastIndex = 0;
+  let last = -1;
+  let match = re.exec(source);
+  while (match !== null) {
+    const end = match.index + match[0].length;
+    if (end > bound) {
+      break;
+    }
+    last = match.index;
+    match = re.exec(source);
+  }
+  return last;
 };
 
-const scanScriptStyleContext = (before: string): ScriptStyleScan => {
-  const scriptOpen = lastMatchEnd(/<script[\s>]/gi, before);
-  const scriptClose = lastMatchStart(/<\/script\s*>/gi, before);
-  const styleOpen = lastMatchEnd(/<style[\s>]/gi, before);
-  const styleClose = lastMatchStart(/<\/style\s*>/gi, before);
-  const commentOpen = lastMatchEnd(/<!--/g, before);
-  const commentClose = lastMatchStart(/-->/g, before);
+const scanScriptStyleContext = (source: string, bound: number): HtmlContext => {
+  const scriptOpen = lastMatchEndBefore(SCRIPT_OPEN_RE, source, bound);
+  const scriptClose = lastMatchStartBefore(SCRIPT_CLOSE_RE, source, bound);
+  const styleOpen = lastMatchEndBefore(STYLE_OPEN_RE, source, bound);
+  const styleClose = lastMatchStartBefore(STYLE_CLOSE_RE, source, bound);
+  const commentOpen = lastMatchEndBefore(COMMENT_OPEN_RE, source, bound);
+  const commentClose = lastMatchStartBefore(COMMENT_CLOSE_RE, source, bound);
 
   if (scriptOpen > scriptClose && scriptOpen > styleOpen && scriptOpen > styleClose) {
-    return { context: 'script', lastOpen: scriptOpen, lastClose: scriptClose };
+    return 'script';
   }
   if (styleOpen > scriptClose && styleOpen > styleClose && styleOpen >= scriptOpen) {
-    return { context: 'style', lastOpen: styleOpen, lastClose: styleClose };
+    return 'style';
   }
   // WHY: an unclosed `<!--` governs interpolations inside comment bodies — they need
   // the comment escaper (both abrupt-close sequences) instead of plain escapeHtml.
   if (commentOpen > commentClose) {
-    return { context: 'comment', lastOpen: commentOpen, lastClose: commentClose };
+    return 'comment';
   }
-  return { context: 'html', lastOpen: -1, lastClose: -1 };
+  return 'html';
 };
 
 const detectAttributeContext = (
-  before: string,
-  scriptStyleResult: ScriptStyleScan
+  source: string,
+  bound: number,
+  scriptStyleContext: HtmlContext
 ): HtmlContext => {
-  if (scriptStyleResult.context !== 'html') {
-    return scriptStyleResult.context;
+  if (scriptStyleContext !== 'html') {
+    return scriptStyleContext;
   }
 
-  const openTagMatch = UNCLOSED_OPEN_TAG_RE.exec(before);
+  // WHY: an open tag cannot contain `>`, so the pending open tag always starts after
+  // the last `>` before the interpolation — scanning only that window reproduces the
+  // previous whole-prefix anchored scan at a fraction of the cost.
+  const windowStart = source.lastIndexOf('>', bound - 1) + 1;
+  const window = source.slice(windowStart, bound);
+
+  const openTagMatch = UNCLOSED_OPEN_TAG_RE.exec(window);
   if (!openTagMatch) {
     return 'html';
   }
 
-  const openTagContent = before.slice(openTagMatch.index);
+  const openTagContent = window.slice(openTagMatch.index);
 
   if (!openTagContent.includes('=')) {
     return 'html';
@@ -135,8 +176,8 @@ const detectAttributeContext = (
   return 'html';
 };
 
-const contextBefore = (before: string): HtmlContext =>
-  detectAttributeContext(before, scanScriptStyleContext(before));
+const contextBefore = (source: string, bound: number): HtmlContext =>
+  detectAttributeContext(source, bound, scanScriptStyleContext(source, bound));
 
 interface HtmlContextTracker {
   getContextAtLineCol: (lineno: number, colno: number) => HtmlContext;
@@ -145,9 +186,11 @@ interface HtmlContextTracker {
 
 /**
  * Creates a tracker that classifies the `HtmlContext` at any source offset by
- * scanning only the prefix before it — script/style/comment nesting plus the
+ * scanning only up to that offset — script/style/comment nesting plus the
  * pending open tag's attribute position — so escaping matches the spot the
  * interpolation lands in.
+ * @param source - The template source string to analyze
+ * @returns An HtmlContextTracker with methods to query context at positions
  */
 const createHtmlContextTracker = (source: string): HtmlContextTracker => {
   const lines = source.split('\n');
@@ -168,16 +211,10 @@ const createHtmlContextTracker = (source: string): HtmlContextTracker => {
   };
 
   return {
-    getContextAtLineCol: (line, col) => contextBefore(source.slice(0, offsetOf(line, col))),
-    getContextAt: (at) => contextBefore(source.slice(0, at)),
+    getContextAtLineCol: (line, col) => contextBefore(source, offsetOf(line, col)),
+    getContextAt: (at) => contextBefore(source, at),
   };
 };
 
 export type { HtmlContext };
-export {
-  createHtmlContextTracker,
-  escapeAttribute,
-  escapeForContext,
-  escapeScriptString,
-  escapeStyle,
-};
+export { createHtmlContextTracker, escapeForContext };

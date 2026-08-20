@@ -1,7 +1,7 @@
 import type { TemplateError, TemplateWarning } from '@nunjucks/error-formatter';
 import { injectWarningsScript } from '@nunjucks/error-renderer';
-import { err, isErr, ok, type Result, type TemplateLoader } from '@nunjucks/lib';
-import { createFileSystemLoader } from '@nunjucks/loaders';
+import { err, isErr, ok, type Result } from '@nunjucks/lib';
+import { createFileSystemLoader, type TemplateLoader } from '@nunjucks/loaders';
 import { createFrame, type ExecuteConfig, execute } from '@nunjucks/runtime';
 import { getDefaultConfig } from '../config/global.ts';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';

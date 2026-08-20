@@ -1,11 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  createHtmlContextTracker,
-  escapeAttribute,
-  escapeForContext,
-  escapeScriptString,
-  escapeStyle,
-} from './escape-context.ts';
+import { escapeAttribute, escapeScriptString, escapeStyle } from './escape.ts';
+import { createHtmlContextTracker, escapeForContext } from './escape-context.ts';
 
 describe('escapeForContext', () => {
   test('html context escapes & < > " \' \\', () => {
@@ -124,5 +119,26 @@ describe('createHtmlContextTracker', () => {
     const tracker = createHtmlContextTracker(src);
     const offset = src.indexOf('VALUE');
     expect(tracker.getContextAt(offset)).toBe(tracker.getContextAtLineCol(0, offset));
+  });
+
+  test('script context ends at the closing tag even when later style opens', () => {
+    const src = '<script>USERVAL</script><style>x</style>';
+    const tracker = createHtmlContextTracker(src);
+    expect(tracker.getContextAt(src.indexOf('USERVAL'))).toBe('script');
+    expect(tracker.getContextAt(src.indexOf('x</style>'))).toBe('style');
+  });
+
+  test('interpolation before any tag is html', () => {
+    const src = 'USERVAL <div></div>';
+    const tracker = createHtmlContextTracker(src);
+    expect(tracker.getContextAt(src.indexOf('USERVAL'))).toBe('html');
+  });
+
+  test('unquoted detection survives a pending tag containing a quoted earlier value', () => {
+    // WHY: pins the last-`=` selection rule from the ATTRIBUTE_EQUALS_RE WHY note —
+    // `title="x=y"` must not flip a later bare `=` into a quoted context.
+    const src = '<a title="x=y" href={{ USERVAL }}>';
+    const tracker = createHtmlContextTracker(src);
+    expect(tracker.getContextAt(src.indexOf('USERVAL'))).toBe('unquoted-attribute');
   });
 });

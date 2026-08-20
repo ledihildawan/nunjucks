@@ -1,9 +1,10 @@
 import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
-import { err, isErr, type Result, type TemplateLoader, type TemplateLoaderSource } from '@nunjucks/lib';
+import { err, isErr, type Result } from '@nunjucks/lib';
+import type { TemplateLoader, TemplateLoaderSource } from './loader-contract.ts';
 
-export type { TemplateLoader, TemplateLoaderSource } from '@nunjucks/lib';
+export type { TemplateLoader, TemplateLoaderSource } from './loader-contract.ts';
 
 interface ResolveChainInput {
   loaders: readonly TemplateLoader[];

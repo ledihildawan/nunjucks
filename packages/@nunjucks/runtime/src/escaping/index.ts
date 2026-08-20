@@ -1,2 +1,2 @@
-export type { HtmlContext } from './escape-context.ts';
-export { createHtmlContextTracker, escapeForContext } from './escape-context.ts';
+export type { HtmlContext } from '@nunjucks/lib';
+export { createHtmlContextTracker, escapeForContext } from '@nunjucks/lib';
