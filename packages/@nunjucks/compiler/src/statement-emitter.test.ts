@@ -53,21 +53,26 @@ describe('emitCompilerFuncBegin', () => {
 });
 
 describe('emitCompilerFuncEnd', () => {
-  test('emits return + catch + closing brace and nulls the buffer', () => {
+  test('emits catch + closing brace and nulls the buffer', () => {
     const c = makeScope();
     c.scopeStack.push('})');
     emitCompilerFuncEnd(c as never);
     const joined = c.emitted.join('');
-    expect(joined).toContain('return output;');
+    expect(joined).toContain('});');
     expect(joined).toContain('} catch (e) {');
     expect(joined).toContain('throw runtime.handleError');
     expect(c.buffer).toBeNull();
   });
 
-  test('skips return when noReturn is set', () => {
+  test('never emits a pending-buffer return even when buffer is non-null', () => {
+    // WHY: regression — the epilogue used to emit `return <buffer>` when buffer was
+    // set, but emitCompilerFuncBegin always nulls it, so the branch was dead; a stray
+    // buffer must not reintroduce a return into an async generator epilogue.
     const c = makeScope();
-    emitCompilerFuncEnd(c as never, true);
-    expect(c.emitted.join('')).not.toContain('return output;');
+    c.buffer = 'stray';
+    emitCompilerFuncEnd(c as never);
+    expect(c.emitted.join('')).not.toContain('return stray;');
+    expect(c.buffer).toBeNull();
   });
 });
 

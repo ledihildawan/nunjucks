@@ -95,6 +95,82 @@ describe('transform (liftSuper)', () => {
     expect(transformed.children.length).toBeGreaterThanOrEqual(2);
   });
 
+  test('lifts super() in a nested inner block even when the outer block also calls super()', () => {
+    // WHY: regression — walk short-circuits a replaced subtree, so the outer block's
+    // rewrite used to hide the inner block from the visitor and its super() failed at
+    // render time; the walk must resume inside the replacement.
+    const outerSuperCall = funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'super'), args: [] });
+    const innerSuperCall = funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'super'), args: [] });
+    const ast = root(ZERO_LOC, [
+      block(ZERO_LOC, {
+        name: 'outer',
+        body: nodeList(ZERO_LOC, [
+          templateData(ZERO_LOC, 'outer body'),
+          outerSuperCall,
+          block(ZERO_LOC, {
+            name: 'inner',
+            body: nodeList(ZERO_LOC, [templateData(ZERO_LOC, 'inner body'), innerSuperCall]),
+          }),
+        ]),
+      }),
+    ]) as Node & { children: Node[] };
+    const transformed = transform(ast);
+    const lifted = findAll(transformed, 'super');
+    expect(lifted).toHaveLength(2);
+    const blockNames = lifted.map((n) => (n as { blockName?: string }).blockName).sort();
+    expect(blockNames).toEqual(['inner', 'outer']);
+  });
+
+  test('lifts super() at every level of 3-deep nested blocks', () => {
+    const superCall = () => funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'super'), args: [] });
+    const ast = root(ZERO_LOC, [
+      block(ZERO_LOC, {
+        name: 'outer',
+        body: nodeList(ZERO_LOC, [
+          templateData(ZERO_LOC, 'o:'),
+          superCall(),
+          block(ZERO_LOC, {
+            name: 'middle',
+            body: nodeList(ZERO_LOC, [
+              templateData(ZERO_LOC, 'm:'),
+              superCall(),
+              block(ZERO_LOC, {
+                name: 'inner',
+                body: nodeList(ZERO_LOC, [templateData(ZERO_LOC, 'i:'), superCall()]),
+              }),
+            ]),
+          }),
+        ]),
+      }),
+    ]) as Node & { children: Node[] };
+    const transformed = transform(ast);
+    const lifted = findAll(transformed, 'super');
+    expect(lifted).toHaveLength(3);
+    const blockNames = lifted.map((n) => (n as { blockName?: string }).blockName).sort();
+    expect(blockNames).toEqual(['inner', 'middle', 'outer']);
+  });
+
+  test('is idempotent — a second pass lifts nothing and finds no super funCalls', () => {
+    const outerSuperCall = funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'super'), args: [] });
+    const innerSuperCall = funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'super'), args: [] });
+    const ast = root(ZERO_LOC, [
+      block(ZERO_LOC, {
+        name: 'outer',
+        body: nodeList(ZERO_LOC, [
+          outerSuperCall,
+          block(ZERO_LOC, {
+            name: 'inner',
+            body: nodeList(ZERO_LOC, [innerSuperCall]),
+          }),
+        ]),
+      }),
+    ]) as Node & { children: Node[] };
+    const once = transform(ast);
+    const twice = transform(once);
+    expect(JSON.stringify(twice)).toBe(JSON.stringify(once));
+    expect(findAll(twice, 'super')).toHaveLength(2);
+  });
+
   test('does not mutate the input AST (copy-on-write contract)', () => {
     const superCall = funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'super'), args: [] });
     const ast = root(ZERO_LOC, [

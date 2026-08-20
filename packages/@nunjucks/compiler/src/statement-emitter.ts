@@ -21,15 +21,19 @@ export const emitCompilerFuncBegin = (
 };
 
 /**
- * Emits the function epilogue: the pending-buffer `return` (unless
- * `noReturn`), `closeScopeLevels`'s closers, the `runtime.handleError`
- * catch, and the closing brace.
+ * Emits the function epilogue: `closeScopeLevels`'s closers, the
+ * `runtime.handleError` catch, and the closing brace. No pending-buffer
+ * `return` is emitted — every `emitCompilerFuncBegin` sets `buffer` to
+ * `null` (async generators return via delegation, not a buffer), so the
+ * epilogue always closes in generator state.
  */
-export const emitCompilerFuncEnd = (compiler: Emitter & ScopeManager, noReturn?: boolean): void => {
-  if (!noReturn && compiler.buffer !== null) {
-    compiler.emitLine(`return ${compiler.buffer};`);
-  }
-
+export const emitCompilerFuncEnd = (
+  compiler: Emitter & ScopeManager,
+  // WHY: legacy flag kept for ScopeManager's `emitFuncEnd(noReturn?)` signature; it only
+  // ever guarded the removed pending-buffer return, which is unreachable since begin
+  // always nulls the buffer.
+  _noReturn?: boolean
+): void => {
   compiler.closeScopeLevels();
   compiler.emitLine('} catch (e) {');
   compiler.emitLine('  throw runtime.handleError(e, { lineno, colno });');

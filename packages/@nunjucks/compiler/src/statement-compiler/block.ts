@@ -52,7 +52,19 @@ export const compileSuper = (
   { node, frame }: CompileNodeInput<SuperNode>
 ): void => {
   const name = node.blockName;
-  const id = String(node.symbol?.value ?? 'super');
+  // WHY: fail closed — defaulting a missing lifted symbol to 'super' would emit
+  // `let super = ...`, a reserved word and a guaranteed SyntaxError at new Function
+  // time; a missing symbol means the liftSuper pass never produced one, so surface
+  // that as a catalogued compile error instead of broken generated code.
+  const id = node.symbol?.value;
+  if (typeof id !== 'string' || id.length === 0) {
+    compiler.fail({
+      message: 'super: missing lifted symbol',
+      lineno: node.lineno,
+      colno: node.colno,
+    });
+    return;
+  }
   assertSafeIdentifier(name, { compiler, lineno: node.lineno, colno: node.colno });
   assertSafeIdentifier(id, { compiler, lineno: node.lineno, colno: node.colno });
 

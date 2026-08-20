@@ -18,15 +18,17 @@ const findDirectSuperCalls = (node: Node): Node[] => {
 /**
  * Hoists each block's direct `super()` calls into a prepended `superNode` bound to a
  * fresh gensym'd symbol, rewriting the call sites to reference it. Nested blocks bind
- * their own `super`, so they are skipped here and visited separately; the pass runs
- * between parse and compile and returns a rewritten tree of the same shape.
+ * their own `super`, so a block's body rewrite never crosses into them — instead the
+ * walk resumes inside the rewritten block so each nested block is lifted in the same
+ * pass. The pass runs between parse and compile, returns a rewritten tree of the same
+ * shape, and is idempotent: lifted supers become `super` nodes, leaving no funCalls.
  */
 export const liftSuper = (ast: Node): Node => {
   // WHY: one gensym per pass — instantiating inside the visitor reset the counter for every
   // block, so each lifted symbol was identically 'hole_0'. Block scoping made that safe, but
   // unique names keep the generated code debuggable and robust to future scope flattening.
   const gensym = createGensym('hole');
-  return walk(ast, (blockNode: Node): Node | undefined => {
+  const visit = (blockNode: Node): Node | undefined => {
     if (!isBlock(blockNode)) {
       return;
     }
@@ -65,7 +67,13 @@ export const liftSuper = (ast: Node): Node => {
       superNode(loc(superLoc), { blockName, sym: symbol(loc(superLoc), sym) }),
       ...bodyChildren,
     ];
-    const replacedBody = { ...newBody, children: newChildren };
-    return { ...blockNode, body: replacedBody };
-  });
+    const replacedBlock = { ...blockNode, body: { ...newBody, children: newChildren } };
+    // WHY: walk short-circuits a replaced subtree — explicitly resume the walk inside the
+    // replacement (skipping its root, which is already lifted) so nested blocks calling
+    // super() are lifted too instead of failing at render time.
+    return walk(replacedBlock, (descendant: Node): Node | undefined =>
+      descendant === replacedBlock ? undefined : visit(descendant)
+    );
+  };
+  return walk(ast, visit);
 };

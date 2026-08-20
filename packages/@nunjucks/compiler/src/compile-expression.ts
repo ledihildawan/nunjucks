@@ -1,95 +1,60 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { createLog } from '@nunjucks/error-formatter';
 import type { Node } from '@nunjucks/nodes';
-import {
-  add,
-  and,
-  array,
-  bitwiseAnd,
-  bitwiseLShift,
-  bitwiseNot,
-  bitwiseOr,
-  bitwiseRShift,
-  bitwiseXor,
-  compare,
-  concat,
-  decrement,
-  dict,
-  div,
-  floorDiv,
-  funCall,
-  getNodeTypeName,
-  group,
-  increment,
-  inlineIf,
-  literal,
-  lookupVal,
-  mod,
-  mul,
-  neg,
-  nodeList,
-  not,
-  nullishCoalesce,
-  optionalChain,
-  or,
-  pipe as pipeNode,
-  pos,
-  pow,
-  slice,
-  sub,
-  symbol,
-} from '@nunjucks/nodes';
+import { getNodeTypeName, T } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler, NodeTypeMatcher } from './index.ts';
 
+// WHY: string `T.*` tags only — factory functions matched via runtime `.name` would
+// silently break under minification (renamed functions stop matching their node type).
 const EXPRESSION_TYPES: NodeTypeMatcher[] = [
-  literal,
-  symbol,
-  group,
-  array,
-  dict,
-  funCall,
-  pipeNode,
-  lookupVal,
-  compare,
-  inlineIf,
-  'in',
-  'is',
-  and,
-  or,
-  not,
-  add,
-  concat,
-  'range',
-  sub,
-  mul,
-  div,
-  floorDiv,
-  mod,
-  pow,
-  neg,
-  pos,
-  optionalChain,
+  T.LITERAL,
+  T.SYMBOL,
+  T.GROUP,
+  T.ARRAY,
+  T.DICT,
+  T.FUN_CALL,
+  T.PIPE,
+  T.LOOKUP_VAL,
+  T.COMPARE,
+  T.INLINE_IF,
+  T.IN,
+  T.IS,
+  T.AND,
+  T.OR,
+  T.NOT,
+  T.ADD,
+  T.CONCAT,
+  T.RANGE,
+  T.SUB,
+  T.MUL,
+  T.DIV,
+  T.FLOOR_DIV,
+  T.MOD,
+  T.POW,
+  T.NEG,
+  T.POS,
+  T.OPTIONAL_CHAIN,
   // WHY: templateLiteral / optionalCall / walrus are parser-producible at guarded
   // expression positions (`{% if `a${b}` %}`, `obj?.()[0]`, `{% set y = (x := 5) %}`)
   // — omitting them made assertType throw ASSERT_TYPE_ERROR on legal templates.
-  'templateLiteral',
-  'optionalCall',
-  'walrus',
-  nullishCoalesce,
-  nodeList,
-  slice,
-  bitwiseOr,
-  bitwiseAnd,
-  bitwiseXor,
-  bitwiseLShift,
-  bitwiseRShift,
-  bitwiseNot,
-  increment,
-  decrement,
-  'test',
-  'testCall',
+  T.TEMPLATE_LITERAL,
+  T.OPTIONAL_CALL,
+  T.WALRUS,
+  T.NULLISH_COALESCE,
+  T.NODE_LIST,
+  T.SLICE,
+  T.BITWISE_OR,
+  T.BITWISE_AND,
+  T.BITWISE_XOR,
+  T.BITWISE_LSHIFT,
+  T.BITWISE_RSHIFT,
+  T.BITWISE_NOT,
+  T.INCREMENT,
+  T.DECREMENT,
+  T.TEST,
+  T.TEST_CALL,
 ];
 
 /** Compiles every child of `node` in order against `frame`. */
@@ -122,12 +87,13 @@ const isMatchingType = (typeName: string | undefined, type: NodeTypeMatcher): bo
   if (type.name === undefined) {
     return false;
   }
-  return typeName === type.name || typeName === type.name.toLowerCase();
+  return typeName === type.name;
 };
 
 /**
  * Throws a catalogued `ASSERT_TYPE_ERROR` unless `node` matches one of
- * `types`; matchers accept node-type names case-insensitively.
+ * `types`; a matcher is either a node-type tag string or an object whose
+ * `name` equals the tag.
  */
 export const assertNodeType = (node: Node, ...types: NodeTypeMatcher[]): void => {
   const typeName = getNodeTypeName(node) ?? 'unknown';

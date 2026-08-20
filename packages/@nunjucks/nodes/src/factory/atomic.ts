@@ -9,6 +9,11 @@ const createNodeWithChildren = <K extends NodeType>(
   children: readonly Node[] = []
 ): NodeOf<K> => createNode(nodeType, loc, { children: [...children] });
 
+// WHY: nodes own their children — copy() detaches a caller-supplied array so mutation of
+// the caller's array after construction cannot mutate the node (createNodeWithChildren's
+// ownership rule, factored for the optional child-array fields in control.ts).
+const copy = <E>(items: readonly E[] | undefined): E[] => [...(items ?? [])];
+
 /** Creates a `nodeList` grouping node without rendering semantics of its own. */
 const nodeList = (loc: Loc, children: readonly Node[] = []) =>
   createNodeWithChildren(T.NODE_LIST, loc, children);
@@ -75,7 +80,9 @@ const walrus = (loc: Loc, fields: WalrusFields) =>
 const templateLiteral = (
   loc: Loc,
   quasis: ({ type: 'template'; value: string } | { type: 'expression'; node: Node })[] = []
-) => createNode(T.TEMPLATE_LITERAL, loc, { quasis });
+  // WHY: quasis is copied — the node owns its children; a caller mutating its input
+  // array post-construction must not mutate the node.
+) => createNode(T.TEMPLATE_LITERAL, loc, { quasis: [...quasis] });
 
 /** Creates a `keywordArgs` node whose children are `pair` nodes of keyword arguments. */
 const keywordArgs = (loc: Loc, children: readonly Node[] = []) =>
@@ -87,6 +94,7 @@ const range = (loc: Loc, fields: BinaryFields) => createNode(T.RANGE, loc, { ...
 export type { PairFields, SpreadFields, WalrusFields };
 export {
   array,
+  copy,
   dict,
   group,
   hole,

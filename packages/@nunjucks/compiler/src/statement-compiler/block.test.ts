@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { block, output, root, superNode, symbol } from '@nunjucks/nodes';
 import { createFrame, type FrameSetOptions } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
@@ -79,6 +80,32 @@ describe('compileSuper', () => {
     );
     expect(emitted[2]).toContain('runtime.markSafe(super)');
     expect(setCalls).toEqual([['super', 'super']]);
+  });
+
+  test('fails closed with a catalogued error when the lifted symbol is missing', () => {
+    // WHY: regression — defaulting a null symbol to 'super' used to emit `let super = ...`,
+    // a guaranteed SyntaxError at new Function time; the missing symbol must surface as a
+    // catalogued compile error instead.
+    const compiler = createCompiler({
+      templateName: 'test',
+      undefinedMode: undefined,
+      source: '',
+    });
+    let caught: unknown;
+    try {
+      compileSuper(asCompiler(compiler), {
+        node: { blockName: 'content', symbol: null, lineno: 3, colno: 7 } as never,
+        frame: createFrame(),
+      });
+    } catch (error: unknown) {
+      caught = error;
+    }
+    expect(caught).toBeDefined();
+    expect(caught).not.toBeInstanceOf(SyntaxError);
+    const templateError = caught as TemplateError;
+    expect(templateError.code).toBe('WALK_UNKNOWN_TYPE');
+    expect(String(templateError.message)).toContain('missing lifted symbol');
+    expect(compiler.getCode()).not.toContain('let super');
   });
 
   test('declares the lifted super hole symbol with let (no implicit global assignment)', () => {

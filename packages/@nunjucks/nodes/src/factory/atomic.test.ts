@@ -207,6 +207,15 @@ describe('templateLiteral', () => {
     const templateLiteralNode = templateLiteral(ZERO_LOC, [...quasis]);
     expect(templateLiteralNode.quasis).toEqual(quasis);
   });
+
+  test('copies the quasis array so later caller mutation cannot change the node', () => {
+    // WHY: regression — the factory used to embed the caller's array by reference,
+    // so mutating it post-construction mutated the node.
+    const quasis: TemplateQuasi[] = [{ type: 'template', value: 'a' }];
+    const templateLiteralNode = templateLiteral(ZERO_LOC, quasis);
+    quasis.push({ type: 'template', value: 'b' });
+    expect(templateLiteralNode.quasis).toEqual([{ type: 'template', value: 'a' }]);
+  });
 });
 
 describe('range', () => {

@@ -422,3 +422,43 @@ describe('callExtensionAsync', () => {
     expect(asyncCallExtNode.autoescape).toBe(true);
   });
 });
+
+describe('child-array ownership', () => {
+  test('copies caller arrays so later caller mutation cannot change the node', () => {
+    // WHY: regression — these factories used to embed the caller's arrays by reference,
+    // so mutating them post-construction mutated the node.
+    const args = [literal(ZERO_LOC, 'a')];
+    const componentNode = component(ZERO_LOC, { name: 'Card', args });
+    args.push(literal(ZERO_LOC, 'b'));
+    expect(componentNode.args).toHaveLength(1);
+
+    const fallbackSlots: SlotBlock[] = [{ name: 'header', params: [], body: bodyNode }];
+    const componentWithSlots = component(ZERO_LOC, { name: 'Card', fallbackSlots });
+    fallbackSlots.length = 0;
+    expect(componentWithSlots.fallbackSlots).toHaveLength(1);
+
+    const cases = [caseNode(ZERO_LOC, { cond: conditionNode, body: bodyNode })];
+    const switchStatement = switchNode(ZERO_LOC, { expr: conditionNode, cases });
+    cases.length = 0;
+    expect(switchStatement.cases).toHaveLength(1);
+
+    const whenCases = [when(ZERO_LOC, { pattern: loopNameNode, body: bodyNode })];
+    const matchStatement = match(ZERO_LOC, { expr: conditionNode, cases: whenCases });
+    whenCases.length = 0;
+    expect(matchStatement.cases).toHaveLength(1);
+
+    const providedSlots: SlotBlock[] = [{ name: 'default', params: [], body: bodyNode }];
+    const renderStatement = renderNode(ZERO_LOC, {
+      callExpr: conditionNode,
+      body: bodyNode,
+      providedSlots,
+    });
+    providedSlots.length = 0;
+    expect(renderStatement.providedSlots).toHaveLength(1);
+
+    const contentArgs = [bodyNode];
+    const callExtNode = callExtension(ZERO_LOC, { ext: 'Ext', prop: 'run', contentArgs });
+    contentArgs.length = 0;
+    expect(callExtNode.contentArgs).toHaveLength(1);
+  });
+});

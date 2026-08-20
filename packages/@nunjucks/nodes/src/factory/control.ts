@@ -9,7 +9,7 @@ import type {
   SlotBlock,
   WhenNode,
 } from '../types/index.ts';
-import { nodeList } from './atomic.ts';
+import { copy, nodeList } from './atomic.ts';
 import { createNode, T } from './create-node.ts';
 
 /** Fields for `if` and `inlineIf` nodes; `alternate` defaults to `null` when omitted. */
@@ -55,9 +55,11 @@ interface ComponentFields {
   fallbackSlots?: SlotBlock[];
 }
 
+// WHY: child arrays (args, fallbackSlots, cases, providedSlots, contentArgs) go through
+// copy() — the node owns its children; caller-array mutation must not reach the node.
 /** Creates a `component` node invoking a template as a custom tag with slot content. */
-const component = (loc: Loc, fields: ComponentFields) =>
-  createNode(T.COMPONENT, loc, { args: [], fallbackSlots: [], ...fields });
+const component = (loc: Loc, { args, fallbackSlots, ...rest }: ComponentFields) =>
+  createNode(T.COMPONENT, loc, { ...rest, args: copy(args), fallbackSlots: copy(fallbackSlots) });
 
 /** Fields for an `import` node; `withContext` defaults to `false`. */
 interface ImportFields {
@@ -118,7 +120,7 @@ interface SwitchFields {
 const switchNode = (loc: Loc, fields: SwitchFields) =>
   createNode(T.SWITCH, loc, {
     expr: fields.expr,
-    cases: fields.cases ?? [],
+    cases: copy(fields.cases),
     default: fields.default_ ?? null,
   });
 
@@ -167,8 +169,8 @@ interface MatchFields {
 }
 
 /** Creates a `match` node dispatching on `expr` across `when` clauses. */
-const match = (loc: Loc, fields: MatchFields): MatchNode =>
-  createNode(T.MATCH, loc, { cases: [], default: null, ...fields });
+const match = (loc: Loc, { cases, ...rest }: MatchFields): MatchNode =>
+  createNode(T.MATCH, loc, { ...rest, cases: copy(cases), default: rest.default ?? null });
 
 /** Fields for a `when` clause node; `guard` defaults to `null`. */
 interface WhenFields {
@@ -193,8 +195,8 @@ interface RenderFields {
 }
 
 /** Creates a `render` node invoking a template with a default body and named slots. */
-const renderNode = (loc: Loc, fields: RenderFields): RenderNode =>
-  createNode(T.RENDER, loc, { providedSlots: [], ...fields });
+const renderNode = (loc: Loc, { providedSlots, ...rest }: RenderFields): RenderNode =>
+  createNode(T.RENDER, loc, { ...rest, providedSlots: copy(providedSlots) });
 
 interface ExtensionMetadata {
   extensionName?: string;
@@ -240,7 +242,7 @@ const buildCallExtension = (
     extName: extensionName(ext, extObj),
     prop,
     args: args ?? nodeList(ZERO_LOC),
-    contentArgs: contentArgs ?? [],
+    contentArgs: copy(contentArgs),
     autoescape: extObj.autoescape ?? true,
   });
 };
