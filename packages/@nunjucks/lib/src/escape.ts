@@ -8,14 +8,8 @@
  * use `escapeUnquotedAttribute` there.
  */
 const escapeHtml = (str: string): string => {
-  const htmlEscaped = str
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;');
-  return htmlEscaped
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
-    .replaceAll('\\', '&#92;');
+  const htmlEscaped = str.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+  return htmlEscaped.replaceAll('"', '&quot;').replaceAll("'", '&#39;').replaceAll('\\', '&#92;');
 };
 
 /**
@@ -24,14 +18,8 @@ const escapeHtml = (str: string): string => {
  * historical nunjucks attribute encoder.
  */
 const escapeAttribute = (str: string): string => {
-  const htmlEscaped = str
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;');
-  return htmlEscaped
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
-    .replaceAll('`', '&#96;');
+  const htmlEscaped = str.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+  return htmlEscaped.replaceAll('"', '&quot;').replaceAll("'", '&#39;').replaceAll('`', '&#96;');
 };
 
 /**
@@ -49,9 +37,7 @@ const escapeScriptString = (str: string): string => {
     .replaceAll('\n', '\\n')
     .replaceAll('\r', '\\r')
     .replaceAll('\t', '\\t');
-  return controlEscaped
-    .replaceAll('<', '\\u003c')
-    .replaceAll('>', '\\u003e');
+  return controlEscaped.replaceAll('<', '\\u003c').replaceAll('>', '\\u003e');
 };
 
 // WHY: inside a <style> context browsers decode CSS escapes (\XX hex), not HTML entities,
@@ -68,9 +54,7 @@ const escapeStyle = (str: string): string => {
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;');
-  return htmlEscaped
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+  return htmlEscaped.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 };
 
 // WHY: UNQUOTED attribute values have no delimiter — whitespace or `=` inside the value
@@ -78,10 +62,7 @@ const escapeStyle = (str: string): string => {
 // Entity encoding cannot express "no space" in this context, so the only sound encoder is
 // percent-encoding of every delimiter (browsers percent-decode attribute values).
 const escapeUnquotedAttribute = (str: string): string => {
-  const percentEscaped = str
-    .replaceAll('%', '%25')
-    .replaceAll('&', '%26')
-    .replaceAll('=', '%3D');
+  const percentEscaped = str.replaceAll('%', '%25').replaceAll('&', '%26').replaceAll('=', '%3D');
   const delimiterEscaped = percentEscaped
     .replaceAll('<', '%3C')
     .replaceAll('>', '%3E')
