@@ -1,7 +1,8 @@
 import type { IncludeChain } from '@nunjucks/error-formatter';
 import { normalizeErrorMetadata, prettifyError } from '@nunjucks/error-formatter';
-import type { CompiledTemplateExports } from '@nunjucks/shared';
 import type { Env } from '@nunjucks/runtime';
+import type { CompiledTemplateExports } from '@nunjucks/shared';
+import { extractCompiledBlocks } from './compiled-blocks.ts';
 import { createTemplateCompiler } from './template-compiler';
 import { createTemplateErrorHandler } from './template-error-handler';
 import { createGetExported } from './template-exporter';
@@ -9,7 +10,6 @@ import { createTemplateRenderer } from './template-renderer';
 import { initTemplateState, loadSource } from './template-source';
 import type { TemplateObject, TemplateSource, TemplateState } from './types';
 import { Template } from './types';
-import { extractCompiledBlocks } from './compiled-blocks.ts';
 
 // WHY: adopts pre-computed compiled exports into the template state machine — the
 // same 'compiled' shape commit() produces, minus the eval (the exports object was

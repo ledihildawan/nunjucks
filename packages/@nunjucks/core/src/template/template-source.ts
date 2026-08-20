@@ -1,7 +1,7 @@
 import { getError } from '@nunjucks/error-catalog';
 import type { IncludeChain } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
-import { type Env, createDefaultEnv } from '@nunjucks/runtime';
+import { createDefaultEnv, type Env } from '@nunjucks/runtime';
 import { isCompiledTemplateExports } from '@nunjucks/shared';
 import { isPlainObject, isString } from 'remeda';
 import type { TemplateSource, TemplateState, TemplateStateBase } from './types';

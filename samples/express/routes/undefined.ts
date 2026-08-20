@@ -1,6 +1,6 @@
 import type { Result } from '@nunjucks/lib';
-import express, { type NextFunction, type Request, type Response, type Router } from 'express';
 import { escapeHtml } from '@nunjucks/lib';
+import express, { type NextFunction, type Request, type Response, type Router } from 'express';
 import { renderDemoTemplate } from '../lib/domain/render-template.ts';
 
 /** Undefined-handling demo router — contrasts the `strict`, `debug`, and `chainable` modes. */

@@ -1,7 +1,7 @@
 import express, { type NextFunction, type Request, type Response, type Router } from 'express';
+import { renderTemplate } from '../lib/domain/render-template.ts';
 import { createSandboxSuites, runTests } from '../lib/domain/sandbox-demo.ts';
 import { renderTable } from '../lib/io/sandbox-table.ts';
-import { renderTemplate } from '../lib/domain/render-template.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
 import { devErrorRouteConfig, VIEWS } from '../lib/io/views-path.ts';
 

@@ -2,8 +2,8 @@
 // WHY: dev-only typed audit tooling for route validation
 
 import { once } from 'node:events';
-import { createServer, type Server } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
+import { createServer, type Server } from 'node:http';
 import { errorGroups } from '../lib/domain/error-route-metadata.ts';
 
 interface ParsedLocation {

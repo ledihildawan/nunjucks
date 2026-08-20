@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import type { ZodType, ZodError } from 'zod';
+import type { ZodError, ZodType } from 'zod';
 
 interface ReadValidatedQueryOptions<T> {
   schema: ZodType<T>;
@@ -39,4 +39,4 @@ const readValidatedQuery = <T>({
   return { ok: true, data: parsed.data };
 };
 
-export { readValidatedQuery, type ReadValidatedQueryResult };
+export { type ReadValidatedQueryResult, readValidatedQuery };

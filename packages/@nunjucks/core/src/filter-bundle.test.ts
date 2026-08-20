@@ -1,5 +1,5 @@
-import { getReservedKeywords } from '@nunjucks/validators';
 import { expect, test } from 'bun:test';
+import { getReservedKeywords } from '@nunjucks/validators';
 import { defaultFilterBundle } from './filter-bundle.ts';
 
 // WHY: both sides now derive from @nunjucks/filters filter-names.ts (SSOT), so this test

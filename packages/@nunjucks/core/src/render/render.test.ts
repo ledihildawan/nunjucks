@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { isErr, isOk } from '@nunjucks/lib';
 import { sanitize } from '@nunjucks/filters/sanitize';
+import { isErr, isOk } from '@nunjucks/lib';
 import { render, renderToStream } from './render.ts';
 import { renderTemplate } from './render-test-helper.ts';
 

@@ -1,5 +1,4 @@
-import type { UndefinedMode } from '@nunjucks/shared';
-import type { DomPurifyConfig, Environment, SandboxMode } from '@nunjucks/shared';
+import type { DomPurifyConfig, Environment, SandboxMode, UndefinedMode } from '@nunjucks/shared';
 import packageJson from '../../package.json';
 
 /** Engine version sourced from `package.json`; stamped into error markers and stream output. */

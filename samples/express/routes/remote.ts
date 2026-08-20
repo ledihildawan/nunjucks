@@ -1,5 +1,5 @@
-import express, { type NextFunction, type Request, type Response, type Router } from 'express';
 import { escapeHtml } from '@nunjucks/lib';
+import express, { type NextFunction, type Request, type Response, type Router } from 'express';
 import { renderTemplate } from '../lib/domain/render-template.ts';
 import { localizedTime } from '../lib/io/clock.ts';
 import { delay } from '../lib/io/delay.ts';

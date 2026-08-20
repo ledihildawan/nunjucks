@@ -1,6 +1,6 @@
-import type { NunjucksConfig } from '@nunjucks/core';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { NunjucksConfig } from '@nunjucks/core';
 
 // WHY: single shell-level owner of the views directory resolution. Every route and demo module
 // imports VIEWS from here instead of re-computing __dirname independently (was duplicated 6×).
@@ -17,4 +17,4 @@ const devErrorRouteConfig: NunjucksConfig = { dev: true, autoescape: true, views
 const demoRouteConfig: NunjucksConfig = { autoescape: true, views: VIEWS };
 const standardRouteConfig: NunjucksConfig = { dev: true, autoescape: true, views: VIEWS };
 
-export { VIEWS, demoRouteConfig, devErrorRouteConfig, standardRouteConfig, strictErrorRouteConfig };
+export { demoRouteConfig, devErrorRouteConfig, standardRouteConfig, strictErrorRouteConfig, VIEWS };

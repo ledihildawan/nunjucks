@@ -17,7 +17,6 @@ import type {
   PerRenderOverrides,
 } from './config/nunjucks-config.ts';
 import { foldPlugins } from './plugin/index.ts';
-import { createTemplateCache } from './template/template-cache.ts';
 import type { PipeRenderStreamOptions, PipeSink } from './render/pipe-stream.ts';
 import { pipeRenderStream as pipeRenderStreamInternal } from './render/pipe-stream.ts';
 import {
@@ -25,6 +24,7 @@ import {
   renderToStream as renderToStreamInternal,
 } from './render/render.ts';
 import type { RenderOptions, RenderStreamResult } from './render/render-types.ts';
+import { createTemplateCache } from './template/template-cache.ts';
 
 // WHY: NODE_ENV is read opportunistically — the engine must stay runnable in non-Node runtimes
 // (browsers/edge) where the global does not exist, mirroring diagnostics.ts's runtime-agnostic stance.

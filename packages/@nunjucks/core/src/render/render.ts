@@ -7,6 +7,7 @@ import { getDefaultConfig } from '../config/global.ts';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
 import { defaultFilterBundle } from '../filter-bundle.ts';
 import { getCallerFrames } from './caller-file.ts';
+import { buildCallableMap } from './render-callable.ts';
 import { buildExecutionEnv, buildRenderEnv } from './render-env.ts';
 import {
   compileTemplate,
@@ -24,7 +25,6 @@ import type {
   RenderStreamResult,
 } from './render-types.ts';
 import { validateRender, validateTemplateSource } from './render-validation.ts';
-import { buildCallableMap } from './render-callable.ts';
 
 const setupRenderConfig = (
   options: Partial<import('../config/global.ts').GlobalConfig>

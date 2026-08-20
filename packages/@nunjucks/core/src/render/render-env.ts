@@ -2,11 +2,11 @@ import { getError } from '@nunjucks/error-catalog';
 import { createLog } from '@nunjucks/error-formatter';
 import { isErr } from '@nunjucks/lib';
 import type { TemplateLoader } from '@nunjucks/loaders';
-import { loadCompiledCode, type Env, type GetTemplateOptions } from '@nunjucks/runtime';
-import { isCompiledTemplateExports, type CompiledTemplateExports } from '@nunjucks/shared';
+import { type Env, type GetTemplateOptions, loadCompiledCode } from '@nunjucks/runtime';
+import { type CompiledTemplateExports, isCompiledTemplateExports } from '@nunjucks/shared';
 import { createTemplate } from '../template/index.ts';
-import { buildCompileCacheKey } from '../template/template-cache.ts';
 import type { CompiledCodeCache } from '../template/template-cache.ts';
+import { buildCompileCacheKey } from '../template/template-cache.ts';
 import type { RenderConfig } from './render-types.ts';
 
 // WHY: template-author-controlled names must resolve OWN properties only — a bare

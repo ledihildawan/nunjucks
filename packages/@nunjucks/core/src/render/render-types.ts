@@ -3,8 +3,12 @@ import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Result } from '@nunjucks/lib';
 import type { TemplateLoader } from '@nunjucks/loaders';
 import type { Env, SandboxOptions } from '@nunjucks/runtime';
-import type { UndefinedMode } from '@nunjucks/shared';
-import type { BaseValidationError, ContentType, Environment } from '@nunjucks/shared';
+import type {
+  BaseValidationError,
+  ContentType,
+  Environment,
+  UndefinedMode,
+} from '@nunjucks/shared';
 import type { ExpressionSecurityConfig } from '@nunjucks/validators';
 import type { SandboxMode } from '../config/global.ts';
 import type { CompiledCodeCache } from '../template/template-cache.ts';

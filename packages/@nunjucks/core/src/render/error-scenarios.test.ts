@@ -5,8 +5,8 @@ import { createLog } from '@nunjucks/error-formatter';
 import { formatError } from '@nunjucks/error-formatter/format';
 import { isErr } from '@nunjucks/lib';
 import type { GlobalConfig } from '../config/global.ts';
-import { renderTemplate as renderTemplateBase } from './render-test-helper.ts';
 import { render } from './render.ts';
+import { renderTemplate as renderTemplateBase } from './render-test-helper.ts';
 
 // WHY: every scenario asserts strict-mode error diagnostics, so the strict undefined mode is baked in file-wide.
 const renderTemplate = (

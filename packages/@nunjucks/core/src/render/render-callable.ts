@@ -46,5 +46,5 @@ const buildCallableMap = (source: unknown, configKey: string): Result<FilterMap,
     : ok(Object.fromEntries(callableEntries));
 };
 
-export { buildCallableMap };
 export type { FilterMap };
+export { buildCallableMap };
