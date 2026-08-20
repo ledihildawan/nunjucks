@@ -53,21 +53,26 @@ const createApp = (): Express => {
   app.engine('.njk', createEngine(engineConfig));
   app.set('view engine', 'njk');
 
+  // WHY: the framework banner advertises the stack for free to any scanner — a sample
+  // that hosts copy should not leak it.
+  app.disable('x-powered-by');
+
   // WHY: baseline hardening for every response — the demo serves no external assets,
   // so nosniff + no-referrer cost nothing and dampen content-type confusion and
-  // referrer leakage if this app is ever copied onto a public host.
+  // referrer leakage if this app is ever copied onto a public host. A strict CSP is
+  // demonstrated on the error page path below (per-response nonce); the demo views
+  // themselves rely on inline scripts and are intentionally left without one.
   app.use((_req: Request, res: Response, next: NextFunction) => {
     res.set('X-Content-Type-Options', 'nosniff');
     res.set('Referrer-Policy', 'no-referrer');
     next();
   });
 
-  app.get('/', async (_req: Request, res: Response, next: NextFunction) => {
-    try {
-      await res.render('index', { userName: 'Guest' });
-    } catch (err) {
-      next(err);
-    }
+  app.get('/', (_req: Request, res: Response) => {
+    // WHY: no await/try-catch — res.render returns void and forwards engine failures to
+    // the error middleware through Express internals; an awaited variant suggested an
+    // error path that could never fire.
+    res.render('index', { userName: 'Guest' });
   });
 
   app.get('/home', async (_req: Request, res: Response, next: NextFunction) => {

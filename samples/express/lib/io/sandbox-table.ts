@@ -6,7 +6,10 @@ const renderTable = (table: SandboxTestResult[], suite: SandboxSuite): string =>
   const rows = table
     .map((row) => {
       const err = outcomeError(row);
-      const resultText = err !== null ? escapeHtml(err.message) : outcomeOutput(row);
+      // WHY: both branches are data-derived (error messages and rendered probe output) —
+      // this table is hand-built HTML, not a template render, so autoescape never applies
+      // and the seam itself must escape.
+      const resultText = err !== null ? escapeHtml(err.message) : escapeHtml(outcomeOutput(row));
       const statusClassName = statusClass(row, suite);
       const statusLabelText = statusLabel(row, suite);
       return (

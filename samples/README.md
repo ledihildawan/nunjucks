@@ -30,7 +30,7 @@ Express 5 app wired via `@nunjucks/integrations/express` `createEngine` — cent
 | `/security` | context-aware escaping across html/attribute/script zones |
 | `/stream`, `/stream-normal`, `/stream-api`, `/stream-block-error` | `renderToStream` + `pipeRenderStream`: AbortSignal on client disconnect, idle timeout, output limits, error recovery (inline markers vs fatal), JSON content-type |
 | `/demo/*` | language features — pipe, scope, switch, slot, component, exec, security |
-| `/errors`, `/errors/:scenario` | the error taxonomy browser — 60+ catalogued scenarios (filter errors, undefined blocks, sandbox violations, circular includes, …), each rendering a dev error page |
+| `/errors`, `/errors/<scenario>` | the error taxonomy browser — 60+ catalogued scenarios (filter errors, undefined blocks, sandbox violations, circular includes, …), each route registered concretely from the metadata registry and rendering a dev error page |
 | `/boundary` | zod schema narrowing `req.query` before it reaches the render context |
 | `/sandbox/*` | sandboxed context: `__proto__`/`constructor`/`process`/`eval` blocked; allowlist mode |
 | `/undefined/*` | strict / debug / chainable modes against the default baseline |
@@ -45,3 +45,4 @@ Views live in `samples/express/views/` — they double as a gallery of the templ
 - **The render seam is I/O-adjacent by design.** `lib/domain/render-template.ts` stays import-clean of node/express/fs, but rendering by template *name* reaches the filesystem through the `views` config, which is always shell-injected (`lib/io/views-path.ts`). Inline-source rendering (the `renderDemoTemplate` baseline) is fully pure. See the module's seam JSDoc.
 - **Boundary validation is a convention, not a one-off.** Routes that read untrusted input use `readValidatedQuery` (`lib/io/validated-query.ts`) — zod parses `req.query` at the edge and writes the 400 rejection itself. New query-reading routes should inherit the guardrail by using it, not by copying the pattern.
 - **Streaming observability lives in one place.** All per-request streaming `console` output is confined to `lib/io/stream-wiring.ts`, which also owns the shared `pipeRenderStream` guardrail chain (disconnect signal, idle timeout, output breaker).
+- **A fresh engine per demo render — do not copy into prod.** `lib/domain/render-template.ts` builds `nunjucks(config)` per call to isolate per-route config (see its seam JSDoc); the trade-off is that template caching is discarded across requests. Production apps should build one engine per config and reuse it.
