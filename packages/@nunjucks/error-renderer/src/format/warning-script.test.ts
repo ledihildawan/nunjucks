@@ -67,5 +67,6 @@ describe('injectWarningsScript', () => {
     const script = injectWarningsScript([{ ...baseWarning, message: 'a <b> & c' }]);
     expect(script).toContain('a \\u003cb\\u003e \\u0026 c');
     expect(script).not.toContain('a <b>');
+    expect(script).not.toContain('a \\<b\\>');
   });
 });

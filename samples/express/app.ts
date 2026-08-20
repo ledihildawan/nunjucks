@@ -62,8 +62,12 @@ const createApp = (): Express => {
     next();
   });
 
-  app.get('/', (_req: Request, res: Response) => {
-    res.render('index', { userName: 'Guest' });
+  app.get('/', async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      await res.render('index', { userName: 'Guest' });
+    } catch (err) {
+      next(err);
+    }
   });
 
   app.get('/home', async (_req: Request, res: Response, next: NextFunction) => {
@@ -139,7 +143,7 @@ const createApp = (): Express => {
       .type('html')
       .set(
         'Content-Security-Policy',
-        `default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`
+        `default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'`
       )
       .send(
         formatError(err, {

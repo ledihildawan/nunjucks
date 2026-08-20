@@ -5,6 +5,9 @@ import { escapeAttribute, escapeHtml } from './presentation/syntax-highlight/hig
 import { toHtml } from './to-html.ts';
 import type { ErrorLike, ToHtmlOptions } from './to-html-types.ts';
 
+const escapeSrcdoc = (str: string): string =>
+  JSON.stringify(str.replaceAll('<', '\\u003c').replaceAll('>', '\\u003e'));
+
 const ALERT_ICON =
   '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
 
@@ -111,7 +114,7 @@ const toHtmlMarker = (
   const message = escapeHtml(options.humanTitle ?? error.message ?? 'Unknown error');
   const id = createErrorId(error);
   const fullPage = toHtml(error, options);
-  const srcdocLiteral = JSON.stringify(fullPage).replaceAll('</', '<\\/');
+  const srcdocLiteral = escapeSrcdoc(fullPage);
   const css = severity === 'inline' ? INLINE_CSS : BLOCK_CSS;
   const locHtml =
     severity === 'block'
@@ -119,31 +122,30 @@ const toHtmlMarker = (
       : '';
 
   if (severity === 'inline') {
-    // Compact inline icon — no block wrapper, no location bar, no message text.
-    // Clicking the icon opens the same overlay as the block variant.
+    const idAttr = escapeAttribute(id);
     return `<style>${css}</style>
 <span class="nj-err-inline" role="status" aria-live="polite">
-  <span class="nj-err-icon" data-nj-err-open="${id}" role="button" tabindex="0" aria-label="${message} — click to view details" title="${message}">${ALERT_ICON}</span>
+  <span class="nj-err-icon" data-nj-err-open="${idAttr}" role="button" tabindex="0" aria-label="${message} — click to view details" title="${message}">${ALERT_ICON}</span>
 </span>
-<div class="nj-err-overlay" id="${id}" hidden>
+<div class="nj-err-overlay" id="${idAttr}" hidden>
   <button class="nj-err-close" type="button" aria-label="Close error overlay">${CLOSE_ICON}</button>
 </div>
-<script>(function(){const b=document.querySelector('[data-nj-err-open="${id}"]');const o=document.getElementById("${id}");if(!b||!o)return;const c=o.querySelector(".nj-err-close");let loaded=false;const open=function(){if(!loaded){loaded=true;const f=document.createElement('iframe');f.className='nj-err-frame';f.srcdoc=${srcdocLiteral};o.appendChild(f);}o.removeAttribute("hidden");document.body.style.overflow="hidden";};const close=function(){o.setAttribute("hidden","");document.body.style.overflow="";};b.addEventListener("click",open);b.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});c.addEventListener("click",close);o.addEventListener("click",function(e){if(e.target===o){close();}});})()</script>`;
+<script>(function(){const b=document.querySelector('[data-nj-err-open]');const o=document.getElementById(b?.getAttribute('data-nj-err-open')||'');if(!b||!o)return;const c=o.querySelector(".nj-err-close");let loaded=false;const open=function(){if(!loaded){loaded=true;const f=document.createElement('iframe');f.className='nj-err-frame';f.srcdoc=${srcdocLiteral};o.appendChild(f);}o.removeAttribute("hidden");document.body.style.overflow="hidden";};const close=function(){o.setAttribute("hidden","");document.body.style.overflow="";};b.addEventListener("click",open);b.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});c.addEventListener("click",close);o.addEventListener("click",function(e){if(e.target===o){close();}});})()</script>`;
   }
 
-  // Full block — header with icon + message + location bar
+  const idAttr = escapeAttribute(id);
   return `<style>${css}</style>
 <div class="nj-err-block" role="status" aria-live="polite">
   <div class="nj-err-header">
-    <span class="nj-err-icon" data-nj-err-open="${id}" role="button" tabindex="0" aria-label="View error details" title="Click to view details">${ALERT_ICON}</span>
-    <span class="nj-err-msg" data-nj-err-full="${message}">${message}</span>
+    <span class="nj-err-icon" data-nj-err-open="${idAttr}" role="button" tabindex="0" aria-label="View error details" title="Click to view details">${ALERT_ICON}</span>
+    <span class="nj-err-msg" data-nj-err-full="${escapeAttribute(message)}">${message}</span>
   </div>
   ${locHtml}
 </div>
-<div class="nj-err-overlay" id="${id}" hidden>
+<div class="nj-err-overlay" id="${idAttr}" hidden>
   <button class="nj-err-close" type="button" aria-label="Close error overlay">${CLOSE_ICON}</button>
 </div>
-<script>(function(){const b=document.querySelector('[data-nj-err-open="${id}"]');const o=document.getElementById("${id}");if(!b||!o)return;const m=document.querySelector('.nj-err-msg[data-nj-err-full]');const checkOverflow=function(){if(!m)return;const full=m.getAttribute('data-nj-err-full');if(m.scrollWidth>m.clientWidth){m.setAttribute('title',full);}else{m.removeAttribute('title');}};checkOverflow();window.addEventListener('resize',checkOverflow);const c=o.querySelector(".nj-err-close");let loaded=false;const open=function(){if(!loaded){loaded=true;const f=document.createElement('iframe');f.className='nj-err-frame';f.srcdoc=${srcdocLiteral};o.appendChild(f);}o.removeAttribute("hidden");document.body.style.overflow="hidden";};const close=function(){o.setAttribute("hidden","");document.body.style.overflow="";};b.addEventListener("click",open);b.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});c.addEventListener("click",close);o.addEventListener("click",function(e){if(e.target===o){close();}});})()</script>`;
+<script>(function(){const b=document.querySelector('[data-nj-err-open]');const o=document.getElementById(b?.getAttribute('data-nj-err-open')||'');if(!b||!o)return;const m=o.closest('.nj-err-block')?.querySelector('.nj-err-msg[data-nj-err-full]');const checkOverflow=function(){if(!m)return;const full=m.getAttribute('data-nj-err-full');if(m.scrollWidth>m.clientWidth){m.setAttribute('title',full);}else{m.removeAttribute('title');}};checkOverflow();window.addEventListener('resize',checkOverflow);const c=o.querySelector(".nj-err-close");let loaded=false;const open=function(){if(!loaded){loaded=true;const f=document.createElement('iframe');f.className='nj-err-frame';f.srcdoc=${srcdocLiteral};o.appendChild(f);}o.removeAttribute("hidden");document.body.style.overflow="hidden";};const close=function(){o.setAttribute("hidden","");document.body.style.overflow="";};b.addEventListener("click",open);b.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});c.addEventListener("click",close);o.addEventListener("click",function(e){if(e.target===o){close();}});})()</script>`;
 };
 
 export { toHtmlMarker };

@@ -126,5 +126,5 @@ export const findDangerousValues = (
     value: context,
     depth: 0,
   });
-  return [...new Set(paths)];
+  return Array.from(new Set(paths));
 };

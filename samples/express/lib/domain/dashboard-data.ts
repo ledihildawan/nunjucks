@@ -7,8 +7,6 @@
  * @returns Display string (`$89.99`-style, or `—` when unavailable).
  */
 const formatPrice = (value: unknown): string => {
-  // WHY: null/undefined must render as "no price" — Number(null) coerces to 0, which
-  // would misleadingly display a $0.00 price for missing data.
   if (value === null || value === undefined || value === '') {
     return '—';
   }

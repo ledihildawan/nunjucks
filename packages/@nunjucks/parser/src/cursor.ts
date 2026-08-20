@@ -227,7 +227,7 @@ export const advanceAfterBlockEnd = (
   parserContext: ParserContext,
   name?: string
 ): Result<Token, TemplateError> => {
-  let blockName = name;
+  let blockName: string | undefined = name;
   if (!blockName) {
     const nameTokResult = nextToken(parserContext);
     if (isErr(nameTokResult)) {

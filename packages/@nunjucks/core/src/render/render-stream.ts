@@ -234,7 +234,7 @@ const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGe
     });
   } finally {
     generator.return(undefined).catch(() => {
-      /* best-effort: swallow cleanup rejection */
+      // intentional no-op — best-effort cleanup rejection during stream abort
     });
   }
   if (warningsCollector.length > 0 && resolvedConfig.dev) {

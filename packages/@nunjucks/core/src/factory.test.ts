@@ -2,8 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { isErr, isOk } from '@nunjucks/lib';
-import type { TemplateLoader } from '@nunjucks/loaders';
+import { isErr, isOk, type TemplateLoader } from '@nunjucks/lib';
 import { createNunjucks } from './factory.ts';
 
 interface InMemoryLoaderInput {

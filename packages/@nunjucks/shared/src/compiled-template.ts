@@ -43,6 +43,8 @@ export const isCompiledTemplateExports = (value: unknown): value is CompiledTemp
     return false;
   }
   return typeof (value as { root?: unknown }).root === 'function';
+// WHY: the shallow cast is sound — only the `root` property is accessed, all other fields
+// (block exports, metadata) are structurally trusted after this guard.
 };
 
 /**

@@ -1,6 +1,9 @@
-// WHY: `as const` keeps HookEvent a 3-literal union instead of collapsing to string.
-// Only compile-phase hooks are declared — speculative load/render lifecycle events with
-// no emitter were removed (YAGNI); re-add an event together with the call site that emits it.
+/**
+ * Compile-phase hook event names the engine emits. Each value is a frozen string
+ * literal (preserved via `as const`) so `HookEvent` stays a 3-member union rather
+ * than widening to `string`. Only compile-phase hooks are declared — speculative
+ * load/render lifecycle events with no emitter were removed (YAGNI).
+ */
 const HOOK_EVENTS = Object.freeze({
   TEMPLATE_COMPILE_START: 'template:compile:start',
   TEMPLATE_COMPILE_COMPLETE: 'template:compile:complete',

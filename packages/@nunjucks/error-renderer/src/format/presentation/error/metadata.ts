@@ -57,11 +57,17 @@ interface FormatterState {
   humanTitle?: string;
 }
 
-// WHY: isProduction must never stay disconnected from dev — a caller that renders error
-// pages with dev:false (the default) is by definition NOT asking for the rich dev page.
-// Deriving the fallback here makes the production "Rendering Interrupted" page the
-// safe-by-default output; only dev:true (or an explicit isProduction:false) opts into
-// stack traces, source excerpts, and render-context sections.
+/**
+ * Normalizes raw error metadata plus output options into the formatter's internal
+ * `FormatterState` shape. Derives `isProduction` from `dev` so that the safe-by-default
+ * output is "Rendering Interrupted" — only `dev: true` opts into rich stack traces,
+ * source excerpts, and render-context sections.
+ *
+ * @param metadata - Location and identity fields from the error/warning object.
+ * @param options - Output shaping: `format`, `verbosity`, `dev`, `ide`, `templatePath`,
+ *   `version`, `timestamp`, `sourceTrace`, `csp`, `jsCaller`, `isJsCaller`.
+ * @returns A fully resolved `FormatterState` with safe defaults applied.
+ */
 export const createFormatterState = ({
   metadata,
   options = {},

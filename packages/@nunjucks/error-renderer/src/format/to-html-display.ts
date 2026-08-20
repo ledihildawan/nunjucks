@@ -22,7 +22,7 @@ const classifyError = (error: ErrorLike): ClassifiedError => {
   const parts = mergeErrorParts(error);
   const classified = classifyFromError(error);
   return {
-    category: error.code ?? classified.category.toUpperCase() ?? 'UNKNOWN',
+    category: error.code ?? classified.category.toUpperCase(),
     undefinedName: classified.undefinedName ?? null,
     title: classified.title ?? '',
     causes: parts.causes,

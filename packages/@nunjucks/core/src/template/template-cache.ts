@@ -5,6 +5,9 @@ import type { RenderConfig } from '../render/render-types.ts';
 // ~65k distinct sources) merely shares a compile between two same-fingerprint sources,
 // and the fingerprint below still separates every compile-input combination.
 const hashSource = (source: string): string => {
+  // WHY: imperative loop — hot-path FNV-1a hash over source strings; allocating an
+  // iterator per character creates measurable GC pressure on bulk renders. Loop
+  // exemption: high-throughput compiler/cache infrastructure.
   let hash = 0x811c9dc5;
   for (let i = 0; i < source.length; i += 1) {
     hash ^= source.charCodeAt(i);
@@ -81,6 +84,9 @@ const createTemplateCache = ({
   const set = (key: string, code: string): void => {
     entries.delete(key);
     entries.set(key, code);
+    // WHY: imperative LRU eviction loop — Map insertion-order enumeration is the
+    // recency list; GC-free index-based eviction would require a parallel array.
+    // Loop exemption: bounded cache eviction (maxEntries is typically 100–1000).
     while (entries.size > maxEntries) {
       const oldest = entries.keys().next().value;
       if (oldest === undefined) {

@@ -19,8 +19,8 @@ const querySchema = z.object({
 });
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  const query = readValidatedQuery({ schema: querySchema, req, res });
-  if (query === null) {
+  const queryResult = readValidatedQuery({ schema: querySchema, req, res });
+  if (!queryResult.ok) {
     return;
   }
 
@@ -29,8 +29,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     next,
     result: await renderTemplate('boundary.njk', {
       context: {
-        name: query.name,
-        count: query.count,
+        name: queryResult.data.name,
+        count: queryResult.data.count,
       },
       config: standardRouteConfig,
     }),

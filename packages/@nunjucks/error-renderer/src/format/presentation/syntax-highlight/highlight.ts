@@ -61,19 +61,14 @@ const matchHtmlRule = (
   rest: string,
   inTag: boolean
 ): HighlightChunk | null => {
-  if (rules.length === 0) {
-    return null;
+  for (const rule of rules) {
+    const matched = rest.match(rule.re)?.[0];
+    if (matched) {
+      const nextInTag = rule.toggle ? matched === '{{' || matched === '{%' : inTag;
+      return { html: span(rule.type, matched), length: matched.length, inTag: nextInTag };
+    }
   }
-  const rule = rules[0];
-  if (!rule) {
-    return null;
-  }
-  const matched = rest.match(rule.re)?.[0];
-  if (matched) {
-    const nextInTag = rule.toggle ? matched === '{{' || matched === '{%' : inTag;
-    return { html: span(rule.type, matched), length: matched.length, inTag: nextInTag };
-  }
-  return matchHtmlRule(rules.slice(1), rest, inTag);
+  return null;
 };
 
 const nextHtmlChunk = (rest: string, inTag: boolean): HighlightChunk => {
@@ -122,32 +117,41 @@ const highlightHtml = (code: string): string => {
 const JS_RULES: SyntaxRule[] = [
   { type: 'comment', re: /^\/\/[^\n]*/u },
   { type: 'comment', re: /^\/\*[\s\S]*?\*\//u },
-  { type: 'string', re: /^(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/u },
+  { type: 'string', re: /^(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*'|$'(?:[^'\\]|\\.)*')/u },
   { type: 'number', re: /^\d+(?:\.\d+)?/u },
   {
     type: 'keyword',
-    re: /^(?:function|async|await|try|catch|finally|return|const|let|var|new|throw|typeof|void|delete|class|extends|super|import|export|default|yield|if|else|for|while|do|switch|case|break|continue|this|of|in|instanceof)(?![\w$])/u,
+    re: /^(?:function|async|await|try|catch|finally|return|const|let|var|new|throw|typeof|void|delete|class|extends|super|import|export|default|yield|if|else|for|while|do|switch|case|break|continue|this|of|in|instanceof|type|enum|interface|namespace|module|declare|abstract|implements|public|private|protected|readonly|static|get|set|asserts|infer|keyof|never|unknown|any|debugger|with|as)(?![\w$])/u,
   },
   { type: 'variable', re: /^[a-zA-Z_$][\w$]*/u },
   {
     type: 'operator',
-    re: /^(?:=>|==|!=|<=|>=|&&|\|\||<|>|\+|-|\*|\/|%|&|\||\^|!|=|\?|:|;|,|\.|\(|\)|\[|\]|\{|\})/u,
+    re: /^(?:=>|==|!=|<=|>=|&&|\|\||<|>|\+|-|\*|\/|%|&|\||\^|!|=|\?|:|;|,|\.|\(|\)|\[|\]|\{|\}|\.\.\.)/u,
   },
 ];
 
+const CSS_RULES: SyntaxRule[] = [
+  { type: 'comment', re: /^\/\*[\s\S]*?\*\//u },
+  { type: 'string', re: /^"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/u },
+  { type: 'number', re: /^(?:\d+(?:\.\d+)?(?:px|em|rem|vh|vw|ch|ex|cm|mm|in|pt|pc|deg|rad|grad|turn|s|ms|%)?|\d+(?:\.\d+)?)/u },
+  {
+    type: 'keyword',
+    re: /^(?:inherit|initial|unset|none|auto|normal|bold|italic|underline|overline|line-through|blink|hidden|scroll|auto|static|relative|absolute|fixed|sticky|block|inline|inline-block|flex|inline-flex|grid|inline-grid|table|inline-table|list-item|run-in|compact|contents|table-row|table-cell|table-row-group|table-header-group|table-footer-group|table-column|table-column-group|table-caption|separate|collapse|transparent|solid|double|groove|ridge|inset|outset|dotted|dashed|center|left|right|justify|both|freeze|print|page|always|avoid|avoid-page|avoid-column|avoid-page)(?![\w-])/u,
+  },
+  { type: 'variable', re: /^--[\w-]*/u },
+  { type: 'attr', re: /^[\w-]+(?=\s*:)/u },
+  { type: 'selector', re: /^[.#][\w-]+/u },
+  { type: 'operator', re: /^[{}()[\]:;,>+~]/u },
+];
+
 const matchJsRule = (rules: SyntaxRule[], rest: string): HighlightChunk | null => {
-  if (rules.length === 0) {
-    return null;
+  for (const rule of rules) {
+    const matched = rest.match(rule.re)?.[0];
+    if (matched) {
+      return { html: span(rule.type, matched), length: matched.length, inTag: false };
+    }
   }
-  const rule = rules[0];
-  if (!rule) {
-    return null;
-  }
-  const matched = rest.match(rule.re)?.[0];
-  if (matched) {
-    return { html: span(rule.type, matched), length: matched.length, inTag: false };
-  }
-  return matchJsRule(rules.slice(1), rest);
+  return null;
 };
 
 const nextJsChunk = (rest: string): HighlightChunk => {
@@ -157,6 +161,30 @@ const nextJsChunk = (rest: string): HighlightChunk => {
   }
 
   const matched = matchJsRule(JS_RULES, rest);
+  if (matched) {
+    return matched;
+  }
+
+  return { html: escapeHtml(rest[0] ?? ''), length: 1, inTag: false };
+};
+
+const matchCssRule = (rules: SyntaxRule[], rest: string): HighlightChunk | null => {
+  for (const rule of rules) {
+    const matched = rest.match(rule.re)?.[0];
+    if (matched) {
+      return { html: span(rule.type, matched), length: matched.length, inTag: false };
+    }
+  }
+  return null;
+};
+
+const nextCssChunk = (rest: string): HighlightChunk => {
+  const ws = rest.match(LEADING_WHITESPACE_RE)?.[0];
+  if (ws) {
+    return { html: ws, length: ws.length, inTag: false };
+  }
+
+  const matched = matchCssRule(CSS_RULES, rest);
   if (matched) {
     return matched;
   }
@@ -183,6 +211,23 @@ const highlightJs = (code: string): string => {
   return out;
 };
 
+/**
+ * Highlights CSS with the same escaped-span scheme as `highlightJs`.
+ */
+const highlightCss = (code: string): string => {
+  if (!code) {
+    return '';
+  }
+  let index = 0;
+  let out = '';
+  while (index < code.length) {
+    const chunk = nextCssChunk(code.slice(index));
+    out += chunk.html;
+    index += chunk.length;
+  }
+  return out;
+};
+
 // WHY: ANSI syntax coloring — mirrors the HTML tokenizer (SYNTAX_RULES + inTag toggle) but outputs picocolors terminal colors instead of HTML spans. Color scheme matches the HTML CSS (tag=red, delimiter=cyan, string=green, keyword=magenta, etc.) so ANSI and HTML output look consistent.
 const ANSI_COLOR_MAP: Record<string, ((text: string) => string) | undefined> = {
   comment: (text) => picocolors.dim(picocolors.italic(text)),
@@ -195,6 +240,7 @@ const ANSI_COLOR_MAP: Record<string, ((text: string) => string) | undefined> = {
   keyword: (text) => picocolors.magenta(picocolors.bold(text)),
   variable: (text) => text,
   operator: (text) => picocolors.gray(text),
+  selector: (text) => picocolors.red(text),
 };
 
 const colorize = (type: string, text: string): string =>
@@ -211,19 +257,14 @@ const matchAnsiRule = (
   rest: string,
   inTag: boolean
 ): AnsiChunk | null => {
-  if (rules.length === 0) {
-    return null;
+  for (const rule of rules) {
+    const matched = rest.match(rule.re)?.[0];
+    if (matched) {
+      const nextInTag = rule.toggle ? matched === '{{' || matched === '{%' : inTag;
+      return { text: colorize(rule.type, matched), length: matched.length, inTag: nextInTag };
+    }
   }
-  const rule = rules[0];
-  if (!rule) {
-    return null;
-  }
-  const matched = rest.match(rule.re)?.[0];
-  if (matched) {
-    const nextInTag = rule.toggle ? matched === '{{' || matched === '{%' : inTag;
-    return { text: colorize(rule.type, matched), length: matched.length, inTag: nextInTag };
-  }
-  return matchAnsiRule(rules.slice(1), rest, inTag);
+  return null;
 };
 
 const nextAnsiChunk = (rest: string, inTag: boolean): AnsiChunk => {
@@ -269,4 +310,4 @@ const highlightAnsi = (code: string): string => {
 };
 
 export { escapeAttribute, escapeHtml } from '@nunjucks/lib';
-export { highlightAnsi, highlightHtml, highlightJs, renderInlineMarkdown };
+export { highlightAnsi, highlightCss, highlightHtml, highlightJs, renderInlineMarkdown };

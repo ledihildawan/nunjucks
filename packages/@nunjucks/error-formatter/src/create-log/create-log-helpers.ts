@@ -42,7 +42,6 @@ const resolveMessage = (
   return message;
 };
 
-/** Null-normalizes an `ErrorContext` so downstream consumers never see `undefined` fields. */
 const normalizeErrorContext = (
   context: ErrorContext | null | undefined
 ): NormalizedErrorContext => ({
@@ -55,10 +54,7 @@ const normalizeErrorContext = (
   environment: context?.environment ?? null,
 });
 
-/**
- * Null-normalizes a `WarningContext`; additionally defaults `undefinedMode`
- * to `DEFAULT_UNDEFINED_MODE` when absent or `null`.
- */
+// WHY: defaults `undefinedMode` to `DEFAULT_UNDEFINED_MODE` when absent or `null`.
 const normalizeWarningContext = (
   context: WarningContext | null | undefined
 ): NormalizedWarningContext => ({

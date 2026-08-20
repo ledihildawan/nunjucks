@@ -2,10 +2,10 @@ import { map, pipe, reduce } from 'remeda';
 import { isCallExtension, isCallExtensionAsync, isNode } from './types/guards.ts';
 import type { CallExtensionNode, ChildrenNode, Node } from './types/index.ts';
 
-const getFields = (node: Node): string[] => {
-  const excluded = new Set(['type', 'lineno', 'colno', 'fields']);
-  return (node.fields ?? []).filter((field) => !excluded.has(field));
-};
+const EXCLUDED_FIELDS = new Set(['type', 'lineno', 'colno', 'fields']);
+
+const getFields = (node: Node): string[] =>
+  (node.fields ?? []).filter((field) => !EXCLUDED_FIELDS.has(field));
 
 const getNodeField = (node: Node, field: string): unknown => Reflect.get(node, field);
 

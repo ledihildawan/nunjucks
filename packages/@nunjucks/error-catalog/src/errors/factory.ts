@@ -15,6 +15,21 @@ interface ErrorDefinitionOptions {
   extraFrom?: ExtraExtractor;
 }
 
+interface ErrorDefinition {
+  readonly name: string;
+  readonly message: string;
+  readonly pattern: RegExp;
+  readonly category: string;
+  readonly titleTemplate?: string;
+  readonly causes: readonly string[];
+  readonly fixCode?: string;
+  readonly fixComment?: string;
+  readonly documentationUrl?: string;
+  readonly severity?: ErrorSeverity;
+  readonly subjectFrom?: ((groups: RegExpMatchArray) => string | null) | null;
+  readonly extraFrom?: ExtraExtractor | null;
+}
+
 // WHY: single source of truth for placeholder → regex capture group mapping. Adding a new placeholder requires ONE entry here — no parallel list to keep in sync. Identifiers (name, key, subject, attr, tag) use [^"']+ to avoid matching quoted strings; free-form values (type, path, msg, etc.) use .+ for broad matching.
 const PLACEHOLDER_PATTERNS: ReadonlyArray<{
   readonly placeholder: string;
@@ -55,7 +70,7 @@ const createPattern = (messageTemplate: string): RegExp => {
  * `{placeholder}` params into capture groups, and defaults `severity` to
  * `'error'` so every definition carries an explicit value.
  */
-const createErrorDefinition = (options: ErrorDefinitionOptions) => {
+const createErrorDefinition = (options: ErrorDefinitionOptions): ErrorDefinition => {
   const {
     name,
     message,

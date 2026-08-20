@@ -18,9 +18,14 @@ interface InternalInvariantError extends Error {
 const isInternalInvariantError = (value: unknown): value is InternalInvariantError =>
   isRecord(value) && INTERNAL_INVARIANT in value && value[INTERNAL_INVARIANT] === true;
 
-// WHY: one audited construction site keeps `throw new Error` out of the domain core —
-// invariant failures carry their own brand so they stay greppable and separable from
-// accidental plain errors.
+/**
+ * Constructs a programmer-bug error branded as an internal engine invariant violation.
+ * Deliberately NOT branded with `TEMPLATE_ERROR`, so Result boundaries (e.g. `parse`)
+ * propagate it as a crash rather than mapping it to a user-facing catalog error.
+ *
+ * @param message - Human-readable description of which invariant was violated.
+ * @returns An `InternalInvariantError` bearing the `INTERNAL_INVARIANT` brand.
+ */
 const createInternalInvariantError = (message: string): InternalInvariantError =>
   Object.assign(new Error(`internal invariant violated: ${message}`), {
     [INTERNAL_INVARIANT]: true as const,

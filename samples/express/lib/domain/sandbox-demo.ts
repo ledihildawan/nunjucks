@@ -1,5 +1,5 @@
 import type { NunjucksConfig } from '@nunjucks/core';
-import { escapeHtml, isErr, isOk, type Result } from '@nunjucks/lib';
+import { isErr, isOk, type Result } from '@nunjucks/lib';
 import { renderDemoTemplate } from './render-template.ts';
 
 interface TestCase {
@@ -81,12 +81,12 @@ const outcomeError = (row: SandboxTestResult): Error | null =>
 
 const outcomeOutput = (row: SandboxTestResult): string => (row.outcome.ok ? row.outcome.value : '');
 
-const prototypeEscapeKeys = ['__proto__', 'constructor', 'prototype'];
+const prototypeEscapeKeys = new Set(['__proto__', 'constructor', 'prototype']);
 
 // WHY: the engine's prototype-escape guard is unconditional — inherited proto/constructor reads
 // render as not-found ("undefined") even in default mode; sandbox mode only upgrades that to a throw.
 const isPrototypeEscapeProbe = (row: SandboxTestResult): boolean =>
-  prototypeEscapeKeys.some((key) => row.name.includes(key));
+  [...prototypeEscapeKeys].some((key) => row.name.includes(key));
 
 const classifyStatus = (
   row: SandboxTestResult,
@@ -120,82 +120,8 @@ const statusClass = (row: SandboxTestResult, suite: SandboxSuite): string =>
 const statusLabel = (row: SandboxTestResult, suite: SandboxSuite): string =>
   classifyStatus(row, suite).label;
 
-/**
- * Renders a suite's results as a standalone HTML report — engine output arrives
- * pre-escaped under forced autoescape; only error messages need explicit escaping.
- */
-const renderTable = (table: SandboxTestResult[], suite: SandboxSuite): string => {
-  const rows = table
-    .map((row) => {
-      const err = outcomeError(row);
-      // WHY: the success path is engine output rendered under renderDemoTemplate's forced
-      // autoescape — it arrives pre-escaped; error messages are the only untrusted text
-      // and are escaped explicitly above.
-      const resultText = err !== null ? escapeHtml(err.message) : outcomeOutput(row);
-      const statusClassName = statusClass(row, suite);
-      const statusLabelText = statusLabel(row, suite);
-      return (
-        '<tr>' +
-        '<td>' +
-        escapeHtml(row.name) +
-        '</td>' +
-        '<td>' +
-        resultText +
-        '</td>' +
-        '<td class="' +
-        statusClassName +
-        '">' +
-        statusLabelText +
-        '</td>' +
-        '</tr>'
-      );
-    })
-    .join('');
-
-  const intro = suite.introHtml ?? '';
-  const outro = suite.outroHtml ?? '';
-
-  return (
-    '<!DOCTYPE html>' +
-    '<html>' +
-    '<head>' +
-    '<title>' +
-    escapeHtml(suite.title) +
-    '</title>' +
-    '<style>' +
-    'body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;max-width:900px;margin:0 auto;padding:20px}' +
-    'h1{color:' +
-    suite.headingColor +
-    '}' +
-    'table{width:100%;border-collapse:collapse;margin:20px 0}' +
-    'th,td{text-align:left;padding:12px;border:1px solid #ddd}' +
-    'th{background:' +
-    suite.accentColor +
-    ';color:white}' +
-    '.blocked{background:#fee;color:#c0392b}' +
-    '.allowed{background:#efe;color:#27ae60}' +
-    '.passed{background:#d5f4e6;color:#27ae60}' +
-    '.failed{background:#fadbd8;color:#e74c3c}' +
-    '.code{background:#f8f9fa;padding:15px;border-radius:8px;font-family:monospace;margin:15px 0}' +
-    '.info{background:#e8f4f8;padding:15px;border-radius:8px;margin:15px 0}' +
-    'a{color:#3498db}' +
-    '</style>' +
-    '</head>' +
-    '<body>' +
-    '<h1>' +
-    escapeHtml(suite.title) +
-    '</h1>' +
-    '<p><a href="/sandbox">Back to Sandbox Demo</a></p>' +
-    intro +
-    '<table>' +
-    '<tr><th>Test</th><th>Result</th><th>Status</th></tr>' +
-    rows +
-    '</table>' +
-    outro +
-    '</body>' +
-    '</html>'
-  );
-};
+export type { SandboxSuite, SandboxTestResult };
+export { classifyStatus, createSandboxSuites, outcomeError, outcomeOutput, runTests, statusClass, statusLabel };
 
 /**
  * Builds the four demo suites (sandbox, normal, allowlist, code-execution); dangerous
@@ -366,5 +292,3 @@ const createSandboxSuites = (dangerousValues: DangerousContextValues): SandboxSu
     ],
   },
 ];
-
-export { renderTable, runTests, createSandboxSuites };

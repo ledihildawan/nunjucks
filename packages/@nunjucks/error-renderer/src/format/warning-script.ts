@@ -9,7 +9,7 @@ interface WarningScriptOptions {
 }
 
 const safeJsonForScript = (value: string): string =>
-  value.replaceAll('<', '\\u003c').replaceAll('>', '\\u003e').replaceAll('&', '\\u0026');
+  value.replaceAll('&', '\\u0026').replaceAll('<', '\\u003c').replaceAll('>', '\\u003e');
 
 const getLocationString = (warning: Warning): string => {
   if (warning.lineno === undefined || warning.lineno === null) {

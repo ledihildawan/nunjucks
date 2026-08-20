@@ -1,3 +1,4 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: render-time context object is a single cohesive unit; splitting would scatter related types and methods
 import type { IncludeChain } from '@nunjucks/error-formatter';
 import { collectString, hasOwn } from '@nunjucks/lib';
 import { isPrototypeEscapeKey } from '@nunjucks/security';
@@ -95,7 +96,7 @@ interface ContextState {
   parentContext: Context | null;
 }
 
-// WHY: canonical bare Env — the single source for the 'no env supplied' default shape; core's fallback Env derives from it.
+/** Canonical bare `Env`: `dev: false`, `autoescape: true`, `undefined: 'default'`. */
 const createDefaultEnv = (): Env => ({
   opts: { dev: false, autoescape: true, undefined: 'default' },
   getFilter: () => null,
@@ -264,6 +265,17 @@ const createContextFromState = (state: ContextState): Context => {
   return context;
 };
 
+/**
+ * Creates a render-time context. The context object is immutable — mutation methods
+ * return a new context rather than mutating in place.
+ *
+ * @param options - Destructured options: `ctx` (variable bindings), `blocks`
+ *   (compiled block overrides), `env` (filter/test/extension lookups), and
+ *   `metadata` (block location table for error reporting).
+ * @returns A `Context` with read methods (`lookup`, `getBlock`, `getSuper`) and
+ *   write methods (`setVariable`, `addBlock`, `addExport`, `fork`) that each
+ *   return a new immutable context.
+ */
 const createContext = ({
   ctx = {},
   blocks: initialBlocks = {},

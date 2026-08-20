@@ -86,7 +86,6 @@ function createLog(type: string, fields: CreateLogFields): TemplateError | Templ
   });
 }
 
-/** Checks whether a value is a `TemplateError` branded via the `TEMPLATE_ERROR` marker. */
 const isTemplateError = (value: unknown): value is TemplateError =>
   isKeyedObject(value) && value[TEMPLATE_ERROR] === true;
 

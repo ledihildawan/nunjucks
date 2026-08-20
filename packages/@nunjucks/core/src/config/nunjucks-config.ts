@@ -1,6 +1,5 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
-import type { Result } from '@nunjucks/lib';
-import type { TemplateLoader } from '@nunjucks/loaders';
+import type { Result, TemplateLoader } from '@nunjucks/lib';
 import type { UndefinedMode } from '@nunjucks/shared';
 import type { ContentType, DomPurifyConfig } from '@nunjucks/shared';
 import type { ExpressionSecurityConfig } from '@nunjucks/validators';

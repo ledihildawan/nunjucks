@@ -30,11 +30,18 @@ interface RenderRuntimeOptions {
   warnings?: unknown[];
 }
 
-// WHY: this object is the compiler-emitted contract surface — every property must be exactly
-// what generated code references as runtime.<name>. isSafeString and copySafeness are never
-// emitted by the compiler (verified against compiler/src) and are therefore kept OFF the
-// object; their implementations remain exported via the package barrel
-// (@nunjucks/runtime index) for first-party consumers.
+/**
+ * Factory for the compiler-emitted runtime contract object — every property on the
+ * returned object is exactly what generated code references as `runtime.<name>`.
+ * `isSafeString` and `copySafeness` are never emitted by the compiler (verified
+ * against compiler/src) and are therefore kept off this object; their
+ * implementations remain exported via the package barrel for first-party consumers.
+ *
+ * @param options - Optional runtime config carrying `templateName`, `renderContext`,
+ *   and a `warnings` collector array that the core render pipeline drains for
+ *   dev-mode injection after render completes.
+ * @returns The runtime contract object passed to compiler-generated template code.
+ */
 const createRenderRuntime = (options?: RenderRuntimeOptions) => ({
   suppressValue,
   awaitValue,

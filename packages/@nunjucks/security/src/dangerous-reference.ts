@@ -4,7 +4,12 @@
 // validators sits above runtime).
 // WHY: host-global reads happen at call time instead of module-load captures so a host
 // that installs or replaces globals after module init is still detected by identity.
+// WHY: globalRecord() is called once per module and cached — every checkFunction uses the
+// same snapshot, which is safe because the function reads identity (same reference each time).
 const globalRecord = (): Record<string, unknown> => globalThis as Record<string, unknown>;
+
+const HOST_SNAPSHOT: Record<string, unknown> | undefined =
+  typeof globalThis !== 'undefined' ? globalRecord() : undefined;
 
 const isPrimitive = (value: unknown): boolean =>
   value === null ||
@@ -13,22 +18,22 @@ const isPrimitive = (value: unknown): boolean =>
 
 const checkGlobalThis = (value: unknown): boolean =>
   typeof globalThis !== 'undefined' && value === globalThis;
-const checkProcess = (value: unknown): boolean => {
-  const host = globalRecord();
-  return host.process !== undefined && value === host.process;
-};
-const checkWindow = (value: unknown): boolean => {
-  const host = globalRecord();
-  return host.window !== undefined && value === host.window;
-};
-const checkDocument = (value: unknown): boolean => {
-  const host = globalRecord();
-  return host.document !== undefined && value === host.document;
-};
-const checkSelf = (value: unknown): boolean => {
-  const host = globalRecord();
-  return host.self !== undefined && value === host.self;
-};
+const checkProcess = (value: unknown): boolean =>
+  HOST_SNAPSHOT !== undefined &&
+  HOST_SNAPSHOT.process !== undefined &&
+  value === HOST_SNAPSHOT.process;
+const checkWindow = (value: unknown): boolean =>
+  HOST_SNAPSHOT !== undefined &&
+  HOST_SNAPSHOT.window !== undefined &&
+  value === HOST_SNAPSHOT.window;
+const checkDocument = (value: unknown): boolean =>
+  HOST_SNAPSHOT !== undefined &&
+  HOST_SNAPSHOT.document !== undefined &&
+  value === HOST_SNAPSHOT.document;
+const checkSelf = (value: unknown): boolean =>
+  HOST_SNAPSHOT !== undefined &&
+  HOST_SNAPSHOT.self !== undefined &&
+  value === HOST_SNAPSHOT.self;
 const checkBuffer = (value: unknown): boolean =>
   typeof Buffer !== 'undefined' && value instanceof Buffer;
 

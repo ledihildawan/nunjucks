@@ -1,35 +1,9 @@
 import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
-import { err, isErr, type Result } from '@nunjucks/lib';
+import { err, isErr, type Result, type TemplateLoader, type TemplateLoaderSource } from '@nunjucks/lib';
 
-/**
- * The resolved template payload a loader returns on `ok`: `src` is the full
- * template source text, `path` is the resolved location used for error
- * reporting and cache keys.
- */
-export interface TemplateLoaderSource {
-  src: string;
-  path: string;
-}
-
-/**
- * The minimal loader contract the render pipeline consumes — `getSource`
- * resolves a template name to source text.
- *
- * Resolution outcomes:
- * - `ok` — carries the source (`TemplateLoaderSource`).
- * - `err` — a hard failure (filesystem error, permission denied) that aborts
- *   resolution.
- * - `null` — "not found here"; a chain moves on to the next loader.
- *
- * The built-in FS loader treats a traversal-blocked name as a MISS (null,
- * defers onward) — nothing is ever read for it; custom loaders decide their
- * own miss-vs-error envelope. Custom loaders only need this shape.
- */
-export interface TemplateLoader {
-  getSource: (name: string) => Promise<Result<TemplateLoaderSource, TemplateError> | null>;
-}
+export type { TemplateLoader, TemplateLoaderSource } from '@nunjucks/lib';
 
 interface ResolveChainInput {
   loaders: readonly TemplateLoader[];

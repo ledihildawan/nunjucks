@@ -1,7 +1,6 @@
 import { getError } from '@nunjucks/error-catalog';
 import { createLog } from '@nunjucks/error-formatter';
-import { isErr } from '@nunjucks/lib';
-import type { TemplateLoader } from '@nunjucks/loaders';
+import { isErr, type TemplateLoader } from '@nunjucks/lib';
 import { loadCompiledCode, type Env, type GetTemplateOptions } from '@nunjucks/runtime';
 import { isCompiledTemplateExports, type CompiledTemplateExports } from '@nunjucks/shared';
 import { createTemplate } from '../template/index.ts';

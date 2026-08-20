@@ -15,7 +15,9 @@ import { devErrorRouteConfig, strictErrorRouteConfig, VIEWS } from '../lib/io/vi
  */
 const router: Router = express.Router();
 
-for (const { path: routePath, template, context } of errorRoutes) {
+// WHY: imperative route registration — each error route mounts a GET handler under its own
+// path. Loop exemption: static route list; no dynamic fan-out, no GC pressure.
+errorRoutes.forEach(({ path: routePath, template, context }) => {
   router.get(`/${routePath}`, async (_req: Request, res: Response, next: NextFunction) => {
     sendTemplateResult({
       res,
@@ -23,7 +25,7 @@ for (const { path: routePath, template, context } of errorRoutes) {
       result: await renderTemplate(template, { context, config: strictErrorRouteConfig }),
     });
   });
-}
+});
 
 // WHY: filter-error lives here instead of error-route-data.ts because it needs a THROWING
 // filter — the shell owns the throwing filters; the domain only owns the template + context

@@ -264,6 +264,7 @@
   .syntax-variable { color: light-dark(oklch(25% 0.02 285), oklch(88% 0.02 285)); }
   .syntax-operator { color: light-dark(oklch(40% 0.04 285), oklch(70% 0.04 285)); }
   .syntax-comment { color: light-dark(oklch(50% 0.02 285), oklch(60% 0.02 285)); font-style: italic; }
+  .syntax-selector { color: light-dark(oklch(55% 0.15 30), oklch(70% 0.15 30)); }
 
   .md-code {
     font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;

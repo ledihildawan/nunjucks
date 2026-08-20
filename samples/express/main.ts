@@ -2,10 +2,12 @@ import { createApp } from './app.ts';
 
 const app = createApp();
 
-// WHY: PORT is shell config, not domain data — env override keeps container/CI runs
-// from fighting the demo default. parseInt + || so a malformed value (empty string,
-// non-numeric) degrades to the default instead of NaN.
-const PORT = Number.parseInt(process.env.PORT ?? '', 10) || 4000;
+// WHY: PORT is shell config — env override keeps container/CI runs from fighting
+// the demo default. parseInt so a malformed value degrades to NaN and triggers the
+// fallback to DEFAULT_PORT.
+const PORT = Number.parseInt(process.env.PORT ?? '', 10);
+const DEFAULT_PORT = 4000;
+const PORT_FINAL = Number.isNaN(PORT) ? DEFAULT_PORT : PORT;
 
 // WHY: declarative catalog — every demo surface declares its path + intent once. The listen
 // handler renders the catalog via map/join so the running output stays in lockstep with the
@@ -51,11 +53,11 @@ const baseRoutes: readonly RouteEntry[] = [
 
 // WHY: bind loopback only — this demo serves rich dev error pages and project source
 // snippets; exposing it on all interfaces (the default) would leak them to the LAN.
-const server = app.listen(PORT, '127.0.0.1', () => {
+const server = app.listen(PORT_FINAL, '127.0.0.1', () => {
   const catalog = baseRoutes
     .map((entry) => `  ${entry.path.padEnd(22)} — ${entry.intent}`)
     .join('\n');
-  console.log(`\nNunjucks Express Demo — http://localhost:${PORT}`);
+  console.log(`\nNunjucks Express Demo — http://localhost:${PORT_FINAL}`);
   console.log('Engine surface at a glance:\n');
   console.log(catalog);
   console.log('\nEvery route renders with `nunjucks(config)` from @nunjucks/core.');

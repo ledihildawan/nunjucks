@@ -1,8 +1,7 @@
-import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError, TemplateWarning } from '@nunjucks/error-formatter';
-import { createLog } from '@nunjucks/error-formatter';
 import { injectWarningsScript } from '@nunjucks/error-renderer';
-import { err, isErr, isKeyedObject, ok, type Result } from '@nunjucks/lib';
+import { err, isErr, ok, type Result, type TemplateLoader } from '@nunjucks/lib';
+import { createFileSystemLoader } from '@nunjucks/loaders';
 import { createFrame, type ExecuteConfig, execute } from '@nunjucks/runtime';
 import { getDefaultConfig } from '../config/global.ts';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
@@ -13,7 +12,6 @@ import {
   compileTemplate,
   handleContextStrictMode,
   prepareSandbox,
-  resolveConfiguredLoader,
   resolveTemplateSource,
   TEMPLATE_FILE_EXTENSION_RE,
 } from './render-pipeline.ts';
@@ -26,53 +24,7 @@ import type {
   RenderStreamResult,
 } from './render-types.ts';
 import { validateRender, validateTemplateSource } from './render-validation.ts';
-
-type FilterFunction = (...args: unknown[]) => unknown;
-type FilterMap = Record<string, FilterFunction>;
-
-const isCallableEntry = (
-  entry: readonly [string, unknown]
-): entry is readonly [string, FilterFunction] => typeof entry[1] === 'function';
-
-interface PartitionedCallableEntries {
-  callableEntries: readonly (readonly [string, FilterFunction])[];
-  invalidNames: readonly string[];
-}
-
-const partitionCallableEntries = (
-  entries: readonly (readonly [string, unknown])[]
-): PartitionedCallableEntries => ({
-  callableEntries: entries.filter(isCallableEntry),
-  invalidNames: entries.filter((entry) => !isCallableEntry(entry)).map(([name]) => name),
-});
-
-// WHY: non-function filters/tests are config misuse (rendering would crash at the call site with an opaque
-// TypeError), so surface them as a catalog-enriched config error at the earliest typed seam instead of casting.
-const createInvalidCallableError = (
-  configKey: string,
-  invalidNames: readonly string[]
-): TemplateError =>
-  createLog('error', {
-    def: {
-      ...getError('INVALID_CONFIG'),
-      message: () =>
-        `Invalid configuration: ${configKey} entries must be functions (non-function entries: ${invalidNames.join(', ')})`,
-    },
-    params: {},
-    subject: invalidNames.join(', '),
-    context: { phase: 'render', lineBase: 'zero' },
-  });
-
-// WHY: source arrives as unknown (GlobalConfig exposes tests only through its index signature), so the
-// partition narrows non-objects to an empty map; config misuse surfaces via the callable partition.
-const buildCallableMap = (source: unknown, configKey: string): Result<FilterMap, TemplateError> => {
-  const { callableEntries, invalidNames } = partitionCallableEntries(
-    isKeyedObject(source) ? Object.entries(source) : []
-  );
-  return invalidNames.length > 0
-    ? err(createInvalidCallableError(configKey, invalidNames))
-    : ok(Object.fromEntries(callableEntries));
-};
+import { buildCallableMap } from './render-callable.ts';
 
 const setupRenderConfig = (
   options: Partial<import('../config/global.ts').GlobalConfig>
@@ -121,6 +73,17 @@ const resolveTemplateName = (template: string, config: RenderConfig): string => 
     return template;
   }
   return config.callerFile || 'inline';
+};
+
+const resolveConfiguredLoader = (config: RenderConfig): TemplateLoader | null => {
+  if (config.loader) {
+    return config.loader;
+  }
+  const views = config.views;
+  if (!views || (Array.isArray(views) && views.length === 0)) {
+    return null;
+  }
+  return createFileSystemLoader(views);
 };
 
 const executeCompiledTemplate = async (
@@ -197,7 +160,7 @@ const prepareRender = async (
   }
   const { warningsCollector, context: safeContext } = strictResult.value;
 
-  const loader = config.loader ?? resolveConfiguredLoader(config);
+  const loader = resolveConfiguredLoader(config);
   const sourceResult = await resolveTemplateSource({ template, loader, config });
   if (isErr(sourceResult)) {
     return err(

@@ -85,7 +85,7 @@ describe('toHtmlMarker — iframe srcdoc escaping', () => {
   test('escapes closing tags so the srcdoc cannot break out of the script', () => {
     const markerError: ErrorLike = { message: MATCHED_UNDEFINED_VARIABLE };
     const markerHtml = toHtmlMarker(markerError);
-    expect(markerHtml).toContain('<\\/');
+    expect(markerHtml).toContain('\\u003c/');
     const srcdocLiteral = markerHtml.slice(
       markerHtml.indexOf('srcdoc='),
       markerHtml.indexOf(';o.appendChild(f)')
@@ -96,7 +96,7 @@ describe('toHtmlMarker — iframe srcdoc escaping', () => {
   test('escapes double quotes inside the srcdoc JSON literal', () => {
     const markerError: ErrorLike = { message: MATCHED_UNDEFINED_VARIABLE };
     const markerHtml = toHtmlMarker(markerError);
-    expect(markerHtml).toContain('srcdoc="<!DOCTYPE html>');
+    expect(markerHtml).toMatch(/srcdoc="[^"]*\\u003c!DOCTYPE[^"]*\\"/);
     expect(markerHtml).toMatch(/srcdoc="[^"]*\\"/);
   });
 });

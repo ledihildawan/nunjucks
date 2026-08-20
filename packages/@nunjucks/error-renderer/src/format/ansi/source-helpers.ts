@@ -20,6 +20,9 @@ const getMarker = (isError: boolean): string => {
 };
 
 const getLineNumWidth = (lines: SourceTraceLine[]): number => {
+  if (lines.length === 0) {
+    return MIN_LINE_NUM_WIDTH;
+  }
   const maxLineNum = Math.max(...lines.map((line) => line.number));
   return Math.max(MIN_LINE_NUM_WIDTH, String(maxLineNum).length);
 };

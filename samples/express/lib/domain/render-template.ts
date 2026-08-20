@@ -1,5 +1,5 @@
 import { type NunjucksConfig, nunjucks } from '@nunjucks/core';
-import { err, type Result } from '@nunjucks/lib';
+import type { Result } from '@nunjucks/lib';
 
 /**
  * WHY (module seam): rendering by template NAME is deliberately I/O-adjacent — name
@@ -33,11 +33,7 @@ const renderTemplate = async (
   template: string,
   { context = {}, config = {} }: RenderTemplateOptions = {}
 ): Promise<Result<string, Error>> => {
-  try {
-    return await nunjucks(config).render(template, context);
-  } catch (error: unknown) {
-    return err(error instanceof Error ? error : new Error(String(error)));
-  }
+  return nunjucks(config).render(template, context);
 };
 
 // WHY: alias instead of a duplicate interface — the demo wrapper accepts exactly the
