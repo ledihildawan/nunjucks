@@ -1,4 +1,4 @@
-import type { CallNode, LiteralNode, LookupNode, Node } from '@nunjucks/nodes';
+import type { CallNode, LookupNode, Node, SymbolNode } from '@nunjucks/nodes';
 import { BracketNotation, isLiteral, isSymbol, T } from '@nunjucks/nodes';
 import { emitLocationGuard } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
@@ -8,19 +8,28 @@ import { compileAggregate } from './container.ts';
 
 const bracketFlag = (node: Node): boolean | undefined => node[BracketNotation];
 
-interface BuildSuffixInput {
-  value: Node;
+interface BuildSymbolSuffixInput {
+  value: SymbolNode;
   isBracket: boolean;
   prefix: string;
 }
 
-const buildSymbolSuffix = ({ value, isBracket, prefix }: BuildSuffixInput): string => {
+interface BuildLiteralSuffixInput {
+  literalValue: string;
+  isBracket: boolean;
+  prefix: string;
+}
+
+const buildSymbolSuffix = ({ value, isBracket, prefix }: BuildSymbolSuffixInput): string => {
   const suffix = isBracket ? `[${getNodeName(value)}]` : `.${getNodeName(value)}`;
   return prefix + suffix;
 };
 
-const buildLiteralSuffix = ({ value, isBracket, prefix }: BuildSuffixInput): string => {
-  const literalValue = (value as LiteralNode).value;
+const buildLiteralSuffix = ({
+  literalValue,
+  isBracket,
+  prefix,
+}: BuildLiteralSuffixInput): string => {
   const suffix = isBracket ? `["${literalValue}"]` : `.${literalValue}`;
   return prefix + suffix;
 };
@@ -36,7 +45,7 @@ const handleLookupVal = (node: LookupNode): string => {
     return buildSymbolSuffix({ value, isBracket, prefix: target });
   }
   if (isLiteral(value) && typeof value.value === 'string') {
-    return buildLiteralSuffix({ value, isBracket, prefix: target });
+    return buildLiteralSuffix({ literalValue: value.value, isBracket, prefix: target });
   }
   return buildBracketAccessSuffix(target, value);
 };
@@ -50,8 +59,7 @@ const handleOptionalChain = (node: LookupNode): string => {
     return `${target}${suffix}`;
   }
   if (isLiteral(value) && typeof value.value === 'string') {
-    const literalValue = (value as LiteralNode).value;
-    const suffix = isBracket ? `?.["${literalValue}"]` : `?.${literalValue}`;
+    const suffix = isBracket ? `?.["${value.value}"]` : `?.${value.value}`;
     return `${target}${suffix}`;
   }
   return `${target}?.[${getNodeName(value)}]`;
