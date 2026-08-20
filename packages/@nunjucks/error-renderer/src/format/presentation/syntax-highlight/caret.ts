@@ -24,34 +24,37 @@ const isPathLike = (word: string): boolean =>
 // sources overflowed the stack exactly like the highlight scanner did before its
 // loop rewrite (see highlight.ts). Same behavior, constant stack depth.
 const findWordStart = (line: string, wordEnd: number): number => {
-  let pos = wordEnd - 2;
-  while (pos > 0 && isWordChar(line[pos - 1])) {
-    pos -= 1;
+  let position = wordEnd - 2;
+  while (position > 0 && isWordChar(line[position - 1])) {
+    position -= 1;
   }
-  return pos;
+  return position;
 };
 
-const findWordEnd = (line: string, pos: number): number => {
-  let currentPos = pos;
+const findWordEnd = (line: string, position: number): number => {
+  let currentPos = position;
   while (currentPos < line.length && isWordChar(line[currentPos])) {
     currentPos += 1;
   }
   return currentPos;
 };
 
-const findNonWordLeft = (line: string, pos: number): number => {
-  let searchLeft = pos - 1;
+const findNonWordLeft = (line: string, position: number): number => {
+  let searchLeft = position - 1;
   while (searchLeft >= 0 && !isWordChar(line[searchLeft])) {
     searchLeft -= 1;
   }
   return searchLeft;
 };
 
-const findWordBoundaries = (line: string, pos: number): { wordStart: number; wordEnd: number } => {
-  if (!isWordChar(line[pos])) {
-    return { wordStart: pos, wordEnd: pos };
+const findWordBoundaries = (
+  line: string,
+  position: number
+): { wordStart: number; wordEnd: number } => {
+  if (!isWordChar(line[position])) {
+    return { wordStart: position, wordEnd: position };
   }
-  const wordEnd = findWordEnd(line, pos);
+  const wordEnd = findWordEnd(line, position);
   const wordStart = findWordStart(line, wordEnd);
   return { wordStart, wordEnd };
 };
@@ -93,20 +96,20 @@ const findSegmentInDotPath = ({
 
 interface ResolveHighlightWordInput {
   line: string;
-  pos: number;
+  position: number;
   wordStart: number;
   wordEnd: number;
 }
 
 const resolveHighlightWord = ({
   line,
-  pos,
+  position,
   wordStart,
   wordEnd,
 }: ResolveHighlightWordInput): { wordStart: number; wordEnd: number; highlightWord: string } => {
   const highlightWord = line.slice(wordStart, wordEnd);
   if (highlightWord?.includes('.') && !isPathLike(highlightWord)) {
-    const relativePos = pos - wordStart;
+    const relativePos = position - wordStart;
     const result = findSegmentInDotPath({ highlightWord, wordStart, relativePos });
     if (result) {
       return result;
@@ -150,15 +153,15 @@ const calculateCaretPosition = (line: string, displayCol: number): CaretResult |
   }
 
   const searchLeft = !isWordChar(rawCharAtPos) ? findNonWordLeft(line, rawPos) : rawPos;
-  const pos =
+  const position =
     !isWordChar(rawCharAtPos) && searchLeft >= 0 && isWordChar(line[searchLeft])
       ? searchLeft
       : rawPos;
 
-  const { wordStart: initialStart, wordEnd: initialEnd } = findWordBoundaries(line, pos);
+  const { wordStart: initialStart, wordEnd: initialEnd } = findWordBoundaries(line, position);
   const { wordStart, wordEnd, highlightWord } = resolveHighlightWord({
     line,
-    pos,
+    position,
     wordStart: initialStart,
     wordEnd: initialEnd,
   });

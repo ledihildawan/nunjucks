@@ -25,7 +25,7 @@ const span = (type: string, text: string): string =>
 // where a sliced unanchored `.match()` would have matched anywhere in the tail.
 interface StickyRule {
   type: string;
-  re: RegExp;
+  pattern: RegExp;
   tagOnly?: boolean;
   toggle?: boolean;
 }
@@ -34,15 +34,15 @@ const toStickyRule = (rule: SyntaxRule): StickyRule => ({
   type: rule.type,
   tagOnly: rule.tagOnly,
   toggle: rule.toggle,
-  re: new RegExp(rule.re.source.replace(/^\^/u, ''), `${rule.re.flags}y`),
+  pattern: new RegExp(rule.re.source.replace(/^\^/u, ''), `${rule.re.flags}y`),
 });
 
 const LEADING_WHITESPACE_RE = /\s+/uy;
 const PLAIN_RUN_RE = /[^<{}"'|\s]+/uy;
 
-const matchSticky = (re: RegExp, code: string, index: number): string | null => {
-  re.lastIndex = index;
-  return re.exec(code)?.[0] ?? null;
+const matchSticky = (regex: RegExp, code: string, index: number): string | null => {
+  regex.lastIndex = index;
+  return regex.exec(code)?.[0] ?? null;
 };
 
 interface Chunk {
@@ -74,7 +74,7 @@ const matchRule = (mode: ScannerMode, cursor: ScanState): Chunk | null => {
     if (rule.tagOnly && !inTag) {
       continue;
     }
-    const matched = matchSticky(rule.re, code, index);
+    const matched = matchSticky(rule.pattern, code, index);
     if (matched !== null) {
       const nextInTag = rule.toggle ? matched === '{{' || matched === '{%' : inTag;
       return { output: mode.wrap(rule.type, matched), length: matched.length, inTag: nextInTag };

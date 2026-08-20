@@ -62,8 +62,14 @@ describe('createLog', () => {
     expect(isTemplateError(warn)).toBe(false);
   });
 
-  test('throws on an unknown log type', () => {
-    expect(() => createLog('bad' as never, { def })).toThrow('Unknown log type');
+  // WHY: createLog never throws for an unknown type — it degrades to a returned
+  // TemplateError, so the assertion must inspect the returned value (Bun's toThrow
+  // matcher also passes on functions that merely RETURN an Error).
+  test('degrades an unknown log type to a TemplateError carrying the message', () => {
+    const result = createLog('bad' as never, { def });
+    expect(isTemplateError(result)).toBe(true);
+    expect(result.message).toBe('Unknown log type: bad');
+    expect(result.code).toBe(null);
   });
 
   test('falls back to legacy data when the input is not a definition', () => {

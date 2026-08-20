@@ -1,10 +1,10 @@
 import { find, keys, map, pipe, reduce } from 'remeda';
-import { DEFAULT_CLASSIFICATION, ERROR_DEFINITIONS, RULES, toRule } from './registry.ts';
+import { DEFAULT_CLASSIFICATION, ERROR_DEFINITIONS, getError, RULES, toRule } from './registry.ts';
 import { reservedKeywordClassifier } from './reserved-keyword.ts';
 import type { Classification, Classifier, ClassifyInput, ErrorSeverity } from './types.ts';
 
 interface ReplacePlaceholdersInput {
-  str: string | null | undefined;
+  template: string | null | undefined;
   undefinedName: string | null;
   extra?: Record<string, string | null> | null;
 }
@@ -26,17 +26,17 @@ const SUBJECT_PLACEHOLDERS = [
 ] as const;
 
 const replacePlaceholders = ({
-  str,
+  template,
   undefinedName,
   extra,
 }: ReplacePlaceholdersInput): string | null => {
-  if (!str) {
-    return str ?? null;
+  if (!template) {
+    return template ?? null;
   }
   const replacement = undefinedName ?? '';
   const result = SUBJECT_PLACEHOLDERS.reduce(
     (acc, p) => acc.replaceAll(`{${p}}`, replacement),
-    str
+    template
   );
   if (!extra) {
     return result;
@@ -61,7 +61,7 @@ interface MapCausesOptions {
 
 const mapCauses = ({ causes, undefinedName, extra }: MapCausesOptions): string[] =>
   causes
-    .map((cause) => replacePlaceholders({ str: cause, undefinedName, extra }))
+    .map((cause) => replacePlaceholders({ template: cause, undefinedName, extra }))
     .filter((cause): cause is string => cause !== null);
 
 const extractRuleData = (rule: (typeof RULES)[0], match: RegExpMatchArray | null) => ({
@@ -88,7 +88,7 @@ const buildClassification = ({
   const baseFixCode = input.fixCode ?? rule.fixCode;
   const baseFixComment = input.fixComment ?? rule.fixComment;
   const title = rule.titleTemplate
-    ? replacePlaceholders({ str: rule.titleTemplate, undefinedName: effectiveSubject, extra })
+    ? replacePlaceholders({ template: rule.titleTemplate, undefinedName: effectiveSubject, extra })
     : null;
 
   return {
@@ -97,9 +97,13 @@ const buildClassification = ({
     undefinedName: effectiveSubject,
     title,
     causes: mapCauses({ causes: baseCauses, undefinedName: effectiveSubject, extra }),
-    fixCode: replacePlaceholders({ str: baseFixCode, undefinedName: effectiveSubject, extra }),
+    fixCode: replacePlaceholders({
+      template: baseFixCode,
+      undefinedName: effectiveSubject,
+      extra,
+    }),
     fixComment: replacePlaceholders({
-      str: baseFixComment,
+      template: baseFixComment,
       undefinedName: effectiveSubject,
       extra,
     }),
@@ -115,10 +119,14 @@ const deriveFromRule = (rule: (typeof RULES)[0], input: ClassifyInput): Classifi
 };
 
 const codeClassifier: Classifier = (input) => {
-  if (!input.code) {
+  const code = input.code;
+  if (!code) {
     return null;
   }
-  const errorDef = ERROR_DEFINITIONS[input.code as keyof typeof ERROR_DEFINITIONS];
+  // WHY: hasOwn-bounded lookup — a bare indexed read would surface Object.prototype
+  // entries ('constructor', 'toString') for arbitrary codes instead of `undefined`,
+  // and getError's string overload types the hit without a cast.
+  const errorDef = Object.hasOwn(ERROR_DEFINITIONS, code) ? getError(code) : undefined;
   if (errorDef) {
     return deriveFromRule(toRule(errorDef), input);
   }

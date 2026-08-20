@@ -91,9 +91,9 @@ const buildLocationLink = (
   ide: string,
   target: { path: string; line: string; col: string }
 ): string => {
-  const norm = normalizePath(target.path);
-  const display = shortenPath(norm, '');
-  return `<a href="${escapeAttribute(resolveIdeLink(ide, { path: norm, line: Number.parseInt(target.line, 10), col: Number.parseInt(target.col, 10) }))}" class="stack-link">${escapeHtml(display)}:${target.line}:${target.col}</a>`;
+  const normalizedPath = normalizePath(target.path);
+  const display = shortenPath(normalizedPath, '');
+  return `<a href="${escapeAttribute(resolveIdeLink(ide, { path: normalizedPath, line: Number.parseInt(target.line, 10), col: Number.parseInt(target.col, 10) }))}" class="stack-link">${escapeHtml(display)}:${target.line}:${target.col}</a>`;
 };
 
 const functionSpan = (fnRaw: string): string =>

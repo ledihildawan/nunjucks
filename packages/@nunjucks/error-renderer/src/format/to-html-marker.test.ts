@@ -37,6 +37,18 @@ describe('toHtmlMarker — escaped title', () => {
     expect(markerHtml).toContain('&lt;x&gt;');
     expect(markerHtml).toContain('&amp;z');
   });
+
+  // WHY: regression pin — data-nj-err-full feeds the overflow tooltip; the message
+  // used to be escapeHtml'd first and escapeAttribute'd again, so the tooltip showed
+  // literal entities. The attribute must be single-escaped from the RAW title.
+  test('single-escapes the data-nj-err-full tooltip attribute from the raw title', () => {
+    const hostile: ErrorLike = { message: '<b>&"x"' };
+    const markerHtml = toHtmlMarker(hostile);
+    expect(markerHtml).toContain('data-nj-err-full="&lt;b&gt;&amp;&quot;x&quot;"');
+    expect(markerHtml).toContain('>&lt;b&gt;&amp;&quot;x&quot;</span>');
+    expect(markerHtml).not.toContain('&amp;lt;');
+    expect(markerHtml).not.toContain('&amp;quot;');
+  });
 });
 
 describe('toHtmlMarker — location link (canLink true)', () => {

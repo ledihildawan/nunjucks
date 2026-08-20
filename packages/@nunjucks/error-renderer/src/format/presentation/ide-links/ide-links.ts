@@ -10,6 +10,30 @@ const ANGLE_PREFIX_RE = /^</u;
 // URL handler; this vendor guide is the documented fallback for machines without one.
 const JETBRAINS_IDE_GUIDE_URL = 'https://www.jetbrains.com/idea/guide/tips/open-in-ide/';
 
+// WHY: single membership set — resolveIdeLink and getIdeMeta previously duplicated the
+// alias `||` chain; a new alias is now added in exactly one place.
+const JETBRAINS_ALIASES = new Set([
+  'jetbrains',
+  'intellij',
+  'pycharm',
+  'webstorm',
+  'goland',
+  'rider',
+  'clion',
+  'datagrip',
+  'phpstorm',
+  'rubymine',
+  'rustrover',
+  'appcode',
+  'kubectl',
+]);
+
+// WHY: scheme paths interpolate raw filesystem paths — per-segment encodeURIComponent
+// percent-encodes spaces, `?`, `#`, and other URL delimiters while keeping the `/`
+// separators, consistent with the encodeURIComponent branches below.
+const encodePathSegments = (path: string): string =>
+  path.split('/').map(encodeURIComponent).join('/');
+
 /**
  * Checks whether a string looks like a real file path: non-empty, ending in a known
  * source extension, and not `native` or an internal `<anonymous>`-style frame.
@@ -59,11 +83,11 @@ const resolveIdeLink = (ide: string | IdeLinkFn, target: LinkTarget): string => 
   const normalizedIde = (ide || 'unknown').toLowerCase().trim();
 
   if (normalizedIde === 'vscode' || normalizedIde === 'code') {
-    return `vscode://file/${normalizedPath}:${target.line}:${target.col}`;
+    return `vscode://file/${encodePathSegments(normalizedPath)}:${target.line}:${target.col}`;
   }
 
   if (normalizedIde === 'cursor') {
-    return `vscode://file/${normalizedPath}:${target.line}:${target.col}`;
+    return `vscode://file/${encodePathSegments(normalizedPath)}:${target.line}:${target.col}`;
   }
 
   if (normalizedIde === 'zed') {
@@ -75,39 +99,25 @@ const resolveIdeLink = (ide: string | IdeLinkFn, target: LinkTarget): string => 
   }
 
   if (normalizedIde === 'bbedit') {
-    return `bbedit://${normalizedPath}?line=${target.line}`;
+    return `bbedit://${encodePathSegments(normalizedPath)}?line=${target.line}`;
   }
 
   if (normalizedIde === 'sublime' || normalizedIde === 'subl') {
     return `subl://open?url=file://${encodeURIComponent(normalizedPath)}&line=${target.line}`;
   }
 
-  if (
-    normalizedIde === 'jetbrains' ||
-    normalizedIde === 'intellij' ||
-    normalizedIde === 'pycharm' ||
-    normalizedIde === 'webstorm' ||
-    normalizedIde === 'goland' ||
-    normalizedIde === 'rider' ||
-    normalizedIde === 'clion' ||
-    normalizedIde === 'datagrip' ||
-    normalizedIde === 'phpstorm' ||
-    normalizedIde === 'rubymine' ||
-    normalizedIde === 'rustrover' ||
-    normalizedIde === 'appcode' ||
-    normalizedIde === 'kubectl'
-  ) {
+  if (JETBRAINS_ALIASES.has(normalizedIde)) {
     return JETBRAINS_IDE_GUIDE_URL;
   }
 
   if (normalizedIde === 'vscodium') {
-    return `vscodium://file/${normalizedPath}:${target.line}:${target.col}`;
+    return `vscodium://file/${encodePathSegments(normalizedPath)}:${target.line}:${target.col}`;
   }
 
-  return `vscode://file/${normalizedPath}:${target.line}:${target.col}`;
+  return `vscode://file/${encodePathSegments(normalizedPath)}:${target.line}:${target.col}`;
 };
 
-// Icons from thesvg.org - VS Code not available, using generic code icon as fallback
+// WHY: no official VS Code icon asset — a generic code icon stands in as fallback.
 const VS_CODE_ICON =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M8 3l-5 4.5 5 4.5v-3.1c3.2 0 6 1.3 7.9 3.4L17 9.3C15.3 7.5 12.8 6.5 8 6.5V6L3 10.5 8 15v-3c4.7 0 9.3 1.5 13 4.2l-1.5-1.3C15.3 11.2 11.7 10 8 10V3zm9 5l5-4.5-5-4.5v3.1c-3.2 0-6-1.3-7.9-3.4L9 7.7c1.7 1.8 4.2 2.8 9 2.8V10l5-4.5-5-4.5v3c-4.7 0-9.3-1.5-13-4.2l1.5 1.3c4.2 3.7 7.8 4.9 11.5 4.9V8z"/></svg>';
 const VSCODIUM_ICON =
@@ -152,19 +162,7 @@ const getIdeMeta = (ide?: string): { label: string; color: string | null; icon: 
     return { label: 'PyCharm', color: '#000000', icon: PYCHARM_ICON };
   }
 
-  if (
-    normalizedIde === 'jetbrains' ||
-    normalizedIde === 'intellij' ||
-    normalizedIde === 'goland' ||
-    normalizedIde === 'rider' ||
-    normalizedIde === 'clion' ||
-    normalizedIde === 'datagrip' ||
-    normalizedIde === 'phpstorm' ||
-    normalizedIde === 'rubymine' ||
-    normalizedIde === 'rustrover' ||
-    normalizedIde === 'appcode' ||
-    normalizedIde === 'kubectl'
-  ) {
+  if (JETBRAINS_ALIASES.has(normalizedIde)) {
     return { label: 'JetBrains', color: '#000000', icon: JETBRAINS_ICON };
   }
 

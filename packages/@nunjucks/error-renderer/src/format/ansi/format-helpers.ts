@@ -1,11 +1,12 @@
 import type { LineBase } from '@nunjucks/error-catalog';
-import { getErrorMessage, isErrorLike } from '@nunjucks/error-catalog';
+import { isErrorLike } from '@nunjucks/error-catalog';
 import { slice } from '@nunjucks/lib';
 import picocolors from 'picocolors';
 import { filter, join, map, pipe, split } from 'remeda';
 import { mergeErrorParts } from '../presentation/error/error-parts.ts';
 import { toDisplayLocation } from '../presentation/source-trace/location.ts';
 import type { SourceTrace } from '../presentation/source-trace/source-trace.ts';
+import { stripInlineMarkdown } from '../strip-inline-markdown.ts';
 import { renderContextAnsi } from './context-helpers';
 import { sanitizeTerminalText } from './sanitize-helpers.ts';
 import { formatSourceTrace } from './source-helpers';
@@ -14,10 +15,9 @@ import {
   formatStackLine,
   getExtrasPart,
   getSeverityLabel,
-  stripInlineMarkdown,
-} from './stack-helpers';
+} from './stack-helpers.ts';
 
-export { extractAnsiErrorParts, formatFullAnsi, formatMediumAnsi, getErrorMessage };
+export { extractAnsiErrorParts, formatFullAnsi, formatMediumAnsi };
 
 const BULLET = `${picocolors.yellow('•')} `;
 

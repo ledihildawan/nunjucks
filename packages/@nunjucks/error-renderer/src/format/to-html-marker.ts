@@ -134,7 +134,11 @@ const toHtmlMarker = (
   options: ToHtmlOptions & { severity?: MarkerSeverity } = {}
 ): string => {
   const severity: MarkerSeverity = options.severity ?? 'block';
-  const message = escapeHtml(options.humanTitle ?? error.message ?? 'Unknown error');
+  // WHY: keep the raw title — the visible text gets escapeHtml and the
+  // data-nj-err-full attribute gets escapeAttribute, each exactly once;
+  // pre-escaping here double-encoded the overflow tooltip as literal entities.
+  const rawTitle = options.humanTitle ?? error.message ?? 'Unknown error';
+  const message = escapeHtml(rawTitle);
   const id = createErrorId(error);
   const fullPage = toHtml(error, options);
   const srcdocLiteral = escapeSrcdoc(fullPage);
@@ -167,7 +171,7 @@ const toHtmlMarker = (
 <div class="nj-err-block" role="status" aria-live="polite">
   <div class="nj-err-header">
     <span class="nj-err-icon" data-nj-err-open="${idAttr}" role="button" tabindex="0" aria-label="View error details" title="Click to view details">${ALERT_ICON}</span>
-    <span class="nj-err-msg" data-nj-err-full="${escapeAttribute(message)}">${message}</span>
+    <span class="nj-err-msg" data-nj-err-full="${escapeAttribute(rawTitle)}">${message}</span>
   </div>
   ${locHtml}
 </div>

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
+import { classifyFromError } from './classify.ts';
 import type { ErrorDefinition } from './types.ts';
 
 // WHY: local TemplateError-shaped fixture avoids a test-only dependency on @nunjucks/error-formatter (cycle + undeclared dep)
@@ -78,8 +79,7 @@ describe('error messages - sample output', () => {
 });
 
 describe('classify', () => {
-  test('classification substitutes placeholders in causes', async () => {
-    const { classifyFromError } = await import('./classify.ts');
+  test('classification substitutes placeholders in causes', () => {
     const cls = classifyFromError({
       code: 'UNDEFINED_PROPERTY',
       subject: 'something',
@@ -90,8 +90,7 @@ describe('classify', () => {
     expect(cls.causes.some((c) => c.includes('user'))).toBe(true);
   });
 
-  test('classification substitutes placeholders in fixCode', async () => {
-    const { classifyFromError } = await import('./classify.ts');
+  test('classification substitutes placeholders in fixCode', () => {
     const cls = classifyFromError({
       code: 'UNDEFINED_FILTER',
       subject: 'myFilter',
@@ -102,8 +101,7 @@ describe('classify', () => {
     expect(cls.fixCode).not.toContain('{subject}');
   });
 
-  test('NULL_VALUE classification substitutes parent', async () => {
-    const { classifyFromError } = await import('./classify.ts');
+  test('NULL_VALUE classification substitutes parent', () => {
     const cls = classifyFromError({
       code: 'NULL_VALUE',
       message: "Cannot access 'name' on null 'user'",
@@ -112,8 +110,7 @@ describe('classify', () => {
     expect(cls.causes.some((c) => c.includes('user'))).toBe(true);
   });
 
-  test('UNDEFINED_VARIABLE classification substitutes subject', async () => {
-    const { classifyFromError } = await import('./classify.ts');
+  test('UNDEFINED_VARIABLE classification substitutes subject', () => {
     const cls = classifyFromError({
       code: 'UNDEFINED_VARIABLE',
       message: "Variable 'foo' is not defined",
@@ -123,8 +120,7 @@ describe('classify', () => {
     expect(cls.fixCode).toContain('foo');
   });
 
-  test('oversized message skips regex classification but keeps code-based classification', async () => {
-    const { classifyFromError } = await import('./classify.ts');
+  test('oversized message skips regex classification but keeps code-based classification', () => {
     const cls = classifyFromError({
       code: 'UNDEFINED_VARIABLE',
       message: `Variable '${'x'.repeat(5000)}' is not defined`,
@@ -133,8 +129,7 @@ describe('classify', () => {
     expect(cls.category).toBe(ERROR_DEFINITIONS.UNDEFINED_VARIABLE.category);
   });
 
-  test('oversized message without a code falls back to the default classification', async () => {
-    const { classifyFromError } = await import('./classify.ts');
+  test('oversized message without a code falls back to the default classification', () => {
     const cls = classifyFromError({
       message: `Cannot access 'name' on null '${'x'.repeat(5000)}'`,
     });
@@ -142,8 +137,7 @@ describe('classify', () => {
     expect(cls.category).toBe('unknown');
   });
 
-  test('classifies a NULL_VALUE-shaped message exactly at the 4096-char boundary', async () => {
-    const { classifyFromError } = await import('./classify.ts');
+  test('classifies a NULL_VALUE-shaped message exactly at the 4096-char boundary', () => {
     const prefix = "Cannot access 'name' on null '";
     const message = `${prefix}${'x'.repeat(4096 - prefix.length - 1)}'`;
     expect(message).toHaveLength(4096);
@@ -152,8 +146,7 @@ describe('classify', () => {
     expect(cls.category).toBe('null_value');
   });
 
-  test('skips regex classification one character past the 4096-char boundary', async () => {
-    const { classifyFromError } = await import('./classify.ts');
+  test('skips regex classification one character past the 4096-char boundary', () => {
     const prefix = "Cannot access 'name' on null '";
     const message = `${prefix}${'x'.repeat(4097 - prefix.length - 1)}'`;
     expect(message).toHaveLength(4097);

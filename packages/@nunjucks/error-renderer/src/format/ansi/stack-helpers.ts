@@ -1,20 +1,13 @@
+import type { ErrorSeverity } from '@nunjucks/error-catalog';
 import picocolors from 'picocolors';
 import { filter, join, pipe } from 'remeda';
 import { isFilePath, resolveIdeLink } from '../presentation/ide-links/ide-links.ts';
 import { shortenPath } from '../presentation/source-trace/path-shortener.ts';
 import { parseStackFrame } from '../presentation/source-trace/stack-parse.ts';
-import { stripInlineMarkdown } from '../strip-inline-markdown.ts';
 import { createHyperlink } from './hyperlink.ts';
 import { sanitizeTerminalText } from './sanitize-helpers.ts';
 
-export { createHyperlink } from './hyperlink.ts';
-export {
-  formatLocationString,
-  formatStackLine,
-  getExtrasPart,
-  getSeverityLabel,
-  stripInlineMarkdown,
-};
+export { formatLocationString, formatStackLine, getExtrasPart, getSeverityLabel };
 
 const getSeverityColor = (severity?: string): ((text: string) => string) => {
   if (severity === 'warning') {
@@ -26,9 +19,21 @@ const getSeverityColor = (severity?: string): ((text: string) => string) => {
   return picocolors.red;
 };
 
+const getSeverityLabelText = (severity: ErrorSeverity | undefined): string => {
+  if (severity === 'warning') {
+    return 'Warning:';
+  }
+  if (severity === 'info') {
+    return 'Info:';
+  }
+  return 'Error:';
+};
+
 /** Formats the severity label, bolded and colored red/yellow/blue by severity. */
-const getSeverityLabel = (severity?: string): ReturnType<typeof picocolors.bold> =>
-  picocolors.bold(getSeverityColor(severity)('Error:'));
+const getSeverityLabel = (
+  severity: ErrorSeverity | undefined
+): ReturnType<typeof picocolors.bold> =>
+  picocolors.bold(getSeverityColor(severity)(getSeverityLabelText(severity)));
 
 /** Joins the first cause hint and docs URL into a ` | `-separated suffix, or `''`. */
 const getExtrasPart = (causeHint: string, docHint: string): string => {

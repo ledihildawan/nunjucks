@@ -1,9 +1,5 @@
-import {
-  extractAnsiErrorParts,
-  formatFullAnsi,
-  formatMediumAnsi,
-  getErrorMessage,
-} from './ansi/format-helpers';
+import { getErrorMessage } from '@nunjucks/error-catalog';
+import { extractAnsiErrorParts, formatFullAnsi, formatMediumAnsi } from './ansi/format-helpers.ts';
 import { sanitizeTerminalText } from './ansi/sanitize-helpers.ts';
 import { DEFAULT_IDE } from './presentation/ide-links/defaults.ts';
 import { toDisplayLocation } from './presentation/source-trace/location.ts';

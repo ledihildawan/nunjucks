@@ -12,7 +12,7 @@ const UNDEFINED_OUTPUT_RE = /attempted to output '([^']+)'/u;
 
 // WHY: imported from the catalog twin — the pattern IS the classify contract; a local
 // literal copy could drift from the definition the classifier renders.
-const RESERVED_KEYWORD_RE = ERROR_DEFINITIONS.RESERVED_KEYWORD?.pattern;
+const RESERVED_KEYWORD_RE = ERROR_DEFINITIONS.RESERVED_KEYWORD.pattern;
 
 // WHY: titles render from the catalog's titleTemplate — the single source of truth.
 // A local literal copy could drift from the definition the classifier renders.
@@ -24,7 +24,7 @@ const catalogTitle = (name: string, subject?: string): string | null => {
   if (template === undefined) {
     return null;
   }
-  return replacePlaceholders({ str: template, undefinedName: subject ?? null });
+  return replacePlaceholders({ template, undefinedName: subject ?? null });
 };
 
 /**

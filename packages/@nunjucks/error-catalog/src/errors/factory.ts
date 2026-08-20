@@ -1,5 +1,5 @@
 import { escapeRegex } from '@nunjucks/lib';
-import type { ErrorSeverity, ExtraExtractor } from './types.ts';
+import type { ErrorDefinition, ErrorSeverity, ExtraExtractor } from './types.ts';
 import { firstCapture } from './types.ts';
 
 interface ErrorDefinitionOptions {
@@ -14,20 +14,13 @@ interface ErrorDefinitionOptions {
   extraFrom?: ExtraExtractor;
 }
 
-interface ErrorDefinition {
-  readonly name: string;
+// WHY: derived from the canonical ErrorDefinition (types.ts) instead of a
+// hand-maintained duplicate interface — the factory only ever builds string
+// message templates, so this narrowing keeps `message: string` for consumers
+// without a second shape that could drift from the canonical one.
+type StringMessageDefinition = Omit<ErrorDefinition, 'message'> & {
   readonly message: string;
-  readonly pattern: RegExp;
-  readonly category: string;
-  readonly titleTemplate?: string;
-  readonly causes: readonly string[];
-  readonly fixCode?: string;
-  readonly fixComment?: string;
-  readonly documentationUrl?: string;
-  readonly severity?: ErrorSeverity;
-  readonly subjectFrom?: ((groups: RegExpMatchArray) => string | null) | null;
-  readonly extraFrom?: ExtraExtractor | null;
-}
+};
 
 // WHY: single source of truth for placeholder → regex capture group mapping. Adding a new placeholder requires ONE entry here — no parallel list to keep in sync. Identifiers (name, key, subject, attr, tag) use [^"']+ to avoid matching quoted strings; free-form values (type, path, msg, etc.) use .+ for broad matching.
 const PLACEHOLDER_PATTERNS: ReadonlyArray<{
@@ -69,7 +62,7 @@ const createPattern = (messageTemplate: string): RegExp => {
  * `{placeholder}` params into capture groups, and defaults `severity` to
  * `'error'` so every definition carries an explicit value.
  */
-const createErrorDefinition = (options: ErrorDefinitionOptions): ErrorDefinition => {
+const createErrorDefinition = (options: ErrorDefinitionOptions): StringMessageDefinition => {
   const {
     name,
     message,

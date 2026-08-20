@@ -38,20 +38,20 @@ describe('isFilePath', () => {
 });
 
 describe('resolveIdeLink', () => {
-  test('builds a vscode:// link for the vscode ide, normalising the drive path', () => {
+  test('builds a vscode:// link for the vscode ide, normalising and encoding the drive path', () => {
     const target: LinkTarget = { path: 'C:\\src\\app.ts', line: 10, col: 20 };
-    expect(resolveIdeLink('vscode', target)).toBe('vscode://file/C:/src/app.ts:10:20');
+    expect(resolveIdeLink('vscode', target)).toBe('vscode://file/C%3A/src/app.ts:10:20');
   });
 
   test('converts backslashes to forward slashes for vscode links', () => {
     expect(resolveIdeLink('vscode', { path: 'C:\\a\\b\\c.ts', line: 1, col: 2 })).toBe(
-      'vscode://file/C:/a/b/c.ts:1:2'
+      'vscode://file/C%3A/a/b/c.ts:1:2'
     );
   });
 
   test('strips a file:// prefix for vscode links', () => {
     expect(resolveIdeLink('vscode', { path: 'file:///C:/src/app.ts', line: 3, col: 4 })).toBe(
-      'vscode://file/C:/src/app.ts:3:4'
+      'vscode://file/C%3A/src/app.ts:3:4'
     );
   });
 
@@ -122,6 +122,25 @@ describe('resolveIdeLink', () => {
   test('falls back to vscode:// for any unrecognised ide string', () => {
     expect(resolveIdeLink('nonexistent-ide', { path: 'app.ts', line: 1, col: 1 })).toBe(
       'vscode://file/app.ts:1:1'
+    );
+  });
+
+  test('percent-encodes spaces, ? and # in scheme paths while keeping slashes', () => {
+    const target: LinkTarget = { path: 'proj/my file?q=1/a#b.njk', line: 5, col: 2 };
+    expect(resolveIdeLink('vscode', target)).toBe(
+      'vscode://file/proj/my%20file%3Fq%3D1/a%23b.njk:5:2'
+    );
+    expect(resolveIdeLink('cursor', target)).toBe(
+      'vscode://file/proj/my%20file%3Fq%3D1/a%23b.njk:5:2'
+    );
+    expect(resolveIdeLink('vscodium', target)).toBe(
+      'vscodium://file/proj/my%20file%3Fq%3D1/a%23b.njk:5:2'
+    );
+    expect(resolveIdeLink('nonexistent-ide', target)).toBe(
+      'vscode://file/proj/my%20file%3Fq%3D1/a%23b.njk:5:2'
+    );
+    expect(resolveIdeLink('bbedit', { path: '/tmp/my file#1.njk', line: 4, col: 8 })).toBe(
+      'bbedit:///tmp/my%20file%231.njk?line=4'
     );
   });
 });
