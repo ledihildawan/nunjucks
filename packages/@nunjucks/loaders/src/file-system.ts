@@ -70,10 +70,12 @@ const resolveRealPaths = async (
   }
 };
 
+type PathValidation = { exists: false } | { exists: true; realFull: string };
+
 const existsAndWithinBase = async (
   basePath: string,
   fullPath: string
-): Promise<Result<boolean, TemplateError>> => {
+): Promise<Result<PathValidation, TemplateError>> => {
   let fileStat: Stats;
   try {
     fileStat = await stat(fullPath);
@@ -81,7 +83,7 @@ const existsAndWithinBase = async (
     if (isFileNotFoundError(statErr)) {
       try {
         await stat(basePath);
-        return ok(false);
+        return ok({ exists: false });
       } catch (baseErr: unknown) {
         return basePathNotFoundError(basePath, baseErr);
       }
@@ -97,41 +99,39 @@ const existsAndWithinBase = async (
   if (!realPathResult.ok) {
     return err(realPathResult.error);
   }
-  return ok(isWithinBase(realPathResult.value.realBase, realPathResult.value.realFull));
+  const { realBase, realFull } = realPathResult.value;
+  return ok({ exists: isWithinBase(realBase, realFull), realFull });
 };
 
 const findFileInSearchPaths = async (
   searchPaths: readonly string[],
   name: string
-): Promise<Result<string, TemplateError> | null> => {
+): Promise<Result<{ fullPath: string; realFull: string }, TemplateError> | null> => {
   const [first, ...rest] = searchPaths;
   if (first === undefined) {
     return null;
   }
   const { basePath, fullPath } = resolveFromSearchPath(name)(first);
   const result = await existsAndWithinBase(basePath, fullPath);
-  if (result.ok && !result.value) {
-    return findFileInSearchPaths(rest, name);
-  }
   if (!result.ok) {
     return err(result.error);
   }
-  return ok(fullPath);
+  if (!result.value.exists) {
+    return findFileInSearchPaths(rest, name);
+  }
+  return ok({ fullPath, realFull: result.value.realFull });
 };
 
 const readFileSource = async (
-  fullPath: string
-): Promise<Result<{ path: string; src: string } | null, TemplateError>> => {
+  readPath: string
+): Promise<Result<{ src: string } | null, TemplateError>> => {
   try {
-    return ok({
-      src: await readFile(fullPath, 'utf-8'),
-      path: fullPath,
-    });
+    return ok({ src: await readFile(readPath, 'utf-8') });
   } catch (readErr: unknown) {
     if (isFileNotFoundError(readErr)) {
       return ok(null);
     }
-    return err(createFilesystemError(fullPath, String(readErr)));
+    return err(createFilesystemError(readPath, String(readErr)));
   }
 };
 
@@ -266,13 +266,15 @@ export const createFileSystemLoader = (
       return err(pathResult.error);
     }
 
-    const fullPath = pathResult.value;
+    const { fullPath, realFull } = pathResult.value;
     pathsToNames.set(fullPath, name);
     if (watchEnabled) {
       watchFile(fullPath);
     }
 
-    const sourceResult = await readFileSource(fullPath);
+    // WHY: read through the validated realpath — re-opening the unresolved path races a
+    // swapped symlink (TOCTOU) into reading outside the search root; reported path stays fullPath.
+    const sourceResult = await readFileSource(realFull);
     if (!sourceResult.ok) {
       return err(sourceResult.error);
     }
@@ -280,7 +282,7 @@ export const createFileSystemLoader = (
       return null;
     }
 
-    const source: TemplateLoaderSource = { ...sourceResult.value };
+    const source: TemplateLoaderSource = { path: fullPath, src: sourceResult.value.src };
     if (sourceMemo) {
       await sourceMemo.remember(fullPath, source);
     }
