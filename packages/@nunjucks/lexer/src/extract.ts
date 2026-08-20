@@ -1,21 +1,16 @@
 interface ExtractWhileOptions {
   source: string;
   start: number;
-  chars: string;
+  allowed: ReadonlySet<string>;
 }
-
-// WHY: pre-compiled Set for O(1) membership test vs O(N) string.includes per char scan.
-// Cache at call site ensures the Set is constructed once per lexer invocation.
-const charsToSet = (chars: string): Set<string> => new Set([...chars]);
 
 /**
  * Extracts the run of characters starting at `start` while they stay inside the allowed
- * `chars` set; the scan stops at EOF or the first disallowed character.
+ * set; the scan stops at EOF or the first disallowed character.
  */
-export const extractWhile = ({ source, start, chars }: ExtractWhileOptions): string => {
+export const extractWhile = ({ source, start, allowed }: ExtractWhileOptions): string => {
   // WHY: while loop instead of the previous per-character recursion — long character
   // runs overflowed the native stack. Loop exemption: lexer/tokenizer engine.
-  const allowed = charsToSet(chars);
   let end = start;
   while (end < source.length && allowed.has(source[end] ?? '')) {
     end += 1;
@@ -26,21 +21,16 @@ export const extractWhile = ({ source, start, chars }: ExtractWhileOptions): str
 interface ExtractUntilOptions {
   source: string;
   start: number;
-  chars: string;
+  terminators: ReadonlySet<string>;
 }
 
-// WHY: pre-compiled Set for O(1) membership test vs O(N) string.includes per char scan.
-// Cache at call site ensures the Set is constructed once per lexer invocation.
-const terminatorsToSet = (chars: string): Set<string> => new Set([...chars]);
-
 /**
- * Extracts the run of characters starting at `start` until one appears in the `chars`
+ * Extracts the run of characters starting at `start` until one appears in the
  * terminator set; the scan stops at EOF or the first terminating character.
  */
-export const extractUntil = ({ source, start, chars }: ExtractUntilOptions): string => {
+export const extractUntil = ({ source, start, terminators }: ExtractUntilOptions): string => {
   // WHY: while loop instead of the previous per-character recursion — long symbol runs
   // overflowed the native stack. Loop exemption: lexer/tokenizer engine.
-  const terminators = terminatorsToSet(chars);
   let end = start;
   while (end < source.length && !terminators.has(source[end] ?? '')) {
     end += 1;

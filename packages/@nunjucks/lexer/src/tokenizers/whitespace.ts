@@ -1,4 +1,4 @@
-import { WHITESPACE_CHARS } from '../constants.ts';
+import { WHITESPACE_CHAR_SET } from '../constants.ts';
 import { extractWhile } from '../extract.ts';
 import { advance } from '../state.ts';
 import { TOKEN_WHITESPACE } from '../token-types.ts';
@@ -7,7 +7,11 @@ import type { Tokenizer } from '../types.ts';
 
 /** Consumes a run of whitespace characters as a single `whitespace` token. */
 export const tokenizeWhitespace: Tokenizer = (state) => {
-  const ws = extractWhile({ source: state.source, start: state.index, chars: WHITESPACE_CHARS });
+  const ws = extractWhile({
+    source: state.source,
+    start: state.index,
+    allowed: WHITESPACE_CHAR_SET,
+  });
   if (!ws) {
     return null;
   }

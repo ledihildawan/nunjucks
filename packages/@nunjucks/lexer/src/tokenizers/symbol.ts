@@ -1,4 +1,4 @@
-import { DELIM_CHARS, isBooleanString, isNullString, WHITESPACE_CHARS } from '../constants.ts';
+import { isBooleanString, isNullString, SYMBOL_TERMINATOR_SET } from '../constants.ts';
 import { extractUntil } from '../extract.ts';
 import { advance } from '../state.ts';
 import { TOKEN_BOOLEAN, TOKEN_NONE, TOKEN_SYMBOL } from '../token-types.ts';
@@ -13,7 +13,7 @@ export const tokenizeSymbol: Tokenizer = (state) => {
   const sym = extractUntil({
     source: state.source,
     start: state.index,
-    chars: WHITESPACE_CHARS + DELIM_CHARS,
+    terminators: SYMBOL_TERMINATOR_SET,
   });
   if (!sym) {
     return null;

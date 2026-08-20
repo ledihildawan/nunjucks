@@ -23,9 +23,12 @@ export {
   DEFAULT_COMMENT_START,
   DEFAULT_VARIABLE_END,
   DEFAULT_VARIABLE_START,
+  DELIM_CHAR_SET,
   DELIM_CHARS,
   INT_CHARS,
   REGEX_FLAGS,
+  SYMBOL_TERMINATOR_SET,
+  WHITESPACE_CHAR_SET,
   WHITESPACE_CHARS,
 } from './delimiters.ts';
 export { isBooleanString, isComplexOperator, isDigit, isNullString };

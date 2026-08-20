@@ -58,9 +58,9 @@ export const parseStatement = (
     });
   }
 
-  // WHY: Set membership is O(1) vs O(N) array.includes for arbitrary breakOn sizes.
-  // Static breakOn sets from callers are typically small; the Set normalizes both paths.
-  if (breakOn && new Set(breakOn).has(String(tok.value))) {
+  // WHY: breakOn lists are statement terminators (1–3 tag names) — array.includes beats
+  // a per-call Set allocation at that size and keeps the parse hot path allocation-free.
+  if (breakOn?.includes(String(tok.value))) {
     return ok(null);
   }
 

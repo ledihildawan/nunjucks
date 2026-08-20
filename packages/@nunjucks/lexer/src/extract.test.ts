@@ -3,29 +3,31 @@ import { extractUntil, extractWhile, parseStringContent } from './extract.ts';
 
 describe('extractWhile', () => {
   test('consumes chars while they are in the allowed set', () => {
-    expect(extractWhile({ source: 'abc123!', start: 0, chars: 'abc' })).toBe('abc');
+    expect(extractWhile({ source: 'abc123!', start: 0, allowed: new Set('abc') })).toBe('abc');
   });
 
   test('starts from the given index', () => {
-    expect(extractWhile({ source: 'xxabc', start: 2, chars: 'abc' })).toBe('abc');
+    expect(extractWhile({ source: 'xxabc', start: 2, allowed: new Set('abc') })).toBe('abc');
   });
 
   test('stops at end of string', () => {
-    expect(extractWhile({ source: 'aaa', start: 0, chars: 'a' })).toBe('aaa');
+    expect(extractWhile({ source: 'aaa', start: 0, allowed: new Set('a') })).toBe('aaa');
   });
 
   test('returns empty when the first char is not allowed', () => {
-    expect(extractWhile({ source: '!', start: 0, chars: 'abc' })).toBe('');
+    expect(extractWhile({ source: '!', start: 0, allowed: new Set('abc') })).toBe('');
   });
 });
 
 describe('extractUntil', () => {
   test('consumes chars until one is in the stop set', () => {
-    expect(extractUntil({ source: 'hello world', start: 0, chars: ' ' })).toBe('hello');
+    expect(extractUntil({ source: 'hello world', start: 0, terminators: new Set(' ') })).toBe(
+      'hello'
+    );
   });
 
   test('runs to end of string when no stop char is found', () => {
-    expect(extractUntil({ source: 'hello', start: 0, chars: ' ' })).toBe('hello');
+    expect(extractUntil({ source: 'hello', start: 0, terminators: new Set(' ') })).toBe('hello');
   });
 });
 

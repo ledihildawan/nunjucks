@@ -1,5 +1,5 @@
 import { advance, getChar, isFinished, matches } from '../state.ts';
-import { WHITESPACE_CHARS } from '../constants.ts';
+import { WHITESPACE_CHAR_SET } from '../constants.ts';
 import { TOKEN_RAW } from '../token-types.ts';
 import { createToken } from '../tokens.ts';
 import type { LexerState, Tokenizer } from '../types.ts';
@@ -19,7 +19,7 @@ const skipWhitespace = (state: LexerState): LexerState => {
   // engine. Covers the full whitespace family (tabs/newlines) so `{%\traw %}` and
   // `{% raw\n%}` lex like upstream's `\s*` tag syntax.
   let current = state;
-  while (!isFinished(current) && WHITESPACE_CHARS.includes(getChar(current))) {
+  while (!isFinished(current) && WHITESPACE_CHAR_SET.has(getChar(current) ?? '')) {
     current = advance(current);
   }
   return current;
@@ -27,7 +27,9 @@ const skipWhitespace = (state: LexerState): LexerState => {
 
 const shouldContinueTagName = (current: LexerState): boolean => {
   const char = getChar(current);
-  return !isFinished(current) && !WHITESPACE_CHARS.includes(char) && char !== '%' && char !== '}';
+  return (
+    !isFinished(current) && !WHITESPACE_CHAR_SET.has(char ?? '') && char !== '%' && char !== '}'
+  );
 };
 
 const extractTagName = (state: LexerState): { name: string; current: LexerState } => {

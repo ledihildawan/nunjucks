@@ -5,6 +5,17 @@ export const DELIM_CHARS = '()[]{}%*-+~/#,:|&.<>=!?`';
 /** The decimal digits `0` through `9`. */
 export const INT_CHARS = '0123456789';
 
+// WHY: module-level membership Sets for the per-character lexer hot loop — a single
+// allocation at module load gives O(1) has() checks, replacing per-scan string.includes
+// (O(N) over the char class) and per-call Set construction in the extract helpers.
+export const WHITESPACE_CHAR_SET: ReadonlySet<string> = new Set([...WHITESPACE_CHARS]);
+export const DELIM_CHAR_SET: ReadonlySet<string> = new Set([...DELIM_CHARS]);
+/** Characters that terminate a symbol scan: whitespace or a delimiter/operator char. */
+export const SYMBOL_TERMINATOR_SET: ReadonlySet<string> = new Set([
+  ...WHITESPACE_CHARS,
+  ...DELIM_CHARS,
+]);
+
 /**
  * Default tag delimiters for blocks, variables, and comments; each plain pair can be
  * overridden via `DelimiterTags`, unlike the fixed strip variants below.
