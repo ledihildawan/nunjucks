@@ -41,12 +41,14 @@ const SAFE_MATH = Object.freeze({
   exp: Math.exp,
 });
 
+// WHY: no Object.assign/Object.create in the default template globals — assign is a
+// [[Set]]-based mutation gadget (a prototype-pollution vector when a template passes an
+// untrusted source object) and neither has a legitimate template-side use; values that
+// need them must be prepared in the imperative shell before render.
 const SAFE_OBJECT = Object.freeze({
   keys: Object.keys,
   values: Object.values,
   entries: Object.entries,
-  assign: Object.assign,
-  create: Object.create,
   freeze: Object.freeze,
   seal: Object.seal,
   isFrozen: Object.isFrozen,

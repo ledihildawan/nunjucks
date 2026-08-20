@@ -54,50 +54,71 @@ const BUILTIN_TESTS: ReadonlyMap<string, TestFn> = new Map([
   ['zero', (target) => target === 0],
   ['finite', (target) => Number.isFinite(target)],
   ['nan', (target) => Number.isNaN(target)],
-  ['divisibleby', (target, divisor) =>
-    typeof target === 'number' &&
-    !Number.isNaN(target) &&
-    typeof divisor === 'number' &&
-    target % divisor === 0],
-  ['between', (target, low, high) => Number(target) >= Number(low) && Number(target) <= Number(high)],
+  [
+    'divisibleby',
+    (target, divisor) =>
+      typeof target === 'number' &&
+      !Number.isNaN(target) &&
+      typeof divisor === 'number' &&
+      target % divisor === 0,
+  ],
+  [
+    'between',
+    (target, low, high) => Number(target) >= Number(low) && Number(target) <= Number(high),
+  ],
   ['string', (target) => typeof target === 'string'],
   ['lower', (target) => typeof target === 'string' && target === target.toLowerCase()],
   ['upper', (target) => typeof target === 'string' && target === target.toUpperCase()],
   ['alpha', (target) => typeof target === 'string' && /^[a-zA-Z]+$/.test(target)],
   ['alphanumeric', (target) => typeof target === 'string' && /^[a-zA-Z0-9]+$/.test(target)],
   ['numeric', (target) => typeof target === 'string' && /^[0-9]+$/.test(target)],
-  ['startswith', (target, prefix) =>
-    typeof target === 'string' && typeof prefix === 'string' && target.startsWith(prefix)],
-  ['endswith', (target, suffix) =>
-    typeof target === 'string' && typeof suffix === 'string' && target.endsWith(suffix)],
+  [
+    'startswith',
+    (target, prefix) =>
+      typeof target === 'string' && typeof prefix === 'string' && target.startsWith(prefix),
+  ],
+  [
+    'endswith',
+    (target, suffix) =>
+      typeof target === 'string' && typeof suffix === 'string' && target.endsWith(suffix),
+  ],
   ['matches', (target, pattern) => typeof target === 'string' && matchesPattern(target, pattern)],
-  ['empty', (target) =>
-    target === '' ||
-    target === null ||
-    target === undefined ||
-    (typeof target === 'object' && target !== null && 'length' in target && target.length === 0)],
-  ['blank', (target) =>
-    typeof target === 'string'
-      ? target.trim() === ''
-      : target === '' ||
-        target === null ||
-        target === undefined ||
-        (typeof target === 'object' && 'length' in target && target.length === 0)],
-  ['contains', (target, item) => {
-    if (target == null) {
+  [
+    'empty',
+    (target) =>
+      target === '' ||
+      target === null ||
+      target === undefined ||
+      (typeof target === 'object' && target !== null && 'length' in target && target.length === 0),
+  ],
+  [
+    'blank',
+    (target) =>
+      typeof target === 'string'
+        ? target.trim() === ''
+        : target === '' ||
+          target === null ||
+          target === undefined ||
+          (typeof target === 'object' && 'length' in target && target.length === 0),
+  ],
+  [
+    'contains',
+    (target, item) => {
+      if (target == null) {
+        return false;
+      }
+      if (typeof target === 'string') {
+        return target.includes(typeof item === 'string' ? item : String(item));
+      }
+      if (Array.isArray(target)) {
+        return target.includes(item);
+      }
+      if (target instanceof Set) {
+        return target.has(item);
+      }
       return false;
-    }
-    if (typeof target === 'string') {
-      return target.includes(typeof item === 'string' ? item : String(item));
-    }
-    if (Array.isArray(target)) {
-      return target.includes(item);
-    }
-    if (target instanceof Set) {
-      return target.has(item);
-    }
-    return false;
-  }],
+    },
+  ],
   ['array', (target) => Array.isArray(target)],
   ['object', (target) => target !== null && typeof target === 'object'],
   ['iterable', (target) => isKeyedObject(target) && Symbol.iterator in target],
@@ -108,8 +129,10 @@ const BUILTIN_TESTS: ReadonlyMap<string, TestFn> = new Map([
   ['symbol', (target) => typeof target === 'symbol'],
   ['function', (target) => typeof target === 'function'],
   // WHY: constructor?.name — null-prototype callables (miss sentinels) have no .constructor.
-  ['asyncfunction', (target) =>
-    typeof target === 'function' && target.constructor?.name === 'AsyncFunction'],
+  [
+    'asyncfunction',
+    (target) => typeof target === 'function' && target.constructor?.name === 'AsyncFunction',
+  ],
   ['Map', (target) => target instanceof Map],
   ['Set', (target) => target instanceof Set],
   ['Date', (target) => target instanceof Date],
@@ -119,6 +142,9 @@ const BUILTIN_TESTS: ReadonlyMap<string, TestFn> = new Map([
   ['Promise', (target) => target instanceof Promise],
   ['sameas', (target, other) => target === other],
   ['equalto', (target, other) => JSON.stringify(target) === JSON.stringify(other)],
+  // WHY: `has` deliberately walks the prototype chain (Jinja `in`-style containment);
+  // the boolean-only oracle is inert because value reads stay behind member-access's
+  // prototype-escape guard — `hasown` covers the own-property variant.
   ['has', (target, key) => isKeyedObject(target) && String(key) in target],
   ['hasown', (target, key) => isKeyedObject(target) && Object.hasOwn(target, String(key))],
   ['safe', (target) => isSafeString(target)],
@@ -148,6 +174,10 @@ const runTest = (env: unknown, name: string, target: unknown, ...args: unknown[]
 
 // WHY: module-level export for the co-located drift-pin test only — the registry is
 // not part of the package's public surface (tests import the module directly).
+/**
+ * Returns all built-in test predicate names sorted alphabetically.
+ * @returns A sorted array of built-in test names.
+ */
 const collectBuiltinTestNames = (): readonly string[] => [...BUILTIN_TESTS.keys()].toSorted();
 
 export { runTest, collectBuiltinTestNames };
