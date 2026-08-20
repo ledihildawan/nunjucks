@@ -1,3 +1,4 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: control factory catalog — per-export TSDoc plus one-name-per-line expansion exceeds the cap; splitting is out-of-scope surface churn.
 import type { Loc } from '@nunjucks/shared';
 import { ZERO_LOC } from '@nunjucks/shared';
 import type {
@@ -19,6 +20,7 @@ interface InlineIfFields {
   alternate?: Node | null;
 }
 
+/** Fields for a `block` node; both `name` and `body` are optional. */
 interface BlockFields {
   name?: string;
   body?: Node;
@@ -79,6 +81,7 @@ interface FromImportFields {
   withContext?: boolean;
 }
 
+/** Creates a `fromImport` node importing selected names from another template. */
 const fromImportNode = (loc: Loc, fields: FromImportFields) =>
   createNode(T.FROM_IMPORT, loc, {
     withContext: false,
@@ -130,12 +133,15 @@ interface CaseFields {
   body: Node;
 }
 
+/** Creates a `case` clause node guarding `body` behind `cond`. */
 const caseNode = (loc: Loc, fields: CaseFields) => createNode(T.CASE, loc, { ...fields });
 
+/** Fields for an `extends` node referencing a parent template. */
 interface ExtendsFields {
   template: Node;
 }
 
+/** Creates an `extends` node inheriting from a parent template. */
 const extendsNode = (loc: Loc, fields: ExtendsFields) =>
   createNode(T.EXTENDS, loc, { template: fields.template });
 

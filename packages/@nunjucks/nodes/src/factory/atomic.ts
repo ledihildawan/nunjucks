@@ -77,11 +77,11 @@ const walrus = (loc: Loc, fields: WalrusFields) =>
  * each expression quasi must stay wrapped in its `{type:'expression', node}` envelope
  * so traversal and transforms can find the inner node.
  */
+// WHY: quasis is copied — the node owns its children; a caller mutating its input
+// array post-construction must not mutate the node.
 const templateLiteral = (
   loc: Loc,
   quasis: ({ type: 'template'; value: string } | { type: 'expression'; node: Node })[] = []
-  // WHY: quasis is copied — the node owns its children; a caller mutating its input
-  // array post-construction must not mutate the node.
 ) => createNode(T.TEMPLATE_LITERAL, loc, { quasis: [...quasis] });
 
 /** Creates a `keywordArgs` node whose children are `pair` nodes of keyword arguments. */

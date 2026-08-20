@@ -9,10 +9,15 @@
 const deepFreezeCategories = <T extends Record<string, readonly string[]>>(
   categories: T
 ): Readonly<T> => {
-  for (const list of Object.values(categories)) {
-    Object.freeze(list);
-  }
-  return Object.freeze(categories);
+  const frozen = Object.fromEntries(
+    Object.entries(categories).map(([name, list]): readonly [string, readonly string[]] => [
+      name,
+      Object.freeze(list),
+    ])
+  );
+  // WHY: cast — Object.fromEntries widens the keys to an index signature; the entries
+  // are exactly `categories`' own, so the concrete per-category shape survives intact.
+  return Object.freeze(frozen) as Readonly<T>;
 };
 
 export const BLOCKED_KEY_CATEGORIES = deepFreezeCategories({
@@ -115,18 +120,10 @@ const AUTO_BLOCKED_KEYS = toSet(
   BLOCKED_KEY_CATEGORIES.DENO_GLOBALS
 );
 
-const DANGEROUS_GLOBALS = toSet(
-  BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS,
-  BLOCKED_KEY_CATEGORIES.NODE_GLOBALS,
-  BLOCKED_KEY_CATEGORIES.BROWSER_GLOBALS,
-  BLOCKED_KEY_CATEGORIES.DENO_GLOBALS
-);
-
-/**
- * Freezes the named sandbox environment identifiers — `ENVIRONMENT_VALUES` derives its
- * members from this map, so adding an environment here is the single edit required.
- */
-export const ENVIRONMENTS = {
+// WHY: module-local — `ENVIRONMENT_VALUES` is the curated public surface for the
+// environment names; keeping the map private leaves one list to maintain, not two
+// that can drift apart.
+const ENVIRONMENTS = {
   NODE: 'node',
   BROWSER: 'browser',
   DENO: 'deno',
@@ -147,8 +144,6 @@ export type Environment = (typeof ENVIRONMENT_VALUES)[number];
  * plain array snapshot — set order is unspecified, so consumers must not rely on it.
  */
 export const BLOCKED_KEYS_LIST: readonly string[] = [...AUTO_BLOCKED_KEYS];
-/** Lists the environment-global names (universal, Node, browser, Deno) as an array snapshot. */
-export const DANGEROUS_GLOBALS_LIST: readonly string[] = [...DANGEROUS_GLOBALS];
 
 /** Lists the frozen object-intrinsic names (`__proto__`, `constructor`, `prototype`, …). */
 export const OBJECT_INTRINSICS: readonly string[] = [...BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS];
@@ -160,6 +155,6 @@ export const CODE_EXECUTION_KEYS: readonly string[] = [...BLOCKED_KEY_CATEGORIES
 
 /**
  * Matches the cross-realm reachability globals (`globalThis`, `process`, window-tree
- * aliases) case-insensitively — narrower than `DANGEROUS_GLOBALS_LIST` by intent.
+ * aliases) case-insensitively — narrower than the environment-global tiers by intent.
  */
 export const DANGEROUS_KEY_PATTERN = /^(?:globalThis|process|window|parent|top|frames|opener)$/iu;

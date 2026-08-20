@@ -38,9 +38,9 @@ export const isCompiledTemplateExports = (value: unknown): value is CompiledTemp
   if (!value || typeof value !== 'object') {
     return false;
   }
-  return typeof (value as { root?: unknown }).root === 'function';
   // WHY: the shallow cast is sound — only the `root` property is accessed, all other fields
   // (block exports, metadata) are structurally trusted after this guard.
+  return typeof (value as { root?: unknown }).root === 'function';
 };
 
 /**
@@ -52,5 +52,7 @@ export const extractBlocks = (source: Record<string, unknown>): Partial<Record<s
     Object.entries(source),
     filter(([key]: readonly [string, unknown]) => key.startsWith('b_')),
     map(([key, value]: readonly [string, unknown]) => [key.slice(2), value]),
+    // WHY: cast tames Object.fromEntries' loose `{ [k: string]: T }` return to the
+    // partial block map the pipeline actually produces.
     Object.fromEntries
   ) as Partial<Record<string, unknown>>;

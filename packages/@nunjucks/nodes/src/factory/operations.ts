@@ -1,3 +1,4 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: operator factory catalog — per-export TSDoc plus child-array ownership copies exceed the cap; splitting is out-of-scope surface churn.
 import type { Loc } from '@nunjucks/shared';
 import type {
   AssignmentPatternNode,
@@ -18,6 +19,7 @@ import type {
   UnaryOpNode,
   VariableDeclNode,
 } from '../types/index.ts';
+import { copy } from './atomic.ts';
 import { createNode, T } from './create-node.ts';
 
 /** Fields for a `slice` node; `null` bounds mean open-ended slicing. */
@@ -36,17 +38,20 @@ interface CallFields {
   args?: readonly Node[];
 }
 
+// WHY: every caller-supplied child array (args, ops, targets) is copied — the node owns
+// its children; caller-array mutation after construction must not reach the node (same
+// ownership rule as the `children` factories and variableDeclaration below).
 /** Creates a `funCall` node invoking `name` with positional `args`. */
 const funCall = (loc: Loc, fields: CallFields): CallNode =>
-  createNode(T.FUN_CALL, loc, { args: [], ...fields });
+  createNode(T.FUN_CALL, loc, { ...fields, args: copy(fields.args) });
 
 /** Creates a `pipe` node applying a filter to the piped left-hand value. */
 const pipe = (loc: Loc, fields: CallFields): CallNode =>
-  createNode(T.PIPE, loc, { args: [], ...fields });
+  createNode(T.PIPE, loc, { ...fields, args: copy(fields.args) });
 
 /** Creates an `optionalCall` node that short-circuits to null on a nullish callee. */
 const optionalCall = (loc: Loc, fields: CallFields): CallNode =>
-  createNode(T.OPTIONAL_CALL, loc, { args: [], ...fields });
+  createNode(T.OPTIONAL_CALL, loc, { ...fields, args: copy(fields.args) });
 
 /** Fields for lookup-shaped nodes indexing `target` with `val`. */
 interface LookupFields {
@@ -103,7 +108,9 @@ const neg = (loc: Loc, target: Node): UnaryOpNode =>
 const pos = (loc: Loc, target: Node): UnaryOpNode =>
   createNode(T.POS, loc, { target, operator: '+' });
 
+/** Creates an `and` node for logical conjunction. */
 const and = (loc: Loc, fields: BinaryFields): BinaryNode => createNode(T.AND, loc, { ...fields });
+/** Creates an `or` node for logical disjunction. */
 const or = (loc: Loc, fields: BinaryFields): BinaryNode => createNode(T.OR, loc, { ...fields });
 /** Creates a `nullishCoalesce` node yielding `right` only when `left` is null/undefined. */
 const nullishCoalesce = (loc: Loc, fields: BinaryFields): BinaryNode =>
@@ -117,7 +124,7 @@ interface CompareFields {
 
 /** Creates a `compare` node chaining `compareOperand` tests against `expr`. */
 const compare = (loc: Loc, fields: CompareFields) =>
-  createNode(T.COMPARE, loc, { ops: [], ...fields });
+  createNode(T.COMPARE, loc, { ...fields, ops: copy(fields.ops) });
 
 /** Fields for a `compareOperand` node carrying one comparison operator. */
 interface CompareOperandFields {
@@ -129,14 +136,19 @@ interface CompareOperandFields {
 const compareOperand = (loc: Loc, fields: CompareOperandFields) =>
   createNode(T.COMPARE_OPERAND, loc, { ...fields });
 
+/** Creates a `bitwiseOr` node for `|` bitwise disjunction. */
 const bitwiseOr = (loc: Loc, fields: BinaryFields): BinaryNode =>
   createNode(T.BITWISE_OR, loc, { ...fields });
+/** Creates a `bitwiseAnd` node for `&` bitwise conjunction. */
 const bitwiseAnd = (loc: Loc, fields: BinaryFields): BinaryNode =>
   createNode(T.BITWISE_AND, loc, { ...fields });
+/** Creates a `bitwiseXor` node for `^` exclusive-or. */
 const bitwiseXor = (loc: Loc, fields: BinaryFields): BinaryNode =>
   createNode(T.BITWISE_XOR, loc, { ...fields });
+/** Creates a `bitwiseLShift` node for `<<` left shift. */
 const bitwiseLShift = (loc: Loc, fields: BinaryFields): BinaryNode =>
   createNode(T.BITWISE_LSHIFT, loc, { ...fields });
+/** Creates a `bitwiseRShift` node for `>>` right shift. */
 const bitwiseRShift = (loc: Loc, fields: BinaryFields): BinaryNode =>
   createNode(T.BITWISE_RSHIFT, loc, { ...fields });
 /** Creates a `bitwiseNot` node complementing `target`. */
@@ -210,7 +222,7 @@ interface TestCallFields {
 
 /** Creates a `testCall` node applying a named test with arguments. */
 const testCallNode = (loc: Loc, fields: TestCallFields): TestCallNode =>
-  createNode(T.TEST_CALL, loc, { args: [], ...fields });
+  createNode(T.TEST_CALL, loc, { ...fields, args: copy(fields.args) });
 
 /** Fields shared by the variable declaration and assignment factories. */
 interface VariableDeclFields {
@@ -236,7 +248,7 @@ interface CompoundAssignmentFields {
 
 /** Creates a `compoundAssignment` node applying `operator` before assigning. */
 const compoundAssignment = (loc: Loc, fields: CompoundAssignmentFields): CompoundAssignNode =>
-  createNode(T.COMPOUND_ASSIGNMENT, loc, { ...fields });
+  createNode(T.COMPOUND_ASSIGNMENT, loc, { ...fields, targets: copy(fields.targets) });
 
 export type {
   AssignmentPatternFields,

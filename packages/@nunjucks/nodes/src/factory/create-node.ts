@@ -11,6 +11,8 @@ const createNode = <K extends NodeType>(
   loc: Loc,
   data: Record<string, unknown> = {}
 ): NodeOf<K> =>
+  // WHY: the cast is sound — the only callers are the typed factories, whose fields
+  // objects are constrained to K's slots, so the spread result always satisfies K.
   ({
     type: nodeType,
     lineno: loc.lineno,

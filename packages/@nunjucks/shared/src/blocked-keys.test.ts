@@ -3,9 +3,8 @@ import {
   BLOCKED_KEY_CATEGORIES,
   BLOCKED_KEYS_LIST,
   CODE_EXECUTION_KEYS,
-  DANGEROUS_GLOBALS_LIST,
   DANGEROUS_KEY_PATTERN,
-  ENVIRONMENTS,
+  ENVIRONMENT_VALUES,
   OBJECT_INTRINSICS,
 } from './blocked-keys.ts';
 
@@ -28,9 +27,11 @@ describe('blocked-keys', () => {
       expect(BLOCKED_KEYS_LIST).toContain('process');
     });
 
-    test('DANGEROUS_GLOBALS_LIST contains expected globals', () => {
-      expect(DANGEROUS_GLOBALS_LIST).toContain('eval');
-      expect(DANGEROUS_GLOBALS_LIST).toContain('globalThis');
+    test('environment-global categories contain the reachability anchors', () => {
+      // WHY: DANGEROUS_GLOBALS_LIST was removed from the public surface — the union it
+      // snapshot was derived from these frozen tiers, so the anchors are asserted here.
+      expect(BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS).toContain('eval');
+      expect(BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS).toContain('globalThis');
     });
 
     test('OBJECT_INTRINSICS contains prototype properties', () => {
@@ -44,12 +45,8 @@ describe('blocked-keys', () => {
       expect(CODE_EXECUTION_KEYS).toContain('exec');
     });
 
-    test('ENVIRONMENTS has correct values', () => {
-      expect(ENVIRONMENTS).toEqual({
-        NODE: 'node',
-        BROWSER: 'browser',
-        DENO: 'deno',
-      });
+    test('ENVIRONMENT_VALUES lists auto plus every environment', () => {
+      expect(ENVIRONMENT_VALUES).toEqual(['auto', 'node', 'browser', 'deno']);
     });
   });
 

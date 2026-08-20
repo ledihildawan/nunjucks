@@ -651,3 +651,47 @@ describe('compoundAssignment', () => {
     expect(compoundNode.value).toBe(rightOperand);
   });
 });
+
+describe('child-array ownership', () => {
+  test('copies caller arrays so later caller mutation cannot change the node', () => {
+    // WHY: regression — these factories used to embed the caller's arrays by reference,
+    // so mutating them post-construction mutated the node.
+    const args = [literal(ZERO_LOC, 'a')];
+    const funCallNode = funCall(ZERO_LOC, { name: 'f', args });
+    args.push(literal(ZERO_LOC, 'b'));
+    expect(funCallNode.args).toHaveLength(1);
+
+    const pipeArgs = [literal(ZERO_LOC, 'a')];
+    const pipeNode = pipe(ZERO_LOC, { name: 'upper', args: pipeArgs });
+    pipeArgs.length = 0;
+    expect(pipeNode.args).toHaveLength(1);
+
+    const optionalCallArgs = [literal(ZERO_LOC, 'a')];
+    const optionalCallNode = optionalCall(ZERO_LOC, { name: 'f', args: optionalCallArgs });
+    optionalCallArgs.length = 0;
+    expect(optionalCallNode.args).toHaveLength(1);
+
+    const ops = [compareOperand(ZERO_LOC, { expr: leftOperand, operator: '<' })];
+    const compareNode = compare(ZERO_LOC, { expr: rightOperand, ops });
+    ops.length = 0;
+    expect(compareNode.ops).toHaveLength(1);
+
+    const testCallArgs = [literal(ZERO_LOC, 'a')];
+    const testCallNodeResult = testCallNode(ZERO_LOC, {
+      target: targetOperand,
+      name: 'even',
+      args: testCallArgs,
+    });
+    testCallArgs.length = 0;
+    expect(testCallNodeResult.args).toHaveLength(1);
+
+    const targets = [targetOperand];
+    const compoundNode = compoundAssignment(ZERO_LOC, {
+      targets,
+      operator: '+=',
+      value: rightOperand,
+    });
+    targets.length = 0;
+    expect(compoundNode.targets).toHaveLength(1);
+  });
+});

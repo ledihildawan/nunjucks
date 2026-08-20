@@ -26,7 +26,7 @@ const loc = <T extends { lineno: number | null; colno: number | null }>(source: 
 
 // WHY: frozen singleton — ZERO_LOC is shared by reference into every default-location
 // node engine-wide; a stray write would corrupt all of them at once.
-const ZERO_LOC: Loc = Object.freeze(loc({ lineno: 0, colno: 0 })) as Loc;
+const ZERO_LOC: Loc = Object.freeze(loc({ lineno: 0, colno: 0 }));
 
 export type { Loc };
 export { loc, ZERO_LOC };

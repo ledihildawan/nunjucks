@@ -24,6 +24,8 @@ const appendChild = <K extends ChildrenNode>(node: K, child: Node): K => ({
 
 const mapCOW = <T>(items: readonly T[], transform: (item: T) => T): T[] => {
   const mapped = pipe(items, map(transform));
+  // WHY: COW fast path hands back the identical reference — callers never mutate the
+  // arrays they receive, so aliasing beats allocating an equal-but-new array.
   return mapped.every((item, i) => item === items[i]) ? (items as T[]) : mapped;
 };
 

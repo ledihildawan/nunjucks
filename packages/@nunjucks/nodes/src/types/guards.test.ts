@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { ZERO_LOC } from '@nunjucks/shared';
 import {
   array,
   block,
@@ -11,8 +12,7 @@ import {
   pair,
   symbol,
   templateData,
-} from '@nunjucks/nodes';
-import { ZERO_LOC } from '@nunjucks/shared';
+} from '../index.ts';
 import {
   isArray,
   isArrayPattern,

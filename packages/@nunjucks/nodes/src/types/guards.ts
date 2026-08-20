@@ -1,16 +1,17 @@
-import {
-  type CallExtensionNode,
-  type CallNode,
-  type ChildrenNode,
-  type CompareOperandNode,
-  type IfNode,
-  type LiteralNode,
-  type Node,
-  type NodeType,
-  type SymbolNode,
-  T,
-  type TemplateDataNode,
-} from './index.ts';
+// WHY: concrete-module imports — taking the value `T` from './index.ts' re-entered the
+// barrel that re-exports this module, creating a module-init cycle.
+import { type NodeType, T } from './constants.ts';
+import type {
+  CallExtensionNode,
+  CallNode,
+  ChildrenNode,
+  CompareOperandNode,
+  IfNode,
+  LiteralNode,
+  Node,
+  SymbolNode,
+  TemplateDataNode,
+} from './node-types.ts';
 
 const nodeTypes: ReadonlySet<NodeType> = new Set(Object.values(T));
 
