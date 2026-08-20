@@ -64,7 +64,10 @@ export const parseStatement = (
   }
 
   const tagName = tok.value;
-  const parser = STATEMENT_PARSERS[tagName];
+  // WHY: Map.get — tagName is template text; Record indexing would resolve
+  // Object.prototype members (`{% constructor %}` dispatched a callable,
+  // `{% __proto__ %}` escaped parse()'s Result boundary as a raw TypeError).
+  const parser = STATEMENT_PARSERS.get(tagName);
   if (parser) {
     return parser(parserContext);
   }

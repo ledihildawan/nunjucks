@@ -21,18 +21,20 @@ const MAX_OPERATOR_CHARS = 3;
 
 // WHY: derives from the canonical token-type constants so the operator→type mapping
 // cannot drift from token-types.ts (SSOT).
-const OPERATOR_TOKEN_TYPES: Record<string, TokenType> = {
-  '(': TOKEN_LEFT_PAREN,
-  ')': TOKEN_RIGHT_PAREN,
-  '[': TOKEN_LEFT_BRACKET,
-  ']': TOKEN_RIGHT_BRACKET,
-  '{': TOKEN_LEFT_CURLY,
-  '}': TOKEN_RIGHT_CURLY,
-  ',': TOKEN_COMMA,
-  ':': TOKEN_COLON,
-  '|>': TOKEN_PIPEFORWARD,
-  '...': TOKEN_SPREAD,
-};
+// A Map, not a Record: the probe key is raw template text, and Record indexing
+// resolves inherited prototype keys for hostile operator spellings.
+const OPERATOR_TOKEN_TYPES = new Map<string, TokenType>([
+  ['(', TOKEN_LEFT_PAREN],
+  [')', TOKEN_RIGHT_PAREN],
+  ['[', TOKEN_LEFT_BRACKET],
+  [']', TOKEN_RIGHT_BRACKET],
+  ['{', TOKEN_LEFT_CURLY],
+  ['}', TOKEN_RIGHT_CURLY],
+  [',', TOKEN_COMMA],
+  [':', TOKEN_COLON],
+  ['|>', TOKEN_PIPEFORWARD],
+  ['...', TOKEN_SPREAD],
+]);
 
 /**
  * Tokenizes operators and punctuation by longest match up to three characters, mapping
@@ -58,7 +60,7 @@ export const tokenizeOperator: Tokenizer = (state) => {
   const op = opLen === MAX_OPERATOR_CHARS ? threeChar : opLen === 2 ? twoChar : char;
   const current = advance(state, opLen);
 
-  const type: TokenType = OPERATOR_TOKEN_TYPES[op] ?? TOKEN_OPERATOR;
+  const type: TokenType = OPERATOR_TOKEN_TYPES.get(op) ?? TOKEN_OPERATOR;
 
   return {
     token: createToken({ type, value: op, lineno: state.lineno, colno: state.colno }),

@@ -168,13 +168,16 @@ const parseIs = (parserContext: ParserContext): Result<Node, TemplateError> => {
   return ok(negate ? not(loc(tok), builtIs) : builtIs);
 };
 
-const bitwiseNodeMap: Record<string, BinNodeFn> = {
-  '|': bitwiseOr,
-  '&': bitwiseAnd,
-  '^': bitwiseXor,
-  '<<': bitwiseLShift,
-  '>>': bitwiseRShift,
-};
+// WHY: a Map, not a plain object — operator text comes from template tokens, and a
+// Record lookup resolves inherited prototype keys (`a constructor b` silently pulled
+// Object.prototype.constructor in as a node builder and corrupted the AST).
+const BITWISE_NODE_BUILDERS = new Map<string, BinNodeFn>([
+  ['|', bitwiseOr],
+  ['&', bitwiseAnd],
+  ['^', bitwiseXor],
+  ['<<', bitwiseLShift],
+  ['>>', bitwiseRShift],
+]);
 
 const parseBitwiseOr = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const initialR = parseIs(parserContext);
@@ -194,7 +197,7 @@ const parseBitwiseOr = (parserContext: ParserContext): Result<Node, TemplateErro
     }
     const tok = tokR.value;
 
-    const createNode = bitwiseNodeMap[String(tok.value)];
+    const createNode = BITWISE_NODE_BUILDERS.get(String(tok.value));
     if (!createNode) {
       pushToken(parserContext, tok);
       break;

@@ -19,31 +19,32 @@ import { parseScope } from './scope.ts';
 import { parseSwitch } from './switch.ts';
 
 type StatementParser = (parserContext: ParserContext) => Result<Node, TemplateError>;
-type TaggedParser = (
-  parserContext: ParserContext,
-  ...args: unknown[]
-) => Result<Node, TemplateError>;
 
 /**
  * Tag-name-to-parser table for every built-in statement; `parseStatement`
  * looks tags up here before falling back to extensions.
+ *
+ * WHY: a Map, not a plain object — tag names are template-controlled text, and
+ * a Record lookup resolves inherited prototype keys (`__proto__`, `constructor`,
+ * `toString`) for hostile or accidental tag names, leaking Object.prototype
+ * members into parse dispatch.
  */
-const STATEMENT_PARSERS: Record<string, StatementParser | TaggedParser> = {
-  if: parseIf,
-  for: parseFor,
-  block: parseBlock,
-  extends: parseExtends,
-  include: parseInclude,
-  component: parseComponent,
-  import: parseImport,
-  from: parseFrom,
-  filter: parseFilterStatement,
-  switch: parseSwitch,
-  exec: parseExec,
-  scope: parseScope,
-  match: parseMatch,
-  capture: parseCapture,
-  render: parseRenderBlock,
-};
+const STATEMENT_PARSERS = new Map<string, StatementParser>([
+  ['if', parseIf],
+  ['for', parseFor],
+  ['block', parseBlock],
+  ['extends', parseExtends],
+  ['include', parseInclude],
+  ['component', parseComponent],
+  ['import', parseImport],
+  ['from', parseFrom],
+  ['filter', parseFilterStatement],
+  ['switch', parseSwitch],
+  ['exec', parseExec],
+  ['scope', parseScope],
+  ['match', parseMatch],
+  ['capture', parseCapture],
+  ['render', parseRenderBlock],
+]);
 
 export { STATEMENT_PARSERS };
