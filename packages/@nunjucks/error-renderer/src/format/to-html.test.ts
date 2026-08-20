@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { ErrorLike } from '@nunjucks/error-catalog';
+import { buildSourceTrace } from './presentation/source-trace/source-trace.ts';
 import { toHtml } from './to-html.ts';
 
 describe('toHtml', () => {
@@ -63,11 +64,26 @@ describe('toHtml', () => {
   });
 
   test('builds valid HTML document structure', () => {
-    const error = { message: 'Error', phase: 'render' } as ErrorLike;
+    const error = { message: 'Runtime error' } as ErrorLike;
     const result = toHtml(error, {});
     expect(result).toContain('<!DOCTYPE html>');
     expect(result).toContain('<html lang="en">');
     expect(result).toContain('<title>');
     expect(result).toContain('</html>');
+  });
+
+  // WHY: the marker div pads with plain spaces — for a CJK source line the pad
+  // must be display cells (11), not code units (8), or the carets drift left.
+  test('caret marker pads by display width for a CJK source line', () => {
+    const sourceTrace = buildSourceTrace({
+      sourceContent: 'エラー: {{ user.status }}',
+      lineno: 0,
+      colno: 8,
+      lineBase: 'zero',
+      sourceStartLine: 1,
+    });
+    const error = { message: 'Error', phase: 'render' } as ErrorLike;
+    const result = toHtml(error, { dev: true, sourceTrace });
+    expect(result).toContain(`error-marker-content">${' '.repeat(11)}^^^^</span>`);
   });
 });

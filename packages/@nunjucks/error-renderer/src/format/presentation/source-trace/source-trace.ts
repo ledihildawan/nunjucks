@@ -1,6 +1,7 @@
 import type { LineBase } from '@nunjucks/error-catalog';
 import { escapeRegex } from '@nunjucks/lib';
 import { calculateCaretPosition } from '../syntax-highlight/caret.ts';
+import { displayWidth } from '../syntax-highlight/display-width.ts';
 import { toDisplayLocation } from './location.ts';
 
 const buildSecretValuePattern = (blockedKeys: readonly string[] | null): RegExp | null => {
@@ -36,11 +37,16 @@ interface SourceTraceLine {
   isError: boolean;
 }
 
-/** Caret underline for the offending token: 0-based char offsets and the `carets` string. */
+/**
+ * Caret underline for the offending token: 0-based code-unit `charStart`/`charEnd`
+ * offsets (slicing stays unit-based), the terminal-cell `displayStart` column for
+ * gutter padding, and the `carets` string.
+ */
 interface SourceTraceCaret {
   line: number;
   charStart: number;
   charEnd: number;
+  displayStart: number;
   carets: string;
 }
 
@@ -109,6 +115,9 @@ const windowSourceTrace = (params: {
         line: displayLine,
         charStart: caretInfo.wordStart,
         charEnd: caretInfo.wordEnd,
+        // WHY: gutter padding is a cell count — wide glyphs before the token
+        // occupy two cells each, so the prefix width must not use '.length'.
+        displayStart: displayWidth(errorLineContent.slice(0, caretInfo.wordStart)),
         carets: caretInfo.carets,
       }
     : null;

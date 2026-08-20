@@ -21,7 +21,9 @@ const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined): 
     const errorClass = line.isError ? 'is-error' : '';
     const row = `<div class="code-line ${errorClass}"><span class="line-number">${line.number}</span><span class="code-content">${highlightHtml(line.content)}</span></div>`;
     if (line.isError && sourceTrace.caret) {
-      const spaces = ' '.repeat(sourceTrace.caret.charStart);
+      // WHY: pad by display cells (wide glyphs = 2 cells) so the marker lands
+      // under the token; charStart stays code-unit based for slicing elsewhere.
+      const spaces = ' '.repeat(sourceTrace.caret.displayStart);
       return [
         row,
         `<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${escapeHtml(sourceTrace.caret.carets)}</span></div>`,

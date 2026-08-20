@@ -1,3 +1,5 @@
+import { displayWidth } from './display-width.ts';
+
 const FALLBACK_CARET_WIDTH = 3;
 
 interface CaretResult {
@@ -115,7 +117,9 @@ const resolveHighlightWord = ({
 
 const buildCarets = (highlightWord: string): string => {
   if (highlightWord) {
-    return '^'.repeat(highlightWord.length);
+    // WHY: one caret per terminal cell — wide (CJK/fullwidth) glyphs span 2
+    // cells, so '.length' undershoots the token on the screen.
+    return '^'.repeat(displayWidth(highlightWord));
   }
   return '^'.repeat(FALLBACK_CARET_WIDTH);
 };
@@ -139,7 +143,9 @@ const calculateCaretPosition = (line: string, displayCol: number): CaretResult |
       wordStart: rawPos,
       wordEnd: rawPos + 1,
       highlightWord: rawCharAtPos,
-      carets: '^',
+      // WHY: a wide punctuation char (e.g. 、) still spans two cells even though
+      // \w does not treat it as a word character.
+      carets: '^'.repeat(displayWidth(rawCharAtPos)),
     };
   }
 

@@ -83,6 +83,22 @@ describe('buildSourceTrace', () => {
     expect(trace.caret?.carets).toBe('^^^^^^');
   });
 
+  test('caret padding uses display cells while offsets stay code-unit based', () => {
+    const trace = buildSourceTrace({
+      sourceContent: 'エラー: {{ user.status }}',
+      lineno: 0,
+      colno: 8,
+      lineBase: 'zero',
+      sourceStartLine: 1,
+    });
+
+    // WHY: 'user' starts at code-unit 8, but 'エラー: {{ ' renders 11 cells wide
+    // (three 2-cell kana) — renderers must pad with displayStart, not charStart.
+    expect(trace.caret?.charStart).toBe(8);
+    expect(trace.caret?.displayStart).toBe(11);
+    expect(trace.caret?.carets).toBe('^^^^');
+  });
+
   test('resolves templatePath as resolvedPath when source content is present', () => {
     const trace = buildSourceTrace({
       sourceContent: 'line one\nline two',

@@ -27,6 +27,14 @@ describe('calculateCaretPosition', () => {
     expect(r?.carets.length).toBeGreaterThanOrEqual(1);
   });
 
+  // WHY: \w is ASCII-only, so a CJK char takes the non-word path — but it still
+  // renders two cells wide, so the caret span must come from displayWidth.
+  test('wide CJK char gets a two-cell caret span', () => {
+    const r = calculateCaretPosition('エラー位置', 1);
+    expect(r?.highlightWord).toBe('エ');
+    expect(r?.carets).toBe('^^');
+  });
+
   // WHY: regression pin — the word scans used to recurse per character and
   // overflowed the stack on pathological single-line sources.
   test('survives a pathological single-line word without overflowing the stack', () => {

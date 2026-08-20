@@ -55,13 +55,13 @@ const getLinePrefix = (lineNumWidth: number): string =>
 
 interface FormatCaretLineInput {
   lineNumWidth: number;
-  charStart: number;
+  displayStart: number;
   carets: string;
 }
 
-const formatCaretLine = ({ lineNumWidth, charStart, carets }: FormatCaretLineInput): string => {
+const formatCaretLine = ({ lineNumWidth, displayStart, carets }: FormatCaretLineInput): string => {
   const prefix = getLinePrefix(lineNumWidth);
-  return `${prefix}${' '.repeat(charStart)}${picocolors.red(carets)}`;
+  return `${prefix}${' '.repeat(displayStart)}${picocolors.red(carets)}`;
 };
 
 /**
@@ -88,7 +88,7 @@ const formatSourceTrace = (lines: SourceTraceLine[], caret: SourceTraceCaret | n
     }
     return [
       codeLine,
-      formatCaretLine({ lineNumWidth, charStart: caret.charStart, carets: caret.carets }),
+      formatCaretLine({ lineNumWidth, displayStart: caret.displayStart, carets: caret.carets }),
     ];
   });
 };
