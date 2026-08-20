@@ -1,4 +1,7 @@
 import { describe, expect, test } from 'bun:test';
+import { literal } from '@nunjucks/nodes';
+import { createFrame } from '@nunjucks/runtime';
+import { ZERO_LOC } from '@nunjucks/shared';
 import { createCompiler } from './create-compiler.ts';
 
 describe('createCompiler', () => {
@@ -111,6 +114,10 @@ describe('createCompiler', () => {
       undefinedMode: undefined,
       source: '{{ 1 + 2 }}',
     });
-    expect(() => c.fail({ message: 'test error' })).toThrow();
+    c.compile(literal(ZERO_LOC, 42), createFrame());
+    expect(c.getCode()).toContain('42');
+    expect(() =>
+      c.compile({ type: 'no-such-type', lineno: 0, colno: 0 } as never, createFrame())
+    ).toThrow();
   });
 });

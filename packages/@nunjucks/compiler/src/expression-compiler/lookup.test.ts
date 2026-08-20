@@ -58,7 +58,9 @@ describe('compileOptionalCall', () => {
     compileOptionalCall(asCompiler(c), { node, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('== null ? undefined :');
-    expect(joined).toContain('"fn"()');
+    // WHY: regression — the aggregate read a nonexistent `.children` off the CallNode
+    // and silently dropped every argument; `fn?.(a)` must forward `a` to the call.
+    expect(joined).toContain('"fn"("a")');
   });
 });
 

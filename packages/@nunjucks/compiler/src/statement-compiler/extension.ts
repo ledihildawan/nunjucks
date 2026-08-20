@@ -2,7 +2,7 @@ import type { CallExtensionNode, Node } from '@nunjucks/nodes';
 import { isNodeList } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { appendTarget } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
 const resolveAutoescape = (node: CallExtensionNode): boolean => {

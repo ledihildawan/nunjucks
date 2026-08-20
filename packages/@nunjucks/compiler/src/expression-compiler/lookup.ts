@@ -2,7 +2,7 @@ import type { CallNode, LookupNode, Node, SliceNode } from '@nunjucks/nodes';
 import { isLiteral, isLookupVal, isSlice, isSymbol } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { emitLocationGuard } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileAggregate } from './container.ts';
 

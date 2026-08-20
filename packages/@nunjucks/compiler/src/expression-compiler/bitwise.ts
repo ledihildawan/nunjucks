@@ -1,6 +1,6 @@
 import type { BinaryNode, UnaryNode } from '@nunjucks/nodes';
 import { emitLocationGuard } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { binOpEmitter } from './binary.ts';
 

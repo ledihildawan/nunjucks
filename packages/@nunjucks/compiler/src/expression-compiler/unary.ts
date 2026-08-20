@@ -1,7 +1,7 @@
 import type { UnaryOpNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { emitLocationGuard } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
 interface UnaryOperatorOptions {
@@ -9,7 +9,7 @@ interface UnaryOperatorOptions {
 }
 
 // WHY: private helper consumed by compileNeg/compilePos — not a dispatch target,
-// so the 4-positional shape is contained and acceptable here.
+// so the 3-positional-plus-options shape is contained and acceptable here.
 const compileUnary = (
   compiler: Compiler,
   node: UnaryOpNode,

@@ -1,5 +1,5 @@
 import type { Node } from '@nunjucks/nodes';
-import type { Emitter, ScopeManager } from './index.ts';
+import type { Emitter, ScopeManager } from './create-compiler.ts';
 
 /**
  * Emits the async-generator prologue for root and block functions, opening
@@ -16,7 +16,7 @@ export const emitCompilerFuncBegin = (
   compiler.scopeStack = [];
   compiler.emitLine(`async function* ${name}(env, context, frame, runtime) {`);
   compiler.emitLine(`let lineno = ${node.lineno};`);
-  compiler.emitLine(`let colno = ${node.colno ?? 0};`);
+  compiler.emitLine(`let colno = ${node.colno};`);
   compiler.emitLine('try {');
 };
 
@@ -27,13 +27,7 @@ export const emitCompilerFuncBegin = (
  * `null` (async generators return via delegation, not a buffer), so the
  * epilogue always closes in generator state.
  */
-export const emitCompilerFuncEnd = (
-  compiler: Emitter & ScopeManager,
-  // WHY: legacy flag kept for ScopeManager's `emitFuncEnd(noReturn?)` signature; it only
-  // ever guarded the removed pending-buffer return, which is unreachable since begin
-  // always nulls the buffer.
-  _noReturn?: boolean
-): void => {
+export const emitCompilerFuncEnd = (compiler: Emitter & ScopeManager): void => {
   compiler.closeScopeLevels();
   compiler.emitLine('} catch (e) {');
   compiler.emitLine('  throw runtime.handleError(e, { lineno, colno });');

@@ -1,9 +1,8 @@
 import type { ForNode, Node } from '@nunjucks/nodes';
 import { isArray, isArrayPattern, isObjectPattern } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
-import { forEach } from 'remeda';
 import { assertSafeIdentifier } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileDestructuring } from './pattern.ts';
 
@@ -36,11 +35,11 @@ const emitLoopBindings = ({
     { name: 'length', val: length },
   ];
 
-  forEach(bindings, (binding) => {
+  for (const binding of bindings) {
     compiler.emitLine(
       `frame = frame.set({ name: "loop.${binding.name}", value: ${binding.val} });`
     );
-  });
+  }
 };
 
 interface LoopBodyInput {
@@ -78,9 +77,7 @@ const setupForLoop = ({
   const frame = parentFrame.push(true);
   compiler.emitLine('frame = frame.push(true);');
   if (compiler.streamErrorRecovery) {
-    const { lineno: rawLine, colno: rawCol } = node;
-    const lineno = rawLine ?? 0;
-    const colno = rawCol ?? 0;
+    const { lineno, colno } = node;
     compiler.emitLine(`let ${iterableId};`);
     compiler.emitLine(`try { ${iterableId} = `);
     compiler.compileExpression(node.arr, frame);
@@ -108,18 +105,22 @@ const compileFlatArrayBinding = ({
   const itemId = compiler.nextCompilerId();
   compiler.emitLine(`let ${itemId} = ${iterableId}[${index}];`);
   if (nameNode.children) {
-    forEach(nameNode.children, (child, elementIndex) => {
-      if (!child) {
-        return;
+    // WHY: imperative counter — the emitted ${itemId}[N] indices must match the
+    // children's positions even when a null child is skipped. Loop exemption:
+    // compiler emission path.
+    let elementIndex = 0;
+    for (const child of nameNode.children) {
+      if (child) {
+        const childValue = String(child.value);
+        assertSafeIdentifier(childValue, { compiler });
+        const elementId = compiler.nextCompilerId();
+        compiler.emitLine(`let ${elementId} = ${itemId}[${elementIndex}];`);
+        compiler.emitLine(
+          `frame = frame.set({ name: ${JSON.stringify(childValue)}, value: ${elementId} });`
+        );
       }
-      const childValue = String(child.value);
-      assertSafeIdentifier(childValue, { compiler });
-      const elementId = compiler.nextCompilerId();
-      compiler.emitLine(`let ${elementId} = ${itemId}[${elementIndex}];`);
-      compiler.emitLine(
-        `frame = frame.set({ name: ${JSON.stringify(childValue)}, value: ${elementId} });`
-      );
-    });
+      elementIndex += 1;
+    }
   }
   emitLoopBody({ compiler, node, frame, index, length });
 };

@@ -9,9 +9,8 @@ import {
 } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { type Loc, loc } from '@nunjucks/shared';
-import { forEach } from 'remeda';
 import { appendTarget } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import { extractPropertyLocation } from '../location-utils.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { extractVarName } from './extract-var-name.ts';
@@ -97,9 +96,7 @@ const processOutputChild = (compiler: Compiler, child: Node, frame: Frame): void
   if (isVariableLike(child)) {
     if (compiler.streamErrorRecovery) {
       // WHY: walrus operator (:=) and variable declarations bypass compileOutputChild (which has the boundary). Wrap them so a failed expression evaluation (e.g. {{ x := missing.deep }}) produces an inline marker instead of killing the generator. The frame.set is never reached, so the variable stays undefined — subsequent {{ x }} hits its own output boundary.
-      const { lineno: rawLine, colno: rawColumn } = extractPropertyLocation(child);
-      const walrusLineno = rawLine ?? 0;
-      const walrusColno = rawColumn ?? 0;
+      const { lineno: walrusLineno, colno: walrusColno } = loc(extractPropertyLocation(child));
       // WHY: emitStreamCatch closes the try { opened below — compiler.compile MUST NOT emit intervening top-level statements between the open and close (the try/catch balance is implicit). The generated code reads: `lineno=X; colno=Y; try { <declaration> } catch(e) { yield streamError }`.
       compiler.emitLine(`lineno = ${walrusLineno}; colno = ${walrusColno}; try {`);
       compiler.compile(child, frame);
@@ -128,6 +125,8 @@ export const compileOutput = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<Node>
 ): void => {
-  forEach(node.children ?? [], (child) => processOutputChild(compiler, child, frame));
+  for (const child of node.children ?? []) {
+    processOutputChild(compiler, child, frame);
+  }
   compiler.emit('\n');
 };

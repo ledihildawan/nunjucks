@@ -1,7 +1,13 @@
 import { isLookupVal, type Node } from '@nunjucks/nodes';
 import type { NodeLocation } from '@nunjucks/shared';
 
-const hasIntegerLocation = (node: { lineno: unknown; colno: unknown }): boolean =>
+// WHY: location-utils validates arbitrary unknown objects (not branded NodeBase
+// values), so the runtime integer probe stays — but as a type predicate, so the
+// `colno + colnoOffset` arithmetic below operates on narrowed numbers.
+const hasIntegerLocation = (node: {
+  lineno: unknown;
+  colno: unknown;
+}): node is { lineno: number; colno: number } =>
   Number.isInteger(node.lineno) && Number.isInteger(node.colno);
 
 /**

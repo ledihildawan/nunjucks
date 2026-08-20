@@ -3,7 +3,7 @@ import type { ForNode } from '@nunjucks/nodes';
 import { arrayPattern, forNode, literal, objectPattern, pair, symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import { compileFor } from './for.ts';
 import { makeFullStatementCompiler } from './test-helpers.ts';
 

@@ -1,6 +1,7 @@
 import type { Node, NodeType, SymbolNode } from '@nunjucks/nodes';
 import { T } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import type { Compiler } from './create-compiler.ts';
 import {
   compileAdd,
   compileAnd,
@@ -48,7 +49,6 @@ import {
   compileTestCall,
   compileWalrus,
 } from './expression-compiler/index.ts';
-import type { Compiler } from './index.ts';
 
 import {
   compileBlock,

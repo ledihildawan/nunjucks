@@ -2,9 +2,8 @@ import type { ChildrenNode, ComponentNode, Node, SlotBlock } from '@nunjucks/nod
 import { isDict, isKeywordArgs, isPair } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { createFrame } from '@nunjucks/runtime';
-import { forEach } from 'remeda';
 import { assertSafeIdentifier } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileSlotFunction } from './slot.ts';
 
@@ -18,10 +17,10 @@ const extractComponentArgs = (
   const args = kwargs ? all.slice(0, -1) : all;
   // WHY: defense-in-depth — component arg names flow into generated JS identifiers (`l_${name}`),
   // so they are validated as identifiers at the codegen boundary exactly like slot params.
-  forEach(args, (argument) => {
+  for (const argument of args) {
     compiler.assertType(argument, 'symbol');
     assertSafeIdentifier(String(argument.value), { compiler });
-  });
+  }
   return { args, kwargs };
 };
 
@@ -68,18 +67,18 @@ const emitComponentArgBindings = (
   compiler: Compiler,
   { args, kwargs, frame }: EmitComponentArgBindingsInput
 ): void => {
-  forEach(args, (argument) => {
+  for (const argument of args) {
     const argValue = String(argument.value);
     compiler.emitLine(
       `frame = frame.set({ name: ${JSON.stringify(argValue)}, value: l_${argValue} });`
     );
-  });
+  }
 
   if (kwargs) {
     const positionalNames = new Set(args.map((arg) => String(arg.value)));
-    forEach(kwargs.children, (pair) => {
+    for (const pair of kwargs.children) {
       if (!isPair(pair)) {
-        return;
+        continue;
       }
       const name = pairKey(compiler, pair);
       const isPositional = positionalNames.has(name);
@@ -94,7 +93,7 @@ const emitComponentArgBindings = (
         compiler.emit(')');
       }
       compiler.emit(' });');
-    });
+    }
   }
 };
 

@@ -2,7 +2,6 @@ import { createHtmlContextTracker, type HtmlContext } from '@nunjucks/lib';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { DEFAULT_UNDEFINED_MODE, type UndefinedMode } from '@nunjucks/shared';
-import { forEach } from 'remeda';
 import { type FailFields, fail, getTemplateName, nextCompilerId, pushBuffer } from './codegen.ts';
 import {
   assertNodeType,
@@ -52,7 +51,7 @@ export interface ScopeManager {
   suppressRootOutput: boolean;
   undefinedMode: UndefinedMode;
   emitFuncBegin: (node: Node, name: string) => void;
-  emitFuncEnd: (noReturn?: boolean) => void;
+  emitFuncEnd: () => void;
   addScopeLevel: () => void;
   closeScopeLevels: () => void;
   withScopedSyntax: (func: () => void) => void;
@@ -131,13 +130,15 @@ export const createCompiler = ({
       compiler.emit(`${code}\n`);
     },
     emitLines(...lines) {
-      forEach(lines, (line) => compiler.emitLine(line));
+      for (const line of lines) {
+        compiler.emitLine(line);
+      }
     },
     emitFuncBegin(node, name) {
       emitCompilerFuncBegin(compiler, node, name);
     },
-    emitFuncEnd(noReturn) {
-      emitCompilerFuncEnd(compiler, noReturn);
+    emitFuncEnd() {
+      emitCompilerFuncEnd(compiler);
     },
     addScopeLevel() {
       addCompilerScopeLevel(compiler);

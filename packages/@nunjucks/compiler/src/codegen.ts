@@ -1,7 +1,8 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { createLog } from '@nunjucks/error-formatter';
+import { SAFE_IDENTIFIER_RE } from '@nunjucks/lib';
 import { last, pipe, split } from 'remeda';
-import type { Emitter } from './index.ts';
+import type { Emitter } from './create-compiler.ts';
 
 /**
  * Fields shared by every compiler `fail` call — the human message plus optional
@@ -11,7 +12,7 @@ export interface FailFields {
   message: string;
   lineno?: number;
   colno?: number;
-  errorName?: string;
+  errorName?: keyof typeof ERROR_DEFINITIONS;
 }
 
 interface FailOptions extends FailFields {
@@ -32,9 +33,13 @@ export const fail = ({
 }: FailOptions): never => {
   const lastPart = pipe(message, split(':'), last());
   const subject = (lastPart ?? 'compile').trim();
+  // WHY: bounded lookup — hasOwn guards the catalog probe against malformed runtime
+  // payloads so an unregistered name falls back to WALK_UNKNOWN_TYPE instead of
+  // surfacing `undefined` as a definition (mirrors the error-catalog lookup contract).
   const errorDef =
-    ERROR_DEFINITIONS[errorName as keyof typeof ERROR_DEFINITIONS] ??
-    ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE;
+    errorName !== undefined && Object.hasOwn(ERROR_DEFINITIONS, errorName)
+      ? ERROR_DEFINITIONS[errorName]
+      : ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE;
 
   throw createLog('error', {
     def: errorDef,
@@ -58,8 +63,8 @@ export const fail = ({
 // identifier so it cannot break out of its emit context. Removing this check would
 // reopen direct injection into the new Function source. `$` and `_` are legitimate JS
 // identifier chars and are allowed; anything else fails closed with a clear compile error.
-const SAFE_IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/u;
-
+// The regex itself is the parser-shared SSOT imported from @nunjucks/lib so the two ends
+// of the pipeline cannot drift apart on what counts as emittable.
 interface AssertIdentifierOptions {
   compiler: { templateName: string | null };
   lineno?: number | null;
@@ -131,7 +136,7 @@ export const appendTarget = (compiler: Pick<Emitter, 'buffer'>): string =>
   compiler.buffer === null ? 'yield ' : `${compiler.buffer} += `;
 
 /** Serializes `templateName` into a JS string literal, or `undefined` when unset. */
-export const getTemplateName = (compiler: { templateName: string | null }): string => {
+export const getTemplateName = (compiler: { templateName: string | null | undefined }): string => {
   if (compiler.templateName === null || compiler.templateName === undefined) {
     return 'undefined';
   }

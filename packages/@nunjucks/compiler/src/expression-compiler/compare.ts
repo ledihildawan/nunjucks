@@ -1,8 +1,7 @@
 import type { BinaryNode, CompareNode, Node } from '@nunjucks/nodes';
 import { isCompareOperand, isFunCall } from '@nunjucks/nodes';
-import { forEach } from 'remeda';
 import { emitLocationGuard } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
 /**
@@ -18,16 +17,16 @@ export const compileCompare = (
   emitLocationGuard(compiler, first.lineno, first.colno);
   compiler.compile(node.expr, frame);
 
-  forEach(ops, (op) => {
+  for (const op of ops) {
     const operand = isCompareOperand(op) ? op : null;
     if (!operand) {
-      return;
+      continue;
     }
     compiler.emit(` ${operand.operator} `);
     emitLocationGuard(compiler, operand.lineno, operand.colno);
     compiler.compile(operand.expr, frame);
     compiler.emit(')');
-  });
+  }
   compiler.emit(')');
 };
 
@@ -41,14 +40,12 @@ export const compileIs = (
   { node, frame }: CompileNodeInput<BinaryNode>
 ): void => {
   const rightOperand = node.right;
-  let right: unknown;
-  let args: readonly Node[] | undefined;
-  if (isFunCall(rightOperand)) {
-    right = rightOperand.name.value;
-    args = rightOperand.args;
-  } else {
-    right = rightOperand.value;
-  }
+  const funCallRight = isFunCall(rightOperand) ? rightOperand : null;
+  const args: readonly Node[] | undefined = funCallRight?.args;
+  // WHY: a bare test operand names the test in its `.value`; a fun-call operand
+  // references it by callee name — both are unknown-typed `.value` payloads, so the
+  // String() coercion stays (single const, no reassignment).
+  const right: unknown = funCallRight ? funCallRight.name.value : rightOperand.value;
   const lineno = node.lineno;
   const colno = node.colno;
   emitLocationGuard(compiler, lineno, colno);

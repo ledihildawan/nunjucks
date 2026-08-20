@@ -1,6 +1,5 @@
 import type { SwitchNode } from '@nunjucks/nodes';
-import { forEach } from 'remeda';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
 /**
@@ -14,7 +13,7 @@ export const compileSwitch = (
   compiler.emit('switch (');
   compiler.compile(node.expr, frame);
   compiler.emitLine(') {');
-  forEach(node.cases ?? [], (c) => {
+  for (const c of node.cases ?? []) {
     compiler.emit('case ');
     compiler.compile(c.cond, frame);
     compiler.emitLine(':');
@@ -28,7 +27,7 @@ export const compileSwitch = (
     if ((c.body.children?.length ?? 0) > 0) {
       compiler.emitLine('break;');
     }
-  });
+  }
   const defaultNode = node.default;
   if (defaultNode) {
     compiler.emitLine('default:');

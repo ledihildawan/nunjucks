@@ -53,9 +53,16 @@ describe('assertNodeType', () => {
 
 describe('compileNodeExpression', () => {
   test('asserts the expression type before compiling', () => {
+    // WHY: membership is a hoisted Set probe (hot path), so the assertion no longer
+    // routes through compiler.assertType — an expression node compiles, a statement
+    // node throws the catalogued ASSERT_TYPE_ERROR before any emission.
     const compiler = makeRecordingCompiler();
     compileNodeExpression(compiler, literal(ZERO_LOC, 'value'), createFrame());
-    expect(compiler.calls).toEqual(['assert', 'compile']);
+    expect(compiler.calls).toEqual(['compile']);
+    const statementNode = output(ZERO_LOC, [templateData(ZERO_LOC, 'text')]);
+    expect(() => compileNodeExpression(compiler, statementNode, createFrame())).toThrow(
+      /Invalid type assertion/
+    );
   });
 });
 

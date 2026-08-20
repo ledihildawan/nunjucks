@@ -1,9 +1,8 @@
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { createFrame } from '@nunjucks/runtime';
-import { forEach } from 'remeda';
 import { assertSafeIdentifier } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 
 interface SlotFunctionInput {
   compiler: Compiler;
@@ -26,9 +25,9 @@ const compileSlotFunction = ({
   slotVar,
 }: SlotFunctionInput): void => {
   // WHY: defense-in-depth — slot params come from lexer `symbol` tokens (DELIM_CHARS blocks the run), but we still validate them as identifiers before emitting them into the generated source. Without this, a malformed upstream could insert `;` or `"` into the generated JS via `l_${param}`.
-  forEach(params, (param) => {
+  for (const param of params) {
     assertSafeIdentifier(param, { compiler });
-  });
+  }
   const localParams = params.map((p) => `l_${p}`);
 
   compiler.emitLine(`let ${slotVar} = async (${localParams.join(', ')}) => {`);
@@ -41,12 +40,12 @@ const compileSlotFunction = ({
   compiler.emitLine('  frame = runtime.createFrame({ parent: __slotFrame });');
 
   const slotFrame = createFrame({ parent: parentFrame });
-  forEach(params, (param) => {
+  for (const param of params) {
     // WHY: `${param}` is interpolated into a double-quoted JS string literal — JSON.stringify escapes it so the generated source is well-formed even if upstream ever yields a non-identifier.
     compiler.emitLine(
       `  frame = frame.set({ name: ${JSON.stringify(param)}, value: l_${param} });`
     );
-  });
+  }
 
   const buf = compiler.pushBuffer();
   compiler.withScopedSyntax(() => {

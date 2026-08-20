@@ -293,15 +293,3 @@ describe('codegen: scope', () => {
     expect(code).toContain('frame');
   });
 });
-
-describe('codegen: slot', () => {
-  test('block emits block function with b_ prefix', () => {
-    const code = compileRoot([
-      block(ZERO_LOC, {
-        name: 'header',
-        body: output(ZERO_LOC, [templateData(ZERO_LOC, 'header content')]),
-      }),
-    ]);
-    expect(code).toContain('b_header');
-  });
-});

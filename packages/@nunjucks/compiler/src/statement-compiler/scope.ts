@@ -1,7 +1,6 @@
 import type { ScopeNode } from '@nunjucks/nodes';
-import { forEach } from 'remeda';
 import { assertSafeIdentifier } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
 /**
@@ -16,8 +15,8 @@ export const compileScope = (
   const bodyFrame = frame.push(true);
   compiler.emitLine('frame = frame.push(true);');
 
-  if (node.assignments?.length > 0) {
-    forEach(node.assignments, (pair) => {
+  if (node.assignments.length > 0) {
+    for (const pair of node.assignments) {
       const name = String(pair.key);
       assertSafeIdentifier(name, { compiler });
       const valueId = compiler.nextCompilerId();
@@ -27,7 +26,7 @@ export const compileScope = (
       compiler.emitLine(
         `frame = frame.set({ name: ${JSON.stringify(name)}, value: ${valueId}, resolveUp: true });`
       );
-    });
+    }
   }
 
   compiler.withScopedSyntax(() => {

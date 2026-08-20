@@ -44,11 +44,11 @@ export const liftSuper = (ast: Node): Node => {
     }
 
     const superLoc = { lineno: superCall.name.lineno, colno: superCall.name.colno };
-    const sym = gensym();
+    const symbolName = gensym();
 
     const newBody = walk(body, (node: Node): Node | undefined => {
       if (isSuperCall(node)) {
-        return symbol(loc(superLoc), sym);
+        return symbol(loc(superLoc), symbolName);
       }
       // WHY: shallow-clone guard so walk does not descend into nested blocks and replace THEIR
       // super() calls with this block's symbol.
@@ -61,7 +61,7 @@ export const liftSuper = (ast: Node): Node => {
     const blockName =
       typeof blockNode.name === 'string' ? blockNode.name : String(blockNode.name?.value ?? '');
     const newChildren = [
-      superNode(loc(superLoc), { blockName, sym: symbol(loc(superLoc), sym) }),
+      superNode(loc(superLoc), { blockName, sym: symbol(loc(superLoc), symbolName) }),
       ...bodyChildren,
     ];
     const replacedBlock = { ...blockNode, body: { ...newBody, children: newChildren } };

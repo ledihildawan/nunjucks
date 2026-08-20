@@ -1,7 +1,7 @@
 import type { IfNode, WalrusNode } from '@nunjucks/nodes';
 import { isArrayPattern, isObjectPattern, isSymbol } from '@nunjucks/nodes';
 import { assertSafeIdentifier, emitLocationGuard } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileDestructuring } from '../statement-compiler/pattern.ts';
 

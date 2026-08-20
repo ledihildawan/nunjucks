@@ -2,9 +2,8 @@ import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { FromImportNode, Node } from '@nunjucks/nodes';
 import { isPair } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
-import { forEach } from 'remeda';
 import { assertSafeIdentifier } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileGetTemplate } from './template-lookup.ts';
 
@@ -12,12 +11,10 @@ const extractNameAlias = (compiler: Compiler, nameNode: Node): { name: string; a
   if (isPair(nameNode)) {
     const key = nameNode.key;
     const name = typeof key === 'string' ? key : String(key.value);
+    const aliasValue = nameNode.value.value;
     // WHY: String() coercion of a malformed pair value would silently bind the
     // alias "undefined"; fail loudly with a catalogued compile error instead.
-    const aliasValue = nameNode.value.value;
     if (typeof aliasValue !== 'string') {
-      // WHY: String() coercion of a malformed pair value would silently bind the
-      // alias "undefined"; fail loudly with a catalogued compile error instead.
       compiler.fail({
         message: 'from-import: alias must be a name',
         lineno: nameNode.lineno,
@@ -91,7 +88,7 @@ export const compileFromImport = (
     `let ${importedId}_exported = await ${importedId}.getExported(${withContextArg});`
   );
 
-  forEach(node.names.children, (nameNode) =>
-    compileImportedName({ compiler, nameNode, importedId, frame })
-  );
+  for (const nameNode of node.names.children) {
+    compileImportedName({ compiler, nameNode, importedId, frame });
+  }
 };

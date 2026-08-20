@@ -4,7 +4,7 @@ import { symbol } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import { compileSlotFunction } from './slot.ts';
 import { makeFullStatementCompiler } from './test-helpers.ts';
 

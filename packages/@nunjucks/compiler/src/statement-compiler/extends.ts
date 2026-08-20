@@ -2,7 +2,7 @@ import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { ExtendsNode, IncludeNode } from '@nunjucks/nodes';
 import { WARNINGS_CONTEXT_KEY as WARNINGS_KEY } from '@nunjucks/shared';
 import { appendTarget, emitLineLocation } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileGetTemplate, getTemplateLocation } from './template-lookup.ts';
 

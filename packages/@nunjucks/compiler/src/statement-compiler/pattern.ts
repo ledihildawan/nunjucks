@@ -12,9 +12,8 @@ import {
   isSymbol,
 } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
-import { forEach, reduce } from 'remeda';
 import { assertSafeIdentifier } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import {
   arraySlice,
   asArrayPattern,
@@ -70,22 +69,16 @@ const compileArrayPattern = (
   if (!patternChildren) {
     return;
   }
-  reduce(
-    patternChildren,
-    (state, child) => {
-      if (state.done) {
-        return state;
-      }
-      const result = handleArrayPatternChild({
-        destructuringContext,
-        child,
-        source,
-        index: state.index,
-      });
-      return { index: result.newIndex, done: result.shouldBreak };
-    },
-    { index: 0, done: false }
-  );
+  // WHY: for…of + break (engine loop exemption) — the rest-pattern child terminates
+  // the scan, which the previous reduce({ index, done }) accumulator only emulated.
+  let index = 0;
+  for (const child of patternChildren) {
+    const result = handleArrayPatternChild({ destructuringContext, child, source, index });
+    if (result.shouldBreak) {
+      break;
+    }
+    index = result.newIndex;
+  }
 };
 
 interface ArrayPatternChildInput {
@@ -245,9 +238,9 @@ const compileObjectPattern = (
   if (!patternChildren) {
     return;
   }
-  forEach(patternChildren, (child) =>
-    processObjectPatternChild(destructuringContext, child, source)
-  );
+  for (const child of patternChildren) {
+    processObjectPatternChild(destructuringContext, child, source);
+  }
 };
 
 /** Recursively destructures `source` through array/object patterns down to symbol bindings. */

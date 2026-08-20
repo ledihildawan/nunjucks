@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { callExtension, literal, nodeList, symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import { compileCallExtension, compileCallExtensionAsync } from './extension.ts';
 import { makeFullStatementCompiler } from './test-helpers.ts';
 

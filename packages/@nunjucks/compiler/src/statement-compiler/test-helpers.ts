@@ -73,6 +73,7 @@ export const makeFullStatementCompiler = () => {
     pushBuffer: () => 'buf_1',
     popBuffer: () => undefined,
     withScopedSyntax: (fn: () => void) => fn(),
+    getHtmlContext: (lineno: number, colno: number) => `ctx:${lineno}:${colno}`,
   };
 };
 
@@ -126,7 +127,7 @@ export const makeRootCompiler = () => {
     emitFuncBegin: (_node: unknown, name: string) => {
       compiler.emitted.push(`func:${name} `);
     },
-    emitFuncEnd: (_isGenerator?: boolean) => {
+    emitFuncEnd: () => {
       compiler.emitted.push('end ');
     },
     inBlock: false,

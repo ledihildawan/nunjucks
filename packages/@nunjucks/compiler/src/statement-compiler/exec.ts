@@ -1,7 +1,7 @@
 import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { ExecNode } from '@nunjucks/nodes';
 import { emitLineLocation } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
 /**
@@ -24,7 +24,7 @@ export const compileExec = (
   compiler.emitLine('  }');
   if (compiler.streamErrorRecovery) {
     compiler.emitLine(
-      `  lineno = ${node.lineno ?? 0}; colno = ${node.colno ?? 0}; yield runtime.streamError(e, { lineno, colno });`
+      `  lineno = ${node.lineno}; colno = ${node.colno}; yield runtime.streamError(e, { lineno, colno });`
     );
   } else {
     compiler.emitLine('  throw e;');

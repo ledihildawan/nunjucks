@@ -36,6 +36,6 @@ describe('getTemplateName', () => {
     expect(getTemplateName({ templateName: null })).toBe('undefined');
   });
   test('returns "undefined" for undefined', () => {
-    expect(getTemplateName({ templateName: null })).toBe('undefined');
+    expect(getTemplateName({ templateName: undefined })).toBe('undefined');
   });
 });

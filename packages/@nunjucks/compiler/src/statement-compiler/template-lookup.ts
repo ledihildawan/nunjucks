@@ -1,7 +1,7 @@
 import type { ExtendsNode, FromImportNode, ImportNode, IncludeNode, Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { emitLineLocation } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 
 type TemplateCarrier = ExtendsNode | IncludeNode | ImportNode | FromImportNode;
 

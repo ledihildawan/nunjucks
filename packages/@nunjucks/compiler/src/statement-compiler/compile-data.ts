@@ -1,6 +1,6 @@
 import type { Node } from '@nunjucks/nodes';
 import { appendTarget } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
 /** Emits one static-text chunk as `appendTarget` + a JSON string literal. */

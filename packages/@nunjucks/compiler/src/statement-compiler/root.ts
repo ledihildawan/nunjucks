@@ -5,9 +5,8 @@ import { findAll, isBlock } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { createFrame } from '@nunjucks/runtime';
 import { BLOCK_META_KEY } from '@nunjucks/shared';
-import { forEach } from 'remeda';
 import { assertSafeIdentifier } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 
 const blockName = (block: BlockNode): string | undefined => {
   const { name } = block;
@@ -18,8 +17,8 @@ const blockName = (block: BlockNode): string | undefined => {
 };
 
 const getBlockLocation = (block: BlockNode): NodeLocation => ({
-  lineno: block.lineno ?? 0,
-  colno: block.colno ?? 0,
+  lineno: block.lineno,
+  colno: block.colno,
 });
 
 const setupRootFunction = (compiler: Compiler, node: Node): { frame: Frame } => {
@@ -36,9 +35,9 @@ const setupRootFunction = (compiler: Compiler, node: Node): { frame: Frame } => 
 // nested blocks render exactly once. The previous filter-then-re-yield pass scrambled
 // document order and double-rendered nested blocks.
 const compileRootChildren = (compiler: Compiler, node: Node, frame: Frame): void => {
-  forEach(node.children ?? [], (child) => {
+  for (const child of node.children ?? []) {
     compiler.compile(child, frame);
-  });
+  }
 };
 
 const emitParentTemplateDelegation = (compiler: Compiler): void => {
@@ -47,34 +46,34 @@ const emitParentTemplateDelegation = (compiler: Compiler): void => {
   compiler.emitLine('  return yield* parentTemplate.rootRenderFunc(env, context, frame, runtime);');
   compiler.emitLine('}');
   compiler.emitLine('return context;');
-  compiler.emitFuncEnd(true);
+  compiler.emitFuncEnd();
 };
 
 const validateUniqueBlockNames = (blocks: BlockNode[]): void => {
   const seenBlocks = new Set<string>();
-  forEach(blocks, (block) => {
+  for (const block of blocks) {
     const name = blockName(block);
     const { lineno, colno } = block;
     if (!name) {
-      return;
+      continue;
     }
     if (seenBlocks.has(name)) {
       throw createLog('error', {
         def: ERROR_DEFINITIONS.DUPLICATE_BLOCK,
         params: { name },
         subject: name,
-        context: { lineno, colno: colno ?? 0, phase: 'compile' },
+        context: { lineno, colno, phase: 'compile' },
       });
     }
     seenBlocks.add(name);
-  });
+  }
 };
 
 const emitBlockFunctions = (compiler: Compiler, blocks: BlockNode[]): void => {
-  forEach(blocks, (block) => {
+  for (const block of blocks) {
     const name = blockName(block);
     if (!name) {
-      return;
+      continue;
     }
     assertSafeIdentifier(name, { compiler, lineno: block.lineno, colno: block.colno });
     compiler.emitFuncBegin(block, `b_${name}`);
@@ -82,29 +81,29 @@ const emitBlockFunctions = (compiler: Compiler, blocks: BlockNode[]): void => {
     compiler.emitLine('frame = frame.push(true);');
     compiler.compile(block.body, tmpFrame);
     compiler.emitFuncEnd();
-  });
+  }
 };
 
 const emitBlockReturnObject = (compiler: Compiler, blocks: BlockNode[]): void => {
   compiler.emitLine('return {');
-  forEach(blocks, (block) => {
+  for (const block of blocks) {
     const name = blockName(block);
     if (name === undefined) {
-      return;
+      continue;
     }
     assertSafeIdentifier(name, { compiler, lineno: block.lineno, colno: block.colno });
     const blockNameId = `b_${name}`;
     compiler.emitLine(`${blockNameId}: ${blockNameId},`);
-  });
+  }
   compiler.emitLine(`${BLOCK_META_KEY}: {`);
-  forEach(blocks, (block) => {
+  for (const block of blocks) {
     const name = blockName(block);
     if (name === undefined) {
-      return;
+      continue;
     }
     const { lineno, colno } = getBlockLocation(block);
     compiler.emitLine(`${JSON.stringify(name)}: { lineno: ${lineno}, colno: ${colno} },`);
-  });
+  }
   compiler.emitLine('},');
   compiler.emitLine('root: root\n};');
 };

@@ -1,5 +1,5 @@
 import type { IfNode } from '@nunjucks/nodes';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
 /**
@@ -11,9 +11,7 @@ export const compileIf = (compiler: Compiler, { node, frame }: CompileNodeInput<
   // `{% if obj.missing %}` takes the false branch like classic nunjucks.
   if (compiler.streamErrorRecovery) {
     const condVar = compiler.nextCompilerId();
-    const { lineno: rawLine, colno: rawCol } = node;
-    const lineno = rawLine ?? 0;
-    const colno = rawCol ?? 0;
+    const { lineno, colno } = node;
     compiler.emitLine(`let ${condVar};`);
     compiler.emitLine(`try { ${condVar} = runtime.isTruthy(`);
     compiler.compileExpression(node.cond, frame);

@@ -1,7 +1,6 @@
 import type { TestCallNode, TestNode } from '@nunjucks/nodes';
-import { forEach } from 'remeda';
 import { emitLocationGuard } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
 // WHY: test temporaries are declared with `let` inside an async IIFE — an undeclared
@@ -40,16 +39,16 @@ export const compileTestCall = (
   compiler.emit('; ');
 
   const args: string[] = [];
-  forEach(node.args, (argNode) => {
+  for (const argNode of node.args) {
     if (!argNode) {
-      return;
+      continue;
     }
     const argTmp = compiler.nextCompilerId();
     compiler.emit(`let ${argTmp} = `);
     compiler.compile(argNode, frame);
     compiler.emit('; ');
     args.push(argTmp);
-  });
+  }
 
   compiler.emit('return ');
   emitLocationGuard(compiler, lineno, colno);

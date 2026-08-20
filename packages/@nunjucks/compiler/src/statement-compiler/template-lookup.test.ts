@@ -10,7 +10,7 @@ import {
 } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import { compileGetTemplate, getTemplateLocation } from './template-lookup.ts';
 import { makeExtendsCompiler } from './test-helpers.ts';
 

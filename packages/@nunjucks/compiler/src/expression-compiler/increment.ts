@@ -2,7 +2,7 @@ import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { IncDecNode } from '@nunjucks/nodes';
 import { isSymbol } from '@nunjucks/nodes';
 import { emitLocationGuard } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
 const compileIncrementDecrement = (

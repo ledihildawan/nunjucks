@@ -1,6 +1,6 @@
 import type { BlockNode, SuperNode } from '@nunjucks/nodes';
 import { assertSafeIdentifier, emitLineLocation } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
 /**

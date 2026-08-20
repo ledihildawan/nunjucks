@@ -10,9 +10,9 @@ import type {
 import { isLiteral, isSpread, isSymbol, literal } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { loc } from '@nunjucks/shared';
-import { forEach, join, map, pipe } from 'remeda';
+import { join, map, pipe } from 'remeda';
 import { assertSafeIdentifier } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
 const TEMPLATE_ESCAPE_MAP: Record<string, string> = {
@@ -157,7 +157,7 @@ const compileTemplateLiteral = (
   const quasis = node.quasis ?? [];
   compiler.emit('`');
 
-  forEach(quasis, (quasi) => {
+  for (const quasi of quasis) {
     if (quasi.type === 'template') {
       compiler.emit(escapeTemplateString(String(quasi.value ?? '')));
     } else if (quasi.type === 'expression') {
@@ -167,7 +167,7 @@ const compileTemplateLiteral = (
       }
       compiler.emit('}');
     }
-  });
+  }
 
   compiler.emit('`');
 };
@@ -196,9 +196,20 @@ const compileAggregate = (
     compiler.emit(startChar);
   }
 
-  const children: readonly Node[] = Array.isArray(node)
+  // WHY: Array.isArray cannot exclude `readonly Node[]` from its false branch (readonly
+  // arrays are not assignable to any[]), so a dedicated guard restores three-way
+  // narrowing over the aggregate input union.
+  const isNodeList = (value: ChildrenNode | CallNode | readonly Node[]): value is readonly Node[] =>
+    Array.isArray(value);
+
+  // WHY: a CallNode (optionalCall) carries its emitted child list in `args`, not
+  // `children` — the former `as ChildrenNode` cast read a nonexistent field and
+  // silently dropped every call argument for that branch.
+  const children: readonly Node[] = isNodeList(node)
     ? node
-    : ((node as ChildrenNode).children ?? []);
+    : 'args' in node
+      ? node.args
+      : node.children;
   // WHY: imperative loop — comma placement between emitted fragments is
   // order-sensitive; a map().join() cannot interleave into the shared emit buffer.
   // Compiler emission exemption.

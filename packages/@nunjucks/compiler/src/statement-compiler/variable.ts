@@ -2,9 +2,8 @@ import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { CompoundAssignNode, Node, VariableDeclNode } from '@nunjucks/nodes';
 import { isArrayPattern, isObjectPattern, isSymbol } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
-import { forEach } from 'remeda';
 import { assertSafeIdentifier, emitLocationGuard } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileDestructuring } from './pattern.ts';
 
@@ -12,7 +11,7 @@ const getTargetName = (target: Node | undefined): string | null => {
   if (!target) {
     return null;
   }
-  if (isSymbol(target) || typeof target?.value === 'string') {
+  if (isSymbol(target) || typeof target.value === 'string') {
     return String(target.value);
   }
   return null;
@@ -37,9 +36,9 @@ const compileVariableDeclaration = (
     compiler.compileExpression(node.value, frame);
     compiler.emitLine(';');
 
-    forEach(node.targets, (pattern) => {
+    for (const pattern of node.targets) {
       compileDestructuring({ compiler, frame }, pattern, valueId);
-    });
+    }
   } else {
     const targets = node.targets;
     const name = getTargetName(targets[0]);
@@ -72,9 +71,9 @@ const compileVariableAssignment = (
     compiler.compileExpression(node.value, frame);
     compiler.emitLine(';');
 
-    forEach(node.targets, (pattern) => {
+    for (const pattern of node.targets) {
       compileDestructuring({ compiler, frame }, pattern, valueId);
-    });
+    }
   } else {
     const targets = node.targets;
     const name = getTargetName(targets[0]);
@@ -157,7 +156,7 @@ const emitFilterAssignment = ({
   const filterName = valueNode.type === 'symbol' ? String(valueNode.value) : null;
   if (filterName) {
     compiler.emit(
-      `let ${valueId} = await (async () => { const r = await runtime.runFilter({ env, name: ${JSON.stringify(filterName)}, lineno: ${node.lineno ?? 0}, colno: ${node.colno ?? 0}, context, args: [${currentId}] }); if (!r.ok) { throw r.error; } return r.value; })();`
+      `let ${valueId} = await (async () => { const r = await runtime.runFilter({ env, name: ${JSON.stringify(filterName)}, lineno: ${node.lineno}, colno: ${node.colno}, context, args: [${currentId}] }); if (!r.ok) { throw r.error; } return r.value; })();`
     );
   } else {
     compiler.emit(`let ${valueId} = await runtime.awaitValue(`);
@@ -211,7 +210,7 @@ const compileCompoundAssignment = (
   const currentId = compiler.nextCompilerId();
   const valueId = compiler.nextCompilerId();
 
-  emitLocationGuard(compiler, node.lineno ?? 0, node.colno ?? 0);
+  emitLocationGuard(compiler, node.lineno, node.colno);
   compiler.emit('(() => {');
   compiler.emit(`let ${currentId} = runtime.contextOrFrameLookup(context, frame, ${key});`);
 

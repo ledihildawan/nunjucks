@@ -1,9 +1,8 @@
-import type { CallNode, Node, RenderNode, SlotBlock } from '@nunjucks/nodes';
+import type { CallNode, RenderNode, SlotBlock } from '@nunjucks/nodes';
 import { isFunCall } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
-import { forEach } from 'remeda';
 import { appendTarget, assertSafeIdentifier, emitLocationGuard } from '../codegen.ts';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileSlotFunction } from './slot.ts';
 
@@ -14,7 +13,7 @@ const compileRenderSlots = (
 ): string => {
   const entries: string[] = [];
   const seenSlotNames = new Set<string>();
-  forEach(slots, (slot) => {
+  for (const slot of slots) {
     assertSafeIdentifier(slot.name, { compiler });
     // WHY: duplicate names in one render collapsed to object-literal last-wins — the
     // first slot body silently vanished. Fail at compile time with a catalogued error.
@@ -37,7 +36,7 @@ const compileRenderSlots = (
       slotVar,
     });
     entries.push(`${JSON.stringify(slot.name)}: ${slotVar}`);
-  });
+  }
   return `slots: { ${entries.join(', ')} }`;
 };
 
@@ -54,20 +53,25 @@ const compileRenderFunCall = ({
   frame,
   kwargsPart,
 }: CompileRenderFunCallInput): void => {
-  emitLocationGuard(compiler, callExpr.lineno, callExpr.colno ?? 0);
+  emitLocationGuard(compiler, callExpr.lineno, callExpr.colno);
   compiler.emit('runtime.callWrap(');
   compiler.compile(callExpr.name, frame);
   const nameStr = callExpr.name.type === 'symbol' ? String(callExpr.name.value) : 'render';
   compiler.emit(`, ${JSON.stringify(nameStr)}, { displayName: null, context, args: [`);
   const args = callExpr.args;
-  forEach(args, (argument: Node, i: number) => {
-    if (i > 0) {
+  // WHY: imperative loop — comma placement between emitted fragments is
+  // index-sensitive; a map().join() cannot interleave into the shared emit buffer.
+  // Loop exemption: compiler emission path.
+  let argumentIndex = 0;
+  for (const argument of args) {
+    if (argumentIndex > 0) {
       compiler.emit(', ');
     }
     if (argument) {
       compiler.compile(argument, frame);
     }
-  });
+    argumentIndex += 1;
+  }
   if (args.length > 0) {
     compiler.emit(', ');
   }
@@ -93,9 +97,14 @@ export const compileRenderBlock = (
 
   const callExpr = node.callExpr;
 
+  // WHY: render output must follow the tracked html context like every {{ }} emit —
+  // a {% render %} sitting inside an attribute region attribute-escapes even SafeString
+  // component markup (the runtime's attribute-injection defense); "html" here would
+  // silently bypass it.
+  const htmlContext = compiler.getHtmlContext(node.lineno, node.colno);
   const prefix = compiler.streamErrorRecovery
-    ? `lineno = ${node.lineno}; colno = ${node.colno ?? 0}; try { ${appendTarget(compiler)}runtime.suppressValue(`
-    : `lineno = ${node.lineno}; colno = ${node.colno ?? 0}; ${appendTarget(compiler)}runtime.suppressValue(`;
+    ? `lineno = ${node.lineno}; colno = ${node.colno}; try { ${appendTarget(compiler)}runtime.suppressValue(`
+    : `lineno = ${node.lineno}; colno = ${node.colno}; ${appendTarget(compiler)}runtime.suppressValue(`;
   compiler.emit(prefix);
   compiler.emit('await runtime.awaitValue(');
 
@@ -105,9 +114,11 @@ export const compileRenderBlock = (
     compiler.compile(callExpr, frame);
   }
 
-  compiler.emitLine(`), { autoescape: env.opts.autoescape, lineno, colno, context: "html" });`);
+  compiler.emitLine(
+    `), { autoescape: env.opts.autoescape, lineno, colno, context: ${JSON.stringify(htmlContext)} });`
+  );
   if (compiler.streamErrorRecovery) {
-    compiler.emitStreamCatch(node.lineno ?? 0, node.colno ?? 0);
+    compiler.emitStreamCatch(node.lineno, node.colno);
   }
   compiler.emitLine('frame = frame.pop();');
 };

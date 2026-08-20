@@ -3,8 +3,7 @@ import { createLog } from '@nunjucks/error-formatter';
 import type { Node } from '@nunjucks/nodes';
 import { getNodeTypeName, T } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
-import { forEach } from 'remeda';
-import type { Compiler, NodeTypeMatcher } from './index.ts';
+import type { Compiler, NodeTypeMatcher } from './create-compiler.ts';
 
 // WHY: string `T.*` tags only — factory functions matched via runtime `.name` would
 // silently break under minification (renamed functions stop matching their node type).
@@ -57,13 +56,22 @@ const EXPRESSION_TYPES: NodeTypeMatcher[] = [
   T.TEST_CALL,
 ];
 
+// WHY: hoisted Set — this membership probe runs on EVERY compileExpression call;
+// assertNodeType's matcher scan would re-walk ~46 entries per expression node.
+// All entries above are string tags, so name-based membership is exact.
+const EXPRESSION_TYPE_TAGS: ReadonlySet<string> = new Set(
+  EXPRESSION_TYPES.map((type) => (typeof type === 'string' ? type : type.name))
+);
+
 /** Compiles every child of `node` in order against `frame`. */
 export const compileNodeChildren = (
   compiler: Pick<Compiler, 'compile'>,
   node: Node,
   frame: Frame
 ): void => {
-  forEach(node.children ?? [], (child) => compiler.compile(child, frame));
+  for (const child of node.children ?? []) {
+    compiler.compile(child, frame);
+  }
 };
 
 /**
@@ -72,11 +80,14 @@ export const compileNodeChildren = (
  * emitting unbalanced fragments.
  */
 export const compileNodeExpression = (
-  compiler: Pick<Compiler, 'assertType' | 'compile'>,
+  compiler: Pick<Compiler, 'compile'>,
   node: Node,
   frame: Frame
 ): void => {
-  compiler.assertType(node, ...EXPRESSION_TYPES);
+  const typeName = getNodeTypeName(node) ?? 'unknown';
+  if (!EXPRESSION_TYPE_TAGS.has(typeName)) {
+    throwAssertTypeMismatch(node, typeName);
+  }
   compiler.compile(node, frame);
 };
 
@@ -90,6 +101,22 @@ const isMatchingType = (typeName: string | undefined, type: NodeTypeMatcher): bo
   return typeName === type.name;
 };
 
+const throwAssertTypeMismatch = (node: Node, typeName: string): never => {
+  // WHY: canonical catalog definition keeps causes/fixCode enrichment — an inline
+  // def would drift from the registry (ARCHITECTURE §6 error-cluster contract).
+  throw createLog('error', {
+    def: ERROR_DEFINITIONS.ASSERT_TYPE_ERROR,
+    params: { type: typeName },
+    subject: typeName,
+    context: {
+      phase: 'compile',
+      lineno: node.lineno,
+      colno: node.colno,
+      lineBase: 'zero',
+    },
+  });
+};
+
 /**
  * Throws a catalogued `ASSERT_TYPE_ERROR` unless `node` matches one of
  * `types`; a matcher is either a node-type tag string or an object whose
@@ -100,18 +127,6 @@ export const assertNodeType = (node: Node, ...types: NodeTypeMatcher[]): void =>
   const matches = types.some((type) => isMatchingType(typeName, type));
 
   if (!matches) {
-    // WHY: canonical catalog definition keeps causes/fixCode enrichment — an inline
-    // def would drift from the registry (ARCHITECTURE §6 error-cluster contract).
-    throw createLog('error', {
-      def: ERROR_DEFINITIONS.ASSERT_TYPE_ERROR,
-      params: { type: typeName },
-      subject: typeName,
-      context: {
-        phase: 'compile',
-        lineno: node.lineno ?? null,
-        colno: node.colno ?? null,
-        lineBase: 'zero',
-      },
-    });
+    throwAssertTypeMismatch(node, typeName);
   }
 };

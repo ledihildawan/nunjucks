@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { keywordArgs, pair, spread, symbol, templateLiteral } from '@nunjucks/nodes';
+import { keywordArgs, literal, pair, spread, symbol, templateLiteral } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { loc, ZERO_LOC } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
@@ -63,7 +63,7 @@ describe('compilePair', () => {
     });
     expect(c.emitted.join('')).toBe('"a": V');
   });
-  test('non-string non-symbol key fails', () => {
+  test('symbol key does not fail', () => {
     const c = makeContainerCompiler();
     expect(() =>
       compilePair(asCompiler(c), {
@@ -76,6 +76,18 @@ describe('compilePair', () => {
         frame,
       })
     ).not.toThrow();
+  });
+  test('non-string non-symbol key fails', () => {
+    const c = makeContainerCompiler();
+    expect(() =>
+      compilePair(asCompiler(c), {
+        node: pair(loc({ lineno: 1, colno: 1 }), {
+          key: literal(loc({ lineno: 1, colno: 1 }), 5),
+          val: { marker: 'V' } as never,
+        }),
+        frame,
+      })
+    ).toThrow('Dict keys must be strings or names');
   });
 });
 

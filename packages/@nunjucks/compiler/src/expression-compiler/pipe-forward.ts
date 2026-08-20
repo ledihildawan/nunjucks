@@ -1,5 +1,5 @@
 import type { CallNode } from '@nunjucks/nodes';
-import type { Compiler } from '../index.ts';
+import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
 /**
@@ -18,7 +18,7 @@ export const compilePipeForward = (
   const args = node.args;
 
   compiler.emit(
-    `await (async () => { const r = await runtime.runFilter({ env, name: ${JSON.stringify(filterName)}, lineno: ${node.lineno ?? 0}, colno: ${node.colno ?? 0}, context, args: [`
+    `await (async () => { const r = await runtime.runFilter({ env, name: ${JSON.stringify(filterName)}, lineno: ${node.lineno}, colno: ${node.colno}, context, args: [`
   );
 
   // WHY: imperative index loop — comma placement between emitted fragments is
