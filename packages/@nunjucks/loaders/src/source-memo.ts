@@ -103,7 +103,8 @@ export const createSourceMemo = (): SourceMemo => {
       return null;
     },
     remember: async (fullPath, source, stats) => {
-      // WHY: stats come from the pre-read validation pass — stat'ing again after
+      // WHY: stats arrive pre-read (the loader's validation stat or the pre-read
+      // fstat off the same descriptor the bytes came from) — stat'ing again after
       // the read would race a concurrent write into memoizing NEW (mtimeMs, size)
       // with OLD content, serving stale source until the next write.
       entries.set(fullPath, { source, mtimeMs: stats.mtimeMs, size: stats.size });

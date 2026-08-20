@@ -1,13 +1,12 @@
 import { type FSWatcher, type Stats, watch } from 'node:fs';
-import { readFile, realpath, stat } from 'node:fs/promises';
+import { constants, type FileHandle, open } from 'node:fs/promises';
 import path from 'node:path';
-import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { createLog } from '@nunjucks/error-formatter';
 import { err, ok, type Result } from '@nunjucks/lib';
 import { createLoader, type Loader } from './base.ts';
 import type { TemplateLoader, TemplateLoaderSource } from './loader-chain.ts';
-import { containsNullByte, isWithinBase } from './path-security.ts';
+import { containsNullByte } from './path-security.ts';
+import { createFilesystemError, findFileInSearchPaths } from './path-validation.ts';
 import { createSourceMemo } from './source-memo.ts';
 
 const normalizeSearchPaths = (searchPaths: string | string[] | undefined): string[] => {
@@ -20,118 +19,50 @@ const normalizeSearchPaths = (searchPaths: string | string[] | undefined): strin
   return [path.normalize(searchPaths)];
 };
 
-const resolveFromSearchPath = (name: string) => (searchPath: string) => {
-  const basePath = path.resolve(searchPath);
-  const fullPath = path.resolve(searchPath, name);
-  return { basePath, fullPath };
-};
-
-const createFilesystemError = (targetPath: string, message: string): TemplateError =>
-  createLog('error', {
-    def: getError('FILESYSTEM_ERROR'),
-    params: { msg: message },
-    subject: targetPath,
-    context: { phase: 'load' },
-  });
-
-const directoryError = (fullPath: string): Result<never, TemplateError> =>
-  err(
-    createFilesystemError(fullPath, `EISDIR: illegal operation - path is a directory: ${fullPath}`)
-  );
-
-const createWatchError = (filePath: string, cause: unknown): TemplateError =>
-  createFilesystemError(filePath, `watch failed: ${String(cause)}`);
-
 const hasErrorCode = (e: unknown): e is { code: string } =>
   e !== null && typeof e === 'object' && 'code' in e;
 
 const isFileNotFoundError = (e: unknown): boolean => hasErrorCode(e) && e.code === 'ENOENT';
 
-const basePathNotFoundError = (
-  basePath: string,
-  baseErr: unknown
-): Result<never, TemplateError> => {
-  const message = isFileNotFoundError(baseErr)
-    ? `ENOENT: no such file or directory: ${basePath}`
-    : String(baseErr);
-  return err(createFilesystemError(basePath, message));
-};
+const createWatchError = (filePath: string, cause: unknown): TemplateError =>
+  createFilesystemError(filePath, `watch failed: ${String(cause)}`);
 
-const resolveRealPaths = async (
-  basePath: string,
-  fullPath: string
-): Promise<Result<{ realBase: string; realFull: string }, TemplateError>> => {
+// WHY: O_NOFOLLOW makes open refuse a symlink swapped onto the validated path
+// (ELOOP) at open time — undefined on Windows, where 0 falls back to a plain
+// open and the dev/ino identity check below is the swap detector.
+const noFollowFlags: number = constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0);
+
+// WHY: `swapped` marks a dev/ino mismatch against the validation stats — benign
+// atomic-rename writers self-heal via the caller's single retry; `null` keeps
+// ENOENT-as-miss; the fd Stats ride along as the strongest pre-read identity
+// snapshot (same inode the bytes are read from) for the memo.
+type HandleRead = { swapped: true } | { swapped: false; src: string; stats: Stats };
+
+const readThroughHandle = async (
+  realFull: string,
+  validationStats: Stats
+): Promise<Result<HandleRead | null, TemplateError>> => {
+  let handle: FileHandle | undefined;
   try {
-    const [realBase, realFull] = await Promise.all([realpath(basePath), realpath(fullPath)]);
-    return ok({ realBase, realFull });
-  } catch (realpathErr: unknown) {
-    return err(createFilesystemError(fullPath, `realpath failed: ${String(realpathErr)}`));
-  }
-};
-
-// WHY: stats ride with validation — captured BEFORE the read so the memo keys on the exact traversal-proven (mtimeMs, size), never a post-read stat racing concurrent writes.
-type PathValidation = { exists: false } | { exists: true; realFull: string; stats: Stats };
-
-const existsAndWithinBase = async (
-  basePath: string,
-  fullPath: string
-): Promise<Result<PathValidation, TemplateError>> => {
-  let fileStat: Stats;
-  try {
-    fileStat = await stat(fullPath);
-  } catch (statErr: unknown) {
-    if (isFileNotFoundError(statErr)) {
-      try {
-        await stat(basePath);
-        return ok({ exists: false });
-      } catch (baseErr: unknown) {
-        return basePathNotFoundError(basePath, baseErr);
-      }
+    handle = await open(realFull, noFollowFlags);
+    const fdStats = await handle.stat();
+    if (
+      fdStats.isSymbolicLink() ||
+      fdStats.dev !== validationStats.dev ||
+      fdStats.ino !== validationStats.ino
+    ) {
+      return ok({ swapped: true });
     }
-    return err(createFilesystemError(fullPath, String(statErr)));
-  }
-
-  if (fileStat.isDirectory()) {
-    return directoryError(fullPath);
-  }
-
-  const realPathResult = await resolveRealPaths(basePath, fullPath);
-  if (!realPathResult.ok) {
-    return err(realPathResult.error);
-  }
-  const { realBase, realFull } = realPathResult.value;
-  return ok({ exists: isWithinBase(realBase, realFull), realFull, stats: fileStat });
-};
-
-const findFileInSearchPaths = async (
-  searchPaths: readonly string[],
-  name: string
-): Promise<Result<{ fullPath: string; realFull: string; stats: Stats }, TemplateError> | null> => {
-  const [first, ...rest] = searchPaths;
-  if (first === undefined) {
-    return null;
-  }
-  const { basePath, fullPath } = resolveFromSearchPath(name)(first);
-  const result = await existsAndWithinBase(basePath, fullPath);
-  if (!result.ok) {
-    return err(result.error);
-  }
-  if (!result.value.exists) {
-    return findFileInSearchPaths(rest, name);
-  }
-  return ok({ fullPath, realFull: result.value.realFull, stats: result.value.stats });
-};
-
-const readFileSource = async (
-  readPath: string
-): Promise<Result<{ src: string } | null, TemplateError>> => {
-  try {
-    return ok({ src: await readFile(readPath, 'utf-8') });
+    return ok({ swapped: false, src: await handle.readFile('utf-8'), stats: fdStats });
   } catch (readErr: unknown) {
     if (isFileNotFoundError(readErr)) {
       return ok(null);
     }
-    return err(createFilesystemError(readPath, String(readErr)));
+    return err(createFilesystemError(realFull, String(readErr)));
+  } finally {
+    // WHY: close on every path — a leaked descriptor per getSource would exhaust
+    // the process fd budget; close failures are inert once content is settled.
+    await handle?.close().catch(() => undefined);
   }
 };
 
@@ -184,8 +115,9 @@ export interface FileSystemLoader extends Loader, TemplateLoader {
  * resolving template sources from disk.
  *
  * Resolution walks `searchPaths` in order (first match wins). Every hit is
- * re-validated via realpath so symlinks cannot escape the search root, and
- * resolved sources are memoized per `(mtimeMs, size)` until the file changes.
+ * re-validated via realpath so symlinks cannot escape the search root, read
+ * through a no-follow descriptor identity-checked against the validation
+ * stat (dev/ino), and memoized per `(mtimeMs, size)` until the file changes.
  *
  * @param searchPaths - Directory, or ordered list of directories, to resolve
  *   template names against. Defaults to `['.']`.
@@ -255,15 +187,18 @@ export const createFileSystemLoader = (
     watchedFiles.clear();
   };
 
-  const readVerifiedSource = async (
-    name: string
-  ): Promise<Result<TemplateLoaderSource, TemplateError> | null> => {
+  type VerifiedReadOutcome = {
+    swapped: boolean;
+    result: Result<TemplateLoaderSource, TemplateError> | null;
+  };
+
+  const attemptVerifiedRead = async (name: string): Promise<VerifiedReadOutcome> => {
     const pathResult = await findFileInSearchPaths(normalizedSearchPaths, name);
     if (pathResult === null) {
-      return null;
+      return { swapped: false, result: null };
     }
     if (!pathResult.ok) {
-      return err(pathResult.error);
+      return { swapped: false, result: err(pathResult.error) };
     }
 
     const { fullPath, realFull, stats } = pathResult.value;
@@ -272,21 +207,50 @@ export const createFileSystemLoader = (
       watchFile(fullPath);
     }
 
-    // WHY: read through the validated realpath — re-opening the unresolved path races a
-    // swapped symlink (TOCTOU) into reading outside the search root; reported path stays fullPath.
-    const sourceResult = await readFileSource(realFull);
+    // WHY: read through a no-follow descriptor pinned at open — readFile(realFull)
+    // re-resolves the path and follows a symlink swapped in between validation and
+    // read (the residual TOCTOU window); the reported path stays fullPath.
+    const sourceResult = await readThroughHandle(realFull, stats);
     if (!sourceResult.ok) {
-      return err(sourceResult.error);
+      return { swapped: false, result: err(sourceResult.error) };
     }
     if (sourceResult.value === null) {
-      return null;
+      return { swapped: false, result: null };
+    }
+    if (sourceResult.value.swapped) {
+      return { swapped: true, result: null };
     }
 
-    const source: TemplateLoaderSource = { path: fullPath, src: sourceResult.value.src };
+    const source: TemplateLoaderSource = {
+      path: fullPath,
+      src: sourceResult.value.src,
+    };
     if (sourceMemo) {
-      await sourceMemo.remember(fullPath, source, stats);
+      await sourceMemo.remember(fullPath, source, sourceResult.value.stats);
     }
-    return ok(source);
+    return { swapped: false, result: ok(source) };
+  };
+
+  const readVerifiedSource = async (
+    name: string
+  ): Promise<Result<TemplateLoaderSource, TemplateError> | null> => {
+    const first = await attemptVerifiedRead(name);
+    if (!first.swapped) {
+      return first.result;
+    }
+    // WHY: exactly one retry — an atomic-rename writer (editor save) legitimately
+    // replaces the file between validation and open, and a fresh resolution picks
+    // up the new inode; a second mismatch fails closed because the bytes are then
+    // not provably the validated file's.
+    const second = await attemptVerifiedRead(name);
+    return second.swapped
+      ? err(
+          createFilesystemError(
+            name,
+            `validation race: file identity changed between validation and read: ${name}`
+          )
+        )
+      : second.result;
   };
 
   const getSource = async (

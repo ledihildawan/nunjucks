@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, open, rm, stat, symlink, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { isOk } from '@nunjucks/lib';
@@ -225,6 +225,75 @@ describe('path traversal protection', () => {
     const source = await loader.getSource('safe.njk\0.evil');
     expect(source).toBeNull();
   });
+});
+
+describe('descriptor-pinned read (TOCTOU closure)', () => {
+  test('serves normal files through the descriptor path with identical content', async () => {
+    const dir = await makeDir();
+    await writeFile(join(dir, 'fd.njk'), 'descriptor content');
+    const loader = createFileSystemLoader(dir, { memo: false });
+    const first = await loader.getSource('fd.njk');
+    const second = await loader.getSource('fd.njk');
+    expect(first !== null && isOk(first) && first.value.src === 'descriptor content').toBe(true);
+    expect(second !== null && isOk(second) && second.value.src === 'descriptor content').toBe(true);
+    if (first !== null && second !== null && isOk(first) && isOk(second)) {
+      expect(second.value.path).toBe(first.value.path);
+    }
+  });
+
+  test('memo still validates on top of the descriptor read (same object identity)', async () => {
+    const dir = await makeDir();
+    const file = join(dir, 'fdmemo.njk');
+    await writeFile(file, 'memoized via fd');
+    const loader = createFileSystemLoader(dir);
+    const first = await loader.getSource('fdmemo.njk');
+    const second = await loader.getSource('fdmemo.njk');
+    expect(first !== null && isOk(first)).toBe(true);
+    expect(second !== null && isOk(second)).toBe(true);
+    if (first !== null && second !== null && isOk(first) && isOk(second)) {
+      // WHY: toBe — a consult hit must return the memoized object identity,
+      // proving remember() still keys on the descriptor-fstat (mtimeMs, size).
+      expect(second.value).toBe(first.value);
+      expect(second.value.src).toBe('memoized via fd');
+    }
+  });
+
+  test('stat and fstat agree on (dev, ino) for a resolved template', async () => {
+    const dir = await makeDir();
+    const file = join(dir, 'identity.njk');
+    await writeFile(file, 'identity probe');
+    const pathStat = await stat(file);
+    const handle = await open(file, 'r');
+    try {
+      const fdStat = await handle.stat();
+      expect(fdStat.isSymbolicLink()).toBe(false);
+      // WHY: the identity guard compares validation stat against fd fstat — if a
+      // runtime ever disagreed on (dev, ino) for the same inode, every read would
+      // retry then fail closed, so the pair must match by construction.
+      expect(fdStat.dev).toBe(pathStat.dev);
+      expect(fdStat.ino).toBe(pathStat.ino);
+    } finally {
+      await handle.close();
+    }
+    const loader = createFileSystemLoader(dir);
+    const result = await loader.getSource('identity.njk');
+    expect(result !== null && isOk(result) && result.value.src === 'identity probe').toBe(true);
+  });
+
+  test.skipIf(process.platform === 'win32')(
+    'a symlink inside the root pointing outside is rejected at validation',
+    async () => {
+      const root = await makeDir();
+      const outsideDir = await makeDir();
+      const secret = join(outsideDir, 'secret.njk');
+      await writeFile(secret, 'outside secret');
+      await symlink(secret, join(root, 'escape.njk'));
+      const loader = createFileSystemLoader(root);
+      // WHY: realpath containment rejects the escape before any read — the
+      // descriptor identity check is the second gate, not the only one.
+      expect(await loader.getSource('escape.njk')).toBeNull();
+    }
+  );
 });
 
 describe('watch', () => {
