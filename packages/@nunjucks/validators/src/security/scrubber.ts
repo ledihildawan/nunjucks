@@ -53,9 +53,19 @@ const visitAndScrub = ({ value, seen, depth }: ScrubVisit): unknown => {
   );
 };
 
-// WHY: accepts `unknown` — the scrubber is applied to untrusted render-context shapes and
-// returns non-objects untouched (pinned by tests); the generic `T → T` it replaced was
-// phantom (every caller passed Record<string, unknown>) and asserted more than it proved.
+/**
+ * Deep-copies an untrusted render context with every dangerous reference
+ * (`Function` instances, `__proto__` carriers, trapped proxies) removed.
+ *
+ * Accepts `unknown` and returns non-objects untouched (pinned by tests); the
+ * generic `T → T` it replaced was phantom (every caller passed
+ * `Record<string, unknown>`) and asserted more than it proved.
+ *
+ * @param context - Untrusted context value; objects are rebuilt on
+ *   null-prototype targets via CreateDataProperty semantics, so a `__proto__`
+ *   key lands as an own property instead of polluting the chain.
+ * @returns The scrubbed copy — input objects are never mutated.
+ */
 export const scrubDangerousReferences = (context: unknown): unknown => {
   const seen = new WeakSet<object>();
   return visitAndScrub({ value: context, seen, depth: 0 });

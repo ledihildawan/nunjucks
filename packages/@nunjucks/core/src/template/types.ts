@@ -7,7 +7,11 @@ export { Template };
 
 const Template = Symbol('Template');
 
-// WHY: Option B — root renders as an async generator yielding output chunks and returning the post-render context.
+/**
+ * Root renderer ABI shared by every compiled template: receives the render env,
+ * the context, the root frame, and the runtime helpers; yields output chunks
+ * as strings and returns the post-render context.
+ */
 type RootRenderFunc = (
   env: Env,
   context: unknown,
@@ -36,8 +40,12 @@ type TemplateState = TemplateStateBase &
       }
   );
 
-// WHY: discriminated union correlates the tag with its payload — `{ type: 'string', value: 42 }`
-// is unrepresentable, so consumers narrow by `type` without re-validating `value`'s shape.
+/**
+ * Template input as a closed discriminated union — `code` carries
+ * pre-compiled exports, `string` carries raw template source. The tag/payload
+ * correlation is total: `{ type: 'string', value: 42 }` is unrepresentable, so
+ * consumers narrow by `type` without re-validating `value`'s shape.
+ */
 export type TemplateSource =
   | { readonly type: 'code'; readonly value: CompiledTemplateExports }
   | { readonly type: 'string'; readonly value: string };

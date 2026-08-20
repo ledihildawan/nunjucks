@@ -1,25 +1,25 @@
 import { isNonNullish } from 'remeda';
 
 interface NormalizeIndexInput {
-  idx: number | null;
-  len: number;
-  defaultVal: number;
+  index: number | null;
+  length: number;
+  defaultValue: number;
   step: number;
 }
 
 /**
- * Resolves a slice boundary against length `len`: a missing index falls back
- * to `defaultVal` (steered by `step` direction), negative indexes count from
- * the end, and the result is clamped to `[0, len]`.
+ * Resolves a slice boundary against the collection `length`: a missing index
+ * falls back to `defaultValue` (steered by `step` direction), negative indexes
+ * count from the end, and the result is clamped to `[0, length]`.
  */
-const normalizeIndex = ({ idx, len, defaultVal, step }: NormalizeIndexInput): number => {
-  if (!isNonNullish(idx)) {
+const normalizeIndex = ({ index, length, defaultValue, step }: NormalizeIndexInput): number => {
+  if (!isNonNullish(index)) {
     if (step < 0) {
-      return defaultVal === 0 ? len - 1 : -1;
+      return defaultValue === 0 ? length - 1 : -1;
     }
-    return defaultVal;
+    return defaultValue;
   }
-  return Math.max(0, Math.min(len, idx < 0 ? len + idx : idx));
+  return Math.max(0, Math.min(length, index < 0 ? length + index : index));
 };
 
 interface SliceCollectInput {

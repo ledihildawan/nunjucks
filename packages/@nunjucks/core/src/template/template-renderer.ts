@@ -115,8 +115,8 @@ const createTemplateRenderer = ({ getState, compiler, errorHandler }: TemplateRe
         );
       }
       return result;
-    } catch (e: unknown) {
-      throw wrapRenderError(state, e);
+    } catch (renderErr: unknown) {
+      throw wrapRenderError(state, renderErr);
     } finally {
       renderingTemplates?.delete(state.path);
     }

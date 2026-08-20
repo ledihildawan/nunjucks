@@ -4,6 +4,7 @@
  * and validators can derive from one source without inverting the package DAG, while
  * this module stays a pure constants tier (types, constants, snapshots — no logic).
  */
+/** Frozen category lists — the single source of truth for the sandbox security tiers. The policy PREDICATES that consume them live in `@nunjucks/security` so both runtime and validators can derive from one source without inverting the package DAG, while this module stays a pure constants tier (types, constants, snapshots — no logic). */
 export const BLOCKED_KEY_CATEGORIES = Object.freeze({
   OBJECT_INTRINSICS: [
     '__proto__',

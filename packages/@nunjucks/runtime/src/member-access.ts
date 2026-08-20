@@ -181,11 +181,16 @@ export const slice = (options: SliceOptions): readonly unknown[] | string => {
 
   const len = source.length;
   const stepValue = step ?? 1;
-  const normalizedStart = normalizeIndex({ idx: start, len, defaultVal: 0, step: stepValue });
+  const normalizedStart = normalizeIndex({
+    index: start,
+    length: len,
+    defaultValue: 0,
+    step: stepValue,
+  });
   const normalizedStop = normalizeIndex({
-    idx: stop,
-    len,
-    defaultVal: stepValue < 0 ? -1 : len,
+    index: stop,
+    length: len,
+    defaultValue: stepValue < 0 ? -1 : len,
     step: stepValue,
   });
 

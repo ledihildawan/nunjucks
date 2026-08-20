@@ -65,8 +65,8 @@ const resolveRealPaths = async (
   try {
     const [realBase, realFull] = await Promise.all([realpath(basePath), realpath(fullPath)]);
     return ok({ realBase, realFull });
-  } catch (e: unknown) {
-    return err(createFilesystemError(fullPath, `realpath failed: ${String(e)}`));
+  } catch (realpathErr: unknown) {
+    return err(createFilesystemError(fullPath, `realpath failed: ${String(realpathErr)}`));
   }
 };
 
@@ -77,8 +77,8 @@ const existsAndWithinBase = async (
   let fileStat: Stats;
   try {
     fileStat = await stat(fullPath);
-  } catch (e: unknown) {
-    if (isFileNotFoundError(e)) {
+  } catch (statErr: unknown) {
+    if (isFileNotFoundError(statErr)) {
       try {
         await stat(basePath);
         return ok(false);
@@ -86,7 +86,7 @@ const existsAndWithinBase = async (
         return basePathNotFoundError(basePath, baseErr);
       }
     }
-    return err(createFilesystemError(fullPath, String(e)));
+    return err(createFilesystemError(fullPath, String(statErr)));
   }
 
   if (fileStat.isDirectory()) {
@@ -127,11 +127,11 @@ const readFileSource = async (
       src: await readFile(fullPath, 'utf-8'),
       path: fullPath,
     });
-  } catch (e: unknown) {
-    if (isFileNotFoundError(e)) {
+  } catch (readErr: unknown) {
+    if (isFileNotFoundError(readErr)) {
       return ok(null);
     }
-    return err(createFilesystemError(fullPath, String(e)));
+    return err(createFilesystemError(fullPath, String(readErr)));
   }
 };
 

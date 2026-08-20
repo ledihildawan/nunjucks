@@ -95,11 +95,11 @@ const createTemplateCompiler = ({ getState, commit }: TemplateStateCell) => {
   const safeCompile = async () => {
     try {
       compile();
-    } catch (e: unknown) {
+    } catch (compileErr: unknown) {
       throw prettifyError({
         path: getState().path,
         withInternals: getState().env.opts.dev,
-        err: normalizeErrorMetadata(e).error,
+        err: normalizeErrorMetadata(compileErr).error,
       });
     }
   };

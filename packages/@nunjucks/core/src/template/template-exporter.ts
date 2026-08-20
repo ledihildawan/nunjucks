@@ -18,12 +18,12 @@ const createGetExported =
 
     try {
       await compiler.safeCompile();
-    } catch (e: unknown) {
+    } catch (compileErr: unknown) {
       const state = getState();
       throw prettifyError({
         path: state.path,
         withInternals: state.env.opts.dev,
-        err: normalizeErrorMetadata(e).error,
+        err: normalizeErrorMetadata(compileErr).error,
         includeChain: state.includeChain ?? undefined,
       });
     }
@@ -61,7 +61,7 @@ const createGetExported =
       // returns the post-render Context or nothing) — internal emitter, not untrusted data.
       const finalContext = (drainedContext as Context | undefined) ?? context;
       return finalContext.getExported();
-    } catch (e: unknown) {
-      return wrapExportedError(e);
+    } catch (exportErr: unknown) {
+      return wrapExportedError(exportErr);
     }
   };

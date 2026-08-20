@@ -3,19 +3,19 @@ import { normalizeIndex, collectForward, collectBackward } from './slice.ts';
 
 describe('normalizeIndex', () => {
   test('clamps explicit indices to the given length', () => {
-    expect(normalizeIndex({ idx: 2, len: 3, defaultVal: 0, step: 1 })).toBe(2);
-    expect(normalizeIndex({ idx: 99, len: 3, defaultVal: 0, step: 1 })).toBe(3);
-    expect(normalizeIndex({ idx: -2, len: 3, defaultVal: 0, step: 1 })).toBe(1);
-    expect(normalizeIndex({ idx: 0, len: 3, defaultVal: 0, step: 1 })).toBe(0);
+    expect(normalizeIndex({ index: 2, length: 3, defaultValue: 0, step: 1 })).toBe(2);
+    expect(normalizeIndex({ index: 99, length: 3, defaultValue: 0, step: 1 })).toBe(3);
+    expect(normalizeIndex({ index: -2, length: 3, defaultValue: 0, step: 1 })).toBe(1);
+    expect(normalizeIndex({ index: 0, length: 3, defaultValue: 0, step: 1 })).toBe(0);
   });
 
   test('uses the default for nullish indices', () => {
-    expect(normalizeIndex({ idx: null, len: 3, defaultVal: 0, step: 1 })).toBe(0);
-    expect(normalizeIndex({ idx: null, len: 3, defaultVal: -1, step: -1 })).toBe(-1);
+    expect(normalizeIndex({ index: null, length: 3, defaultValue: 0, step: 1 })).toBe(0);
+    expect(normalizeIndex({ index: null, length: 3, defaultValue: -1, step: -1 })).toBe(-1);
   });
 
   test('with a negative step and defaultVal 0 resolves to the last index', () => {
-    expect(normalizeIndex({ idx: null, len: 4, defaultVal: 0, step: -1 })).toBe(3);
+    expect(normalizeIndex({ index: null, length: 4, defaultValue: 0, step: -1 })).toBe(3);
   });
 });
 

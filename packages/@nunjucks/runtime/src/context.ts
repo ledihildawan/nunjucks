@@ -19,6 +19,16 @@ interface GetTemplateOptions {
   ignoreMissing?: boolean;
 }
 
+/**
+ * The render environment handed to every compiled template — the seam between
+ * engine configuration and generated code. Built per render by the core
+ * composition layer; lookups resolve (or catalog-throw) filters, tests, and
+ * extensions, and `getTemplate` backs `{% include %}`/`{% extends %}` through
+ * the configured loader.
+ *
+ * `getFilter`/`getTest` throw a catalogued `UNDEFINED_FILTER`/`UNDEFINED_TEST`
+ * for unknown names; `getExtension` throws `UNDEFINED_EXTENSION`.
+ */
 export interface Env {
   opts: {
     dev: boolean;
