@@ -38,5 +38,11 @@ const resolveSandboxOptions = (options: SandboxOptions = {}): ResolvedSandboxOpt
   environment: options.environment ?? 'auto',
 });
 
-export type { ResolvedSandboxOptions, SandboxOptions };
+/** Common inputs to the `set`/`deleteProperty`/`defineProperty` trap factories. */
+interface ValidateSetOptions {
+  sandboxOptions: ResolvedSandboxOptions;
+  topLevel: boolean;
+}
+
+export type { ResolvedSandboxOptions, SandboxOptions, ValidateSetOptions };
 export { resolveSandboxOptions };

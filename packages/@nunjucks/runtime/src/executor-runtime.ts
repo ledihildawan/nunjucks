@@ -7,11 +7,11 @@ import {
   isCompiledTemplateExports,
   type SandboxMode,
 } from '@nunjucks/shared';
-import { loadCompiledCode } from './code-loader.ts';
 import { isNullAccessResult, isPropertyNotFoundResult } from './member-access.ts';
 import type { RenderRuntime } from './render-runtime.ts';
 import type { SandboxOptions } from './sandbox/index.ts';
 import { wrapMemberAccess } from './sandbox/index.ts';
+import { loadCompiledCode } from './shell/code-loader.ts';
 
 const ROOT_FUNCTION_RE = /^async\s+function\*\s+root\s*\(/;
 

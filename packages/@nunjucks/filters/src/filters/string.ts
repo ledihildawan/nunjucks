@@ -1,7 +1,15 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: the string module is one cohesive upstream-parity group sharing createStringFilter/normalize/preserveSafe conventions; splitting it would scatter the SafeString threading every filter here repeats
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { err, escapeHtml, getAttrGetter, markSafe, ok, type Result } from '@nunjucks/lib';
+import {
+  err,
+  escapeAttribute,
+  escapeHtml,
+  getAttrGetter,
+  markSafe,
+  ok,
+  type Result,
+} from '@nunjucks/lib';
 import { defaultTo, join as joinRemeda, map, pipe, split } from 'remeda';
 import type { SafeString } from '../factory/index.ts';
 import {
@@ -385,7 +393,11 @@ interface UrlizeOptions {
   nofollow?: boolean;
 }
 
-const urlizeImpl = ({ str, length, nofollow }: UrlizeOptions): Result<string, TemplateError> => {
+const urlizeImpl = ({
+  str,
+  length,
+  nofollow,
+}: UrlizeOptions): Result<SafeString, TemplateError> => {
   // WHY: NaN/missing length means "no truncation" (upstream isNaN check) —
   // Infinity slices cleanly in String.prototype.slice.
   const maxLength =
@@ -399,26 +411,39 @@ const urlizeImpl = ({ str, length, nofollow }: UrlizeOptions): Result<string, Te
       // "see (example.com)" links example.com while the parens stay plain text.
       const possibleUrl = word.match(PUNC_RE)?.[1] ?? word;
       const shortUrl = possibleUrl.slice(0, maxLength);
+      // WHY: the anchor is markup of the filter's own construction — the href is
+      // attribute-encoded (escapeAttribute, the quoted-attribute entity set) and the
+      // display text HTML-escaped, so input like `http://x" onmouseover="alert(1)`
+      // cannot terminate the href attribute or inject markup through the anchor body.
       if (HTTP_HTTPS_RE.test(possibleUrl)) {
-        return `<a href="${possibleUrl}"${noFollowAttr}>${shortUrl}</a>`;
+        return `<a href="${escapeAttribute(possibleUrl)}"${noFollowAttr}>${escapeHtml(shortUrl)}</a>`;
       }
       if (WWW_RE.test(possibleUrl)) {
-        return `<a href="http://${possibleUrl}"${noFollowAttr}>${shortUrl}</a>`;
+        return `<a href="http://${escapeAttribute(possibleUrl)}"${noFollowAttr}>${escapeHtml(shortUrl)}</a>`;
       }
       if (EMAIL_RE.test(possibleUrl)) {
-        return `<a href="mailto:${possibleUrl}">${possibleUrl}</a>`;
+        return `<a href="mailto:${escapeAttribute(possibleUrl)}">${escapeHtml(possibleUrl)}</a>`;
       }
       if (TLD_RE.test(possibleUrl)) {
-        return `<a href="http://${possibleUrl}"${noFollowAttr}>${shortUrl}</a>`;
+        return `<a href="http://${escapeAttribute(possibleUrl)}"${noFollowAttr}>${escapeHtml(shortUrl)}</a>`;
       }
-      return word;
+      // WHY: non-URL words are pre-escaped here because the joined output is marked
+      // safe below — otherwise hostile markup riding a plain word would bypass
+      // autoescape verbatim once the whole string is elevated to SafeString.
+      return escapeHtml(word);
     });
-  return ok(words.join(''));
+  // WHY: marked safe unconditionally (upstream templates must pipe `| urlize | safe`
+  // themselves; this port makes safe markup the default) — sound ONLY because every
+  // non-anchor segment above is already escaped, so the anchor survives autoescape
+  // instead of being entity-destroyed as it was when a plain string was returned.
+  return ok(markSafe(words.join('')));
 };
 
 /**
- * Converts bare URLs, `www.` hosts, and emails in the text into anchor tags,
- * truncating display text beyond `length`; `nofollow=true` adds `rel="nofollow"`.
+ * Converts bare URLs, `www.` hosts, and emails in the text into anchor tags —
+ * attribute-encoding the href and HTML-escaping the display text — and returns
+ * a `SafeString` so autoescape renders working anchors; display text truncates
+ * beyond `length`; `nofollow=true` adds `rel="nofollow"`.
  */
 const urlize = createFilter(['str', 'length', 'nofollow'], urlizeImpl);
 

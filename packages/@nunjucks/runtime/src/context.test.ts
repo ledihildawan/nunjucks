@@ -61,6 +61,8 @@ describe('Context', () => {
   test('addBlock throws a catalog error for a non-function block', () => {
     const ctx = createContext({ env: fakeEnv });
     try {
+      // WHY: hostile fixture — a JS caller breaking the BlockFn contract with a
+      // string block; pins the NOT_A_FUNCTION path.
       ctx.addBlock('main', 'not-a-function' as unknown as () => void);
     } catch (e) {
       expect((e as { code: string }).code).toBe('NOT_A_FUNCTION');

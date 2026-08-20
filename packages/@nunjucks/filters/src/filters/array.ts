@@ -194,18 +194,18 @@ const batchImpl = ({
     );
   }
   // WHY: fixed-size slicing reproduces upstream's i % linecount batching exactly —
-  // every chunk holds linecount items except (at most) a trailing partial one, and
-  // the partial tail is dropped when empty (upstream's `if (tmp.length)` guard).
-  const chunks: unknown[][] = [];
-  for (let start = 0; start < arr.length; start += linecount) {
-    chunks.push(arr.slice(start, start + linecount));
-  }
-  const lastChunk = chunks.at(-1);
-  // WHY: truthy fillWith only — upstream pads with `if (fillWith)`, so falsy fill
-  // values (0, '', null) opt out of padding instead of appending literal falses.
-  if (fillWith && lastChunk && lastChunk.length < linecount) {
-    lastChunk.push(...Array.from({ length: linecount - lastChunk.length }, () => fillWith));
-  }
+  // every chunk holds linecount items except (at most) a trailing partial one; a
+  // ceil-count range keeps the build declarative in the sibling slice filter's shape.
+  const chunkCount = Math.ceil(arr.length / linecount);
+  const chunks = range(0, chunkCount).map((index) => {
+    const chunk = arr.slice(index * linecount, (index + 1) * linecount);
+    // WHY: truthy fillWith only — upstream pads with `if (fillWith)`, so falsy fill
+    // values (0, '', null) opt out of padding instead of appending literal falses;
+    // only the FINAL short chunk is padded (empty input yields zero chunks).
+    return index === chunkCount - 1 && fillWith && chunk.length < linecount
+      ? [...chunk, ...Array.from({ length: linecount - chunk.length }, () => fillWith)]
+      : chunk;
+  });
   return ok(chunks);
 };
 

@@ -144,6 +144,8 @@ describe('createComponent', () => {
         return this.val;
       },
     });
+    // WHY: hostile fixture — the component invoked through an untyped reference,
+    // as a plain JS caller with no compile-time contract would.
     expect((macro as unknown as () => number).call({ val: 42 })).toBe(42);
   });
 });

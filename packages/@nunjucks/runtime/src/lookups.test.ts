@@ -3,6 +3,9 @@ import { fromIterator } from '@nunjucks/lib';
 import { contextOrFrameLookup } from './lookups.ts';
 
 describe('contextOrFrameLookup', () => {
+  // WHY (all three tests): hostile fixtures — partial `{ lookup }` stand-ins violate
+  // the real Context/Frame contracts the way an untyped JS caller would; the full
+  // objects are exercised in their own suites.
   test('prefers frame value when defined', () => {
     const frame = { lookup: () => 'from_frame' };
     const context = { lookup: () => 'from_context' };

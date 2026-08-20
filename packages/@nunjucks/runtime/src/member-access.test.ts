@@ -42,6 +42,8 @@ describe('memberLookup', () => {
     expect(isPropertyNotFoundResult(result)).toBe(true);
     expect(result[PROP_NOT_FOUND]).toBe(true);
     expect(typeof result).toBe('function');
+    // WHY: hostile fixture — invoking the callable sentinel through an untyped
+    // reference pins its returns-undefined contract.
     expect((result as unknown as () => unknown)()).toBeUndefined();
   });
 

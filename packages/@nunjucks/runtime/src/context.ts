@@ -49,6 +49,7 @@ interface ContextMetadata {
   blockLocations?: Record<string, BlockLocation>;
 }
 
+/** A compiled template block function; async generators at runtime, loosely typed for the shared compiler contract. */
 type BlockFn = (...args: unknown[]) => unknown;
 
 interface GetSuperOptions {
@@ -303,7 +304,7 @@ const createContext = ({
     env: env ?? createDefaultEnv(),
     ctx: { ...ctx },
     blocks: {},
-    metadata: metadata ?? {},
+    metadata,
     exported: [] as string[],
     parentBlockNames: null as string[] | null,
     parentContext: null as Context | null,

@@ -7,6 +7,7 @@ import {
   resolveNullAccess,
   resolveUndefinedProperty,
   resolveUndefinedValue,
+  type UndefinedWarningEmitter,
 } from './undefined-rules.ts';
 
 /** Options for `ensureDefined`: source position, variable name, and undefined mode. */
@@ -18,6 +19,9 @@ export interface EnsureDefinedOptions {
   // 'default' mode into this emitted-code channel verbatim; only 'strict' and 'debug'
   // have resolver behavior, every other value falls through to the undefined string.
   undefinedMode?: UndefinedMode;
+  // WHY: threaded from the composition root (render-runtime) — debug-mode warnings
+  // flow through the injected emitter instead of the domain importing the shell.
+  emitWarning?: UndefinedWarningEmitter;
 }
 
 /**
@@ -37,7 +41,13 @@ export function ensureDefined(
   value: unknown,
   options: EnsureDefinedOptions = {}
 ): unknown {
-  const { lineno, colno, varName = null, undefinedMode = DEFAULT_UNDEFINED_MODE } = options;
+  const {
+    lineno,
+    colno,
+    varName = null,
+    undefinedMode = DEFAULT_UNDEFINED_MODE,
+    emitWarning,
+  } = options;
   if (isPropertyNotFoundResult(value) || isNullAccessResult(value)) {
     const ctx = getLogContext(this);
     const effectiveTemplateName = ctx.templateName ?? 'inline';
@@ -50,6 +60,7 @@ export function ensureDefined(
       mode: undefinedMode,
       phase: ctx.phase ?? 'render',
       templateName: effectiveTemplateName,
+      emitWarning,
     };
     if (isPropertyNotFoundResult(value)) {
       return resolveUndefinedProperty(value, resolveOptions);
@@ -69,6 +80,7 @@ export function ensureDefined(
       mode: undefinedMode,
       phase: ctx.phase ?? 'render',
       templateName: effectiveTemplateName,
+      emitWarning,
     });
   }
 

@@ -107,15 +107,43 @@ const defaultEnv = (config: ExecuteConfig): Env => {
 
 // WHY: named for what it consumes — an already-built runtime. It executes both sandboxed and
 // non-sandboxed configs; sandboxing (when enabled) lives in the swapped runtime.memberLookup.
-const executeWithRuntime = async (options: ExecuteWithRuntimeOptions): Promise<string> => {
-  const { code, context, frame, env, runtime, executionTimeoutMs } = options;
+
+// WHY: execute/executeStream share the load-validate + createContext + render-entry
+// sequence; the helper yields the ready-to-drain stream so each public entry only
+// decides drain policy (collect under deadline vs hand the generator to the caller).
+interface StartRenderStreamOptions {
+  code: string;
+  context: Record<string, unknown>;
+  frame: Frame;
+  env: Env;
+  runtime: RenderRuntime;
+}
+
+const startRenderStream = ({
+  code,
+  context,
+  frame,
+  env,
+  runtime,
+}: StartRenderStreamOptions): AsyncGenerator<string, unknown> => {
   const { render, blocks } = getRenderFunction(code);
   const ctx = createContext({ ctx: context, env, blocks });
+  return render(env, ctx, frame, runtime);
+};
 
-  const stream = render(env, ctx, frame, runtime);
+const executeWithRuntime = async (options: ExecuteWithRuntimeOptions): Promise<string> => {
+  const stream = startRenderStream(options);
+  const { executionTimeoutMs } = options;
   return executionTimeoutMs && executionTimeoutMs > 0
     ? collectStringWithDeadline(stream, executionTimeoutMs)
     : collectString(stream);
+};
+
+// WHY: both public entries share the env-defaulting + runtime-building resolution;
+// only what they do with the resulting stream differs.
+const resolveEnvAndRuntime = (options: ExecuteOptions): { env: Env; runtime: RenderRuntime } => {
+  const { env, config = {} } = options;
+  return { env: env ?? defaultEnv(config), runtime: buildRuntime(config) };
 };
 
 /**
@@ -124,15 +152,13 @@ const executeWithRuntime = async (options: ExecuteWithRuntimeOptions): Promise<s
  * under the configured cooperative wall-clock deadline when one is set.
  */
 const execute = async (options: ExecuteOptions): Promise<string> => {
-  const { code, context, frame, env, config = {} } = options;
-  const resolvedEnv = env ?? defaultEnv(config);
-  const runtime = buildRuntime(config);
-
+  const { code, context, frame, config = {} } = options;
+  const { env, runtime } = resolveEnvAndRuntime(options);
   return executeWithRuntime({
     code,
     context,
     frame,
-    env: resolvedEnv,
+    env,
     runtime,
     executionTimeoutMs: config.executionTimeoutMs,
   });
@@ -144,13 +170,9 @@ const execute = async (options: ExecuteOptions): Promise<string> => {
  * consumption — and therefore timeout policy — to the caller.
  */
 const executeStream = (options: ExecuteOptions): AsyncGenerator<string, unknown> => {
-  const { code, context, frame, env, config = {} } = options;
-  const resolvedEnv = env ?? defaultEnv(config);
-  const runtime = buildRuntime(config);
-  const { render, blocks } = getRenderFunction(code);
-  const ctx = createContext({ ctx: context, env: resolvedEnv, blocks });
-
-  return render(resolvedEnv, ctx, frame, runtime);
+  const { code, context, frame } = options;
+  const { env, runtime } = resolveEnvAndRuntime(options);
+  return startRenderStream({ code, context, frame, env, runtime });
 };
 
 export type { ExecuteConfig, ExecuteOptions };

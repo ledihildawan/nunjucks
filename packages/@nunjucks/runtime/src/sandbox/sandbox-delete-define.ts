@@ -1,7 +1,7 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { hasOwn } from '@nunjucks/lib';
 import { sandboxError } from './sandbox-errors.ts';
-import type { ResolvedSandboxOptions } from './sandbox-options.ts';
+import type { ResolvedSandboxOptions, ValidateSetOptions } from './sandbox-options.ts';
 import {
   DANGEROUS_OBJECT_INTRINSICS,
   isAllowedKey,
@@ -9,11 +9,6 @@ import {
   isBlockedSymbol,
   isInternalKey,
 } from './sandbox-predicates.ts';
-
-interface ValidateSetOptions {
-  sandboxOptions: ResolvedSandboxOptions;
-  topLevel: boolean;
-}
 
 interface StringKeyWriteScope {
   key: string;
@@ -63,29 +58,29 @@ const guardTopLevelContextMutation = (
   });
 };
 
-/** Validates a string key for a write operation (set/delete/defineProperty). */
-const validateStringKeyForWrite = (scope: StringKeyWriteScope): boolean => {
+/**
+ * Validates a string key for a write operation (set/delete/defineProperty),
+ * throwing on every blocked category — sound because Proxy traps can only fail
+ * by throwing, so the previous boolean result was unreachable at `false`.
+ */
+const assertValidStringKeyForWrite = (scope: StringKeyWriteScope): void => {
   const { key, sandboxOptions, topLevel } = scope;
   if (topLevel && isInternalKey(key)) {
-    return true;
+    return;
   }
   guardBlockedStringKey(scope);
   guardAllowlist(key, sandboxOptions);
   if (topLevel) {
     guardTopLevelContextMutation(key, sandboxOptions);
   }
-  return true;
 };
 
 /** Builds the Proxy `deleteProperty` trap: internal keys allowed, blocked categories fail-closed. */
 const createValidateDeleteProperty = ({ sandboxOptions, topLevel }: ValidateSetOptions) => {
   return (target: Record<string | symbol, unknown>, key: string | symbol): boolean => {
     guardBlockedSymbol(key, sandboxOptions);
-    if (
-      typeof key === 'string' &&
-      !validateStringKeyForWrite({ key, target, sandboxOptions, topLevel })
-    ) {
-      return false;
+    if (typeof key === 'string') {
+      assertValidStringKeyForWrite({ key, target, sandboxOptions, topLevel });
     }
     return delete target[key];
   };
@@ -100,14 +95,11 @@ const createValidateDefineProperty = ({ sandboxOptions, topLevel }: ValidateSetO
   ): boolean => {
     guardBlockedSymbol(key, sandboxOptions);
     if (typeof key === 'string') {
-      if (!validateStringKeyForWrite({ key, target, sandboxOptions, topLevel })) {
-        return false;
-      }
-      return Reflect.defineProperty(target, key, descriptor);
+      assertValidStringKeyForWrite({ key, target, sandboxOptions, topLevel });
     }
     return Reflect.defineProperty(target, key, descriptor);
   };
 };
 
-export type { StringKeyWriteScope, ValidateSetOptions };
+export type { StringKeyWriteScope };
 export { createValidateDefineProperty, createValidateDeleteProperty };

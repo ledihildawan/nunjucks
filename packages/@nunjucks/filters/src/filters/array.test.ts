@@ -124,7 +124,8 @@ describe('filters/array', () => {
     test('divides an array into N roughly equal slices', () => {
       const result = slice([1, 2, 3, 4, 5, 6], 3);
       expect(isOk(result)).toBe(true);
-      const value = getOrElse(result, null!);
+      // WHY: typed sentinel — an Err result surfaces as [] and fails the length pin.
+      const value = getOrElse(result, []);
       expect(value).toHaveLength(3);
       expect(value[0]).toEqual([1, 2]);
       expect(value[1]).toEqual([3, 4]);
@@ -134,7 +135,7 @@ describe('filters/array', () => {
     test('distributes leftover elements to earlier slices', () => {
       const result = slice([1, 2, 3, 4, 5, 6, 7], 3);
       expect(isOk(result)).toBe(true);
-      const value = getOrElse(result, null!);
+      const value = getOrElse(result, []);
       expect(value[0]).toEqual([1, 2, 3]);
       expect(value[1]).toEqual([4, 5]);
       expect(value[2]).toEqual([6, 7]);
@@ -143,7 +144,7 @@ describe('filters/array', () => {
     test('pads trailing slices with the fillWith value when leftover', () => {
       const result = slice([1, 2, 3, 4], 3, 'x');
       expect(isOk(result)).toBe(true);
-      const value = getOrElse(result, null!);
+      const value = getOrElse(result, []);
       expect(value[0]).toEqual([1, 2]);
       expect(value[1]).toEqual([3, 'x']);
       expect(value[2]).toEqual([4, 'x']);
@@ -152,7 +153,7 @@ describe('filters/array', () => {
     test('pads trailing empty slices when N exceeds the array length', () => {
       const result = slice([1, 2, 3], 5, null);
       expect(isOk(result)).toBe(true);
-      const value = getOrElse(result, null!);
+      const value = getOrElse(result, []);
       expect(value).toHaveLength(5);
       expect(value[0]).toEqual([1]);
       expect(value[1]).toEqual([2]);

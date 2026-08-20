@@ -1,9 +1,31 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { ErrorDefinitionEntry } from '@nunjucks/error-formatter';
-import type { Phase, UndefinedMode } from '@nunjucks/shared';
+import type { HandledUndefinedMode, Phase, UndefinedMode } from '@nunjucks/shared';
 import { throwRuntimeError } from './error-context.ts';
 import type { NullAccessResult, PropertyNotFoundResult } from './member-access.ts';
-import { emitUndefinedWarning } from './shell/warning-emitter.ts';
+
+/** A debug-mode undefined warning payload assembled by the resolver; the injected emitter renders it. */
+export interface UndefinedWarningInput {
+  name: string;
+  message: () => string;
+  subject: string | null;
+  lineno?: number | null;
+  colno?: number | null;
+  phase: Phase;
+  templateName: string;
+  mode: HandledUndefinedMode;
+  varName: string | null;
+}
+
+/**
+ * Emits a debug-mode undefined warning against the render's runtime context;
+ * bound to the shell's collector/console emitter at the composition site and
+ * defaulting to a no-op for pure domain use.
+ */
+export type UndefinedWarningEmitter = (
+  runtimeContext: unknown,
+  warning: UndefinedWarningInput
+) => void;
 
 /** Inputs shared by every undefined resolution: subject, position, mode, and error context. */
 export interface ResolveUndefinedOptions {
@@ -17,6 +39,9 @@ export interface ResolveUndefinedOptions {
   mode: UndefinedMode;
   phase: Phase;
   templateName: string;
+  // WHY: injectable so undefined-mode logic stays shell-free — the collector/console
+  // emitter is bound by the composition root (render-runtime), never imported here.
+  emitWarning?: UndefinedWarningEmitter;
 }
 
 interface UndefinedResolution {
@@ -31,7 +56,7 @@ const resolveUndefined = (
   options: ResolveUndefinedOptions,
   resolution: UndefinedResolution
 ): 'undefined' => {
-  const { runtimeContext, lineno, colno, mode, phase, templateName } = options;
+  const { runtimeContext, lineno, colno, emitWarning, mode, phase, templateName } = options;
 
   if (mode === 'strict') {
     throwRuntimeError(resolution.errorDef, {
@@ -45,7 +70,7 @@ const resolveUndefined = (
   }
 
   if (mode === 'debug') {
-    emitUndefinedWarning(runtimeContext, {
+    emitWarning?.(runtimeContext, {
       name: resolution.warningName,
       message: resolution.warningMessage,
       subject: resolution.subject,

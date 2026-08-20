@@ -2,7 +2,6 @@ export { awaitValue } from './await-value.ts';
 export { runTest } from './builtin-predicates.ts';
 export type { CallWrapOptions, InOperatorOptions } from './call-wrap.ts';
 export { callWrap, inOperator } from './call-wrap.ts';
-export { loadCompiledCode } from './code-loader.ts';
 export {
   type ComponentContext,
   createComponent,
@@ -44,6 +43,7 @@ export {
   type ResolvedSandboxOptions,
   type SandboxOptions,
 } from './sandbox/index.ts';
+export { loadCompiledCode } from './shell/code-loader.ts';
 export { createSlotContext, type SlotContext } from './slots.ts';
 export { isStreamErrorSentinel, type StreamErrorSentinel, streamError } from './stream-error.ts';
 export {
@@ -55,3 +55,8 @@ export type { SuppressValueOptions } from './suppress-value.ts';
 export { suppressValue } from './suppress-value.ts';
 export type { EnsureDefinedOptions } from './undefined-resolution.ts';
 export { ensureDefined } from './undefined-resolution.ts';
+export type {
+  ResolveUndefinedOptions,
+  UndefinedWarningEmitter,
+  UndefinedWarningInput,
+} from './undefined-rules.ts';

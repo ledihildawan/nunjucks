@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { ensureDefined } from './index.ts';
+import { emitUndefinedWarning } from './shell/warning-emitter.ts';
 
 const propNotFound = (path = 'x', parent = 'obj') => ({
   __nunjucks_prop_not_found__: true,
@@ -60,11 +61,14 @@ describe('ensureDefined', () => {
 
   test('collects debug warnings when __warnings__ array is present', () => {
     const warnings: unknown[] = [];
+    // WHY: emitter wired explicitly — after the domain→shell inversion, ensureDefined
+    // defaults to a no-op and render-runtime binds the shell emitter at composition.
     const result = ensureDefined.call({ __warnings__: warnings }, undefined, {
       lineno: 1,
       colno: 2,
       varName: 'v',
       undefinedMode: 'debug',
+      emitWarning: emitUndefinedWarning,
     });
     expect(result).toBe('undefined');
     expect(warnings).toHaveLength(1);
@@ -78,7 +82,13 @@ describe('ensureDefined', () => {
     };
     try {
       expect(
-        ensureDefined(undefined, { lineno: 1, colno: 2, varName: 'v', undefinedMode: 'debug' })
+        ensureDefined(undefined, {
+          lineno: 1,
+          colno: 2,
+          varName: 'v',
+          undefinedMode: 'debug',
+          emitWarning: emitUndefinedWarning,
+        })
       ).toBe('undefined');
     } finally {
       console.warn = original;

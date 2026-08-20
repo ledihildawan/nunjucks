@@ -18,6 +18,7 @@ const createStringFilter =
 // WHY: only R is generic — it propagates the implementation's return type (e.g. its Result
 // shape) to the wrapped filter. The args tuple generic it previously carried was phantom
 // (values are unknown end-to-end at the component boundary).
+/** Wraps a positional-args implementation as a macro filter, binding its arg names to keyword-argument fallbacks. */
 const createMacroFilter = <R>(argNames: string[], fn: (...args: unknown[]) => R) =>
   createComponent({ argNames, kwargNames: [], func: fn });
 

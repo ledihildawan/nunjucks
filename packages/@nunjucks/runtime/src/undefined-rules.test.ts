@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { WARNINGS_CONTEXT_KEY } from '@nunjucks/shared';
 import type { NullAccessResult, PropertyNotFoundResult } from './member-access.ts';
+import { emitUndefinedWarning } from './shell/warning-emitter.ts';
 import type { ResolveUndefinedOptions } from './undefined-rules.ts';
 import {
   resolveNullAccess,
@@ -8,6 +9,8 @@ import {
   resolveUndefinedValue,
 } from './undefined-rules.ts';
 
+// WHY: wires the shell emitter exactly as render-runtime does — after the
+// domain→shell inversion the rules default to a no-op emitter.
 const makeResolveOptions = (
   mode: ResolveUndefinedOptions['mode'],
   varName: string | null = null,
@@ -21,6 +24,7 @@ const makeResolveOptions = (
   mode,
   phase: 'render',
   templateName: 'page.njk',
+  emitWarning: emitUndefinedWarning,
 });
 
 const makeWarningsContext = () => {

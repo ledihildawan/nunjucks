@@ -53,7 +53,7 @@ const streamError = function (
   const unreachableMarker: never = (() => {
     throw createInternalInvariantError('handleError always throws');
   })();
-  return unreachableMarker as StreamErrorSentinel;
+  return unreachableMarker;
 };
 
 export type { StreamErrorSentinel };

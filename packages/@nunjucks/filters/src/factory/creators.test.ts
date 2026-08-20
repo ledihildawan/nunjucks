@@ -84,7 +84,8 @@ describe('createStringFilter', () => {
 
   test('preserves safeness by returning a SafeString when the input is a SafeString', () => {
     const safeInput = safeString('hello');
-    const result = getOrElse(upper(safeInput), null!);
+    // WHY: typed sentinel — the union result admits '', so no non-null-assertion hack.
+    const result = getOrElse(upper(safeInput), '');
     expect(isSafeString(result)).toBe(true);
     expect(result.toString()).toBe('HELLO');
   });

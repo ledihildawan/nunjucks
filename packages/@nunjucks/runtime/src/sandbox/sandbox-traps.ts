@@ -12,7 +12,11 @@ import {
   type DynamicCallable,
   sandboxError,
 } from './sandbox-errors.ts';
-import type { ResolvedSandboxOptions, SandboxOptions } from './sandbox-options.ts';
+import type {
+  ResolvedSandboxOptions,
+  SandboxOptions,
+  ValidateSetOptions,
+} from './sandbox-options.ts';
 import { resolveSandboxOptions } from './sandbox-options.ts';
 import {
   DANGEROUS_OBJECT_INTRINSICS,
@@ -132,11 +136,6 @@ const createValidateGet = ({ sandboxEnabled, sandboxOptions, topLevel }: Validat
     return validateStringKey(target, key);
   };
 };
-
-interface ValidateSetOptions {
-  sandboxOptions: ResolvedSandboxOptions;
-  topLevel: boolean;
-}
 
 /** Builds the Proxy `set` trap; internal keys, blocked keys, and top-level writes each throw their own error. */
 const createValidateSet = ({ sandboxOptions, topLevel }: ValidateSetOptions) => {

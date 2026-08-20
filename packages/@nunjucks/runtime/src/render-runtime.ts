@@ -16,10 +16,11 @@ import {
   slice,
 } from './member-access.ts';
 import { createSafeString, markSafe } from './runtime-contract/safe-string.ts';
+import { emitUndefinedWarning } from './shell/warning-emitter.ts';
 import { createSlotContext } from './slots.ts';
 import { streamError } from './stream-error.ts';
 import { suppressValue } from './suppress-value.ts';
-import { ensureDefined } from './undefined-resolution.ts';
+import { type EnsureDefinedOptions, ensureDefined } from './undefined-resolution.ts';
 
 interface RenderRuntimeOptions {
   templateName?: string;
@@ -42,6 +43,18 @@ interface RenderRuntimeOptions {
  *   dev-mode injection after render completes.
  * @returns The runtime contract object passed to compiler-generated template code.
  */
+// WHY: composition-root wiring — undefined-rules takes its warning emitter as an
+// injectable dependency (no-op default) so pure undefined-mode logic never reaches
+// the console; the shell's collector/console emitter is bound exactly here, where
+// the runtime contract object handed to compiled code is assembled.
+const runtimeEnsureDefined = function (
+  this: unknown,
+  value: unknown,
+  options?: EnsureDefinedOptions
+): unknown {
+  return ensureDefined.call(this, value, { ...options, emitWarning: emitUndefinedWarning });
+};
+
 const createRenderRuntime = (options?: RenderRuntimeOptions) => ({
   suppressValue,
   awaitValue,
@@ -59,7 +72,7 @@ const createRenderRuntime = (options?: RenderRuntimeOptions) => ({
   inOperator,
   fromIterator,
   callWrap,
-  ensureDefined,
+  ensureDefined: runtimeEnsureDefined,
   markSafe,
   createFrame,
   createSafeString,

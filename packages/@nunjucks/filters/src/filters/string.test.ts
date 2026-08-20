@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { getOrElse, isErr, isOk, isSafeString, markSafe } from '@nunjucks/lib';
-import { createKeywordArgs } from '@nunjucks/runtime';
+import { createKeywordArgs, suppressValue } from '@nunjucks/runtime';
 import {
   capitalize,
   center,
@@ -218,6 +218,8 @@ describe('filters/string', () => {
     });
 
     test('returns the original string when it cannot be resolved as a string', () => {
+      // WHY: hostile fixture — simulates a JS caller violating the filter's string
+      // contract; the filter passes unresolvable inputs through untouched.
       const obj = { toString: () => '' };
       expect(getOrElse(replace(obj, 'x', 'y'), null)).toBe(obj as unknown as string);
     });
@@ -440,40 +442,76 @@ describe('filters/string', () => {
   });
 
   describe('urlize', () => {
+    // WHY: expectations pin the SafeString output — the filter now attribute-encodes
+    // the href, escapes the display text, and safe-marks the joined markup, so the
+    // old plain-string pins (which autoescape would entity-destroy) became String()
+    // form assertions on the safe content.
     test('links http and https URLs', () => {
       const result = urlize('see https://example.com now');
       expect(isOk(result)).toBe(true);
-      expect(getOrElse(result, null)).toBe(
+      expect(String(getOrElse(result, null))).toBe(
         'see <a href="https://example.com">https://example.com</a> now'
       );
+      expect(isSafeString(getOrElse(result, null))).toBe(true);
     });
 
     test('links www. hosts via http://', () => {
-      expect(getOrElse(urlize('go www.example.com'), null)).toBe(
+      expect(String(getOrElse(urlize('go www.example.com'), null))).toBe(
         'go <a href="http://www.example.com">www.example.com</a>'
       );
     });
 
     test('links email addresses via mailto', () => {
-      expect(getOrElse(urlize('mail foo.bar@example.com'), null)).toBe(
+      expect(String(getOrElse(urlize('mail foo.bar@example.com'), null))).toBe(
         'mail <a href="mailto:foo.bar@example.com">foo.bar@example.com</a>'
       );
     });
 
     test('truncates the display text at length but keeps the full href', () => {
       const result = urlize('https://example.com/longpath', 10);
-      expect(getOrElse(result, null)).toBe('<a href="https://example.com/longpath">https://ex</a>');
+      expect(String(getOrElse(result, null))).toBe(
+        '<a href="https://example.com/longpath">https://ex</a>'
+      );
     });
 
     test('adds rel="nofollow" when nofollow is true', () => {
       const result = urlize('https://example.com', undefined, true);
-      expect(getOrElse(result, null)).toBe(
+      expect(String(getOrElse(result, null))).toBe(
         '<a href="https://example.com" rel="nofollow">https://example.com</a>'
       );
     });
 
-    test('leaves plain words untouched', () => {
-      expect(getOrElse(urlize('just words here'), null)).toBe('just words here');
+    test('leaves plain words textually untouched (pre-escaped for the safe-marked output)', () => {
+      const result = urlize('just words here');
+      expect(String(getOrElse(result, null))).toBe('just words here');
+      expect(isSafeString(getOrElse(result, null))).toBe(true);
+    });
+
+    test('a double-quote payload cannot break out of the href attribute', () => {
+      // WHY: `http://x" onmouseover="alert(1)` — the quote is entity-encoded inside
+      // the href and the payload tail renders as inert escaped text, never as a
+      // new attribute on the anchor.
+      const result = urlize('http://x" onmouseover="alert(1)');
+      expect(String(getOrElse(result, null))).toBe(
+        '<a href="http://x&quot;">http://x&quot;</a> onmouseover=&quot;alert(1)'
+      );
+      expect(String(getOrElse(result, null))).not.toContain('onmouseover="');
+    });
+
+    test('normal URLs render working anchors under autoescape', () => {
+      const result = urlize('see https://example.com now');
+      const rendered = suppressValue.call({}, getOrElse(result, null), { autoescape: true });
+      expect(String(rendered)).toBe(
+        'see <a href="https://example.com">https://example.com</a> now'
+      );
+    });
+
+    test('mailto links stay intact under autoescape', () => {
+      const result = urlize('mail foo.bar@example.com');
+      const rendered = suppressValue.call({}, getOrElse(result, null), { autoescape: true });
+      expect(String(rendered)).toBe(
+        'mail <a href="mailto:foo.bar@example.com">foo.bar@example.com</a>'
+      );
     });
   });
 
