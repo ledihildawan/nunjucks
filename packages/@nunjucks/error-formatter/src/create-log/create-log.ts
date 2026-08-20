@@ -24,7 +24,7 @@ import {
   extractExtraFromContext,
   createErrorEnvelope,
 } from './create-log-helpers.ts';
-import { createErrorFromDef, createWarningFromDef } from './create-log-error.ts';
+import { createErrorFromDef, createWarningFromDef } from './create-log-defs.ts';
 import { isKeyedObject } from '@nunjucks/lib';
 
 /**

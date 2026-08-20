@@ -116,6 +116,18 @@ const createBaseMetadata = ({ message, rawLogData, info, type }: CreateBaseMetad
   return baseMetadata;
 };
 
+// WHY: module-level Set — hoisted out of the per-error call so the exclusion check
+// is a single O(1) has() instead of rebuilding the key list per invocation.
+const KNOWN_METADATA_KEYS = new Set([
+  'lineno',
+  'colno',
+  'phase',
+  'templateName',
+  'lineBase',
+  'varName',
+  'undefinedMode',
+]);
+
 /**
  * Extracts context keys outside the known location/phase set into an `extra`
  * bag (e.g. `sourceContent`, `sourceStartLine`); returns `undefined` when the
@@ -124,19 +136,10 @@ const createBaseMetadata = ({ message, rawLogData, info, type }: CreateBaseMetad
 const extractExtraFromContext = (
   context: ErrorContext | null | undefined
 ): Record<string, unknown> | undefined => {
-  const extraKeys = [
-    'lineno',
-    'colno',
-    'phase',
-    'templateName',
-    'lineBase',
-    'varName',
-    'undefinedMode',
-  ];
   if (!context) {
     return undefined;
   }
-  return pickBy(context, (_, k) => !extraKeys.includes(k));
+  return pickBy(context, (_, k) => !KNOWN_METADATA_KEYS.has(k));
 };
 
 export {

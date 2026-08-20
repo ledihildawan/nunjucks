@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { createErrorFromDef, createWarningFromDef } from './create-log-error.ts';
+import { createErrorFromDef, createWarningFromDef } from './create-log-defs.ts';
 import type {
   ErrorDefinitionEntry,
   NormalizedErrorContext,

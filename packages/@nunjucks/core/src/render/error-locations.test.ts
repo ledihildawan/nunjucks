@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { formatError } from '@nunjucks/error-formatter';
+import { formatError } from '@nunjucks/error-formatter/format';
 import { isErr } from '@nunjucks/lib';
 import type { GlobalConfig } from '../config/global.ts';
 import { renderViaExternalWrapper } from './fixtures/external-wrapper.ts';

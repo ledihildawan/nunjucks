@@ -26,7 +26,7 @@ import { createNunjucks } from './factory.ts';
 const nunjucks = (config: NunjucksConfig = {}): NunjucksEngine => createNunjucks(config);
 
 export type { SourceFileReader, TemplateError } from '@nunjucks/error-formatter';
-export { formatError } from '@nunjucks/error-formatter';
+export { formatError } from '@nunjucks/error-formatter/format';
 export type { Result } from '@nunjucks/lib';
 export type {
   ContentType,

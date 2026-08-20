@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { createLog, formatError } from '@nunjucks/error-formatter';
+import { createLog } from '@nunjucks/error-formatter';
+import { formatError } from '@nunjucks/error-formatter/format';
 import { isErr } from '@nunjucks/lib';
 import type { GlobalConfig } from '../config/global.ts';
 import { renderTemplate as renderTemplateBase } from './render-test-helper.ts';

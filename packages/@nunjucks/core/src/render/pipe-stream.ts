@@ -1,6 +1,7 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { ErrorContext, TemplateError } from '@nunjucks/error-formatter';
-import { createLog, formatError } from '@nunjucks/error-formatter';
+import { createLog } from '@nunjucks/error-formatter';
+import { formatError } from '@nunjucks/error-formatter/format';
 import { isErr } from '@nunjucks/lib';
 import type { ContentType } from '@nunjucks/shared';
 import { formatErrorMarker } from './render.ts';

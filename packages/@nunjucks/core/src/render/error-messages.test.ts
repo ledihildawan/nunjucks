@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { formatError } from '@nunjucks/error-formatter';
+import { formatError } from '@nunjucks/error-formatter/format';
 import { renderTemplate } from './render-test-helper.ts';
 
 describe('error messages - causes and fix', () => {

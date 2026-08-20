@@ -1,3 +1,8 @@
+// WHY: this module is the ONLY renderer-coupled part of error-formatter, exposed via
+// the `@nunjucks/error-formatter/format` subpath — NOT the root barrel. Keeping it out
+// of the barrel means every domain package importing `createLog` (lexer, parser,
+// compiler, runtime, filters, validators) loads zero presentation code (ANSI/HTML
+// rendering, picocolors) in its import closure.
 import { classifyAndBuildTitle } from '@nunjucks/error-catalog';
 import {
   toAnsi,
@@ -9,17 +14,9 @@ import {
   type SourceTrace,
 } from '@nunjucks/error-renderer';
 import type { ProjectSourceContent, SourceFileReader } from './create-log-types.ts';
-import { normalizeLineBase, ERROR_CODES, type LineBase } from '@nunjucks/error-catalog';
-import type {
-  TemplateError,
-  TemplateWarning,
-  ErrorDefinitionEntry,
-  OutputOptions,
-  NormalizedErrorContext,
-  NormalizedWarningContext,
-  ColnoAdjustmentError,
-} from './create-log-types.ts';
-import { resolveMessage, createErrorEnvelope } from './create-log-helpers.ts';
+import { normalizeLineBase, type LineBase } from '@nunjucks/error-catalog';
+import type { TemplateError, TemplateWarning, OutputOptions } from './create-log-types.ts';
+import { adjustColnoForNullValue } from './adjust-colno.ts';
 
 const isTemplateError = (log: TemplateError | TemplateWarning): log is TemplateError =>
   (log as TemplateError).templatePath !== undefined;
@@ -44,44 +41,6 @@ const resolveTraceLineBase = (err: TemplateError, isJsCaller: boolean | undefine
     return 'one';
   }
   return normalizeLineBase(err.lineBase);
-};
-
-/**
- * Repoints a `NULL_VALUE` error's column at the accessed property on the
- * parent object instead of the raw null position, so the source-trace caret
- * lands on the offending member (the `.name` in `user.name`, not the null).
- *
- * Non-`NULL_VALUE` errors, missing source/line, or messages without a
- * parseable "on null/undefined 'parent'" suffix pass `err.colno` through
- * unchanged.
- *
- * @param err - The branded error carrying `code`, `sourceContent`, `lineno`,
- *   `colno`, and `lineBase`.
- * @returns The adjusted column, interpreted under the error's `lineBase`.
- */
-const adjustColnoForNullValue = (err: ColnoAdjustmentError): number | null | undefined => {
-  if (err.code !== ERROR_CODES.NULL_VALUE || !err.sourceContent || err.lineno == null) {
-    return err.colno;
-  }
-  const parentMatch = err.message.match(/on (?:null|undefined) '([^']+)'$/u);
-  if (!parentMatch?.[1]) {
-    return err.colno;
-  }
-  // WHY: normalizeLineBase so an absent/junk lineBase defaults to 'zero' exactly like
-  // resolveTraceLineBase — the raw `=== 'zero'` check used to fall through to the 'one'
-  // branch for undefined, producing off-by-one columns for non-branded errors.
-  const zeroBased = normalizeLineBase(err.lineBase) === 'zero';
-  const lines = err.sourceContent.split('\n');
-  const lineIndex = zeroBased ? err.lineno : Math.max(0, err.lineno - 1);
-  const errorLine = lines[lineIndex];
-  if (!errorLine) {
-    return err.colno;
-  }
-  const parentIdx = errorLine.indexOf(parentMatch[1]);
-  if (parentIdx < 0) {
-    return err.colno;
-  }
-  return zeroBased ? parentIdx : parentIdx + 1;
 };
 
 const buildSourceTraceIfNeeded = (
@@ -206,114 +165,4 @@ const toTemplateError = (err: Error, options: OutputOptions): TemplateError => {
   return wrapped;
 };
 
-const buildErrorJson = (err: TemplateError) => (): Record<string, unknown> => ({
-  name: err.name,
-  code: err.code,
-  subject: err.subject,
-  message: err.message,
-  phase: err.phase,
-  templateName: err.templateName,
-  templatePath: err.templatePath,
-  sourceStartLine: err.sourceStartLine,
-  lineno: err.lineno,
-  colno: err.colno,
-  lineBase: err.lineBase,
-  causes: err.causes,
-  fixCode: err.fixCode,
-  fixComment: err.fixComment,
-  severity: err.severity,
-  stack: err.stack,
-});
-
-interface CreateErrorFromDefOptions {
-  errorDef: ErrorDefinitionEntry;
-  paramsValue: Record<string, string> | undefined;
-  normalized: NormalizedErrorContext;
-  extra: Record<string, unknown> | undefined;
-  subject: string | null;
-}
-
-/**
- * Builds a branded `TemplateError` from a catalog definition: resolves the
- * message with `params`, spreads the normalized context, promotes
- * `extra.sourceContent`/`extra.sourceStartLine` when string/number, copies
- * causes/fix/severity fields, and attaches a `toJSON` snapshot.
- */
-const createErrorFromDef = ({
-  errorDef,
-  paramsValue,
-  normalized,
-  extra,
-  subject,
-}: CreateErrorFromDefOptions): TemplateError => {
-  const err = createErrorEnvelope(resolveMessage(errorDef.message, paramsValue));
-  Object.assign(err, {
-    name: 'Template render error',
-    code: errorDef.name,
-    subject,
-    ...normalized,
-  });
-  if (typeof extra?.sourceContent === 'string') {
-    err.sourceContent = extra.sourceContent;
-  }
-  if (typeof extra?.sourceStartLine === 'number') {
-    err.sourceStartLine = extra.sourceStartLine;
-  }
-  err.templatePath = normalized.templateName;
-  if (errorDef.causes?.length) {
-    err.causes = [...(errorDef.causes ?? [])];
-  }
-  if (errorDef.fixCode) {
-    err.fixCode = errorDef.fixCode;
-  }
-  if (errorDef.fixComment) {
-    err.fixComment = errorDef.fixComment;
-  }
-  if (errorDef.documentationUrl) {
-    err.documentationUrl = errorDef.documentationUrl;
-  }
-  if (errorDef.severity) {
-    err.severity = errorDef.severity;
-  }
-  err.toJSON = buildErrorJson(err);
-  return err;
-};
-
-interface CreateWarningFromDefOptions {
-  errorDef: ErrorDefinitionEntry;
-  paramsValue: Record<string, string> | undefined;
-  normalizedWarning: NormalizedWarningContext;
-  subject: string | null;
-}
-
-/**
- * Builds the data-only `TemplateWarning` counterpart of `createErrorFromDef`:
- * resolves the message with `params`, spreads the normalized warning context
- * (which supplies `varName` and defaulted `undefinedMode`), and copies causes
- * and fix hints when the definition provides them.
- */
-const createWarningFromDef = ({
-  errorDef,
-  paramsValue,
-  normalizedWarning,
-  subject,
-}: CreateWarningFromDefOptions): TemplateWarning => {
-  const warn = {
-    message: resolveMessage(errorDef.message, paramsValue),
-    code: errorDef.name,
-    subject,
-    ...normalizedWarning,
-  } as TemplateWarning;
-  if (errorDef.causes?.length) {
-    warn.causes = [...(errorDef.causes ?? [])];
-  }
-  if (errorDef.fixCode) {
-    warn.fixCode = errorDef.fixCode;
-  }
-  if (errorDef.fixComment) {
-    warn.fixComment = errorDef.fixComment;
-  }
-  return warn;
-};
-
-export { formatError, createErrorFromDef, createWarningFromDef, adjustColnoForNullValue };
+export { formatError };
