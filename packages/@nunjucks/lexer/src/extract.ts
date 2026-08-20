@@ -47,7 +47,8 @@ interface ParseStringContentOptions {
 /**
  * Extracts string content up to the closing `quote`, skipping backslash escape pairs
  * wholesale so an escaped quote does not terminate the literal; an EOF-bounded slice
- * is returned when the quote is never reached.
+ * is returned when the quote is never reached. The RAW text is returned — escape
+ * decoding is `decodeStringEscapes`'s job.
  */
 export const parseStringContent = ({ source, start, quote }: ParseStringContentOptions): string => {
   // WHY: while loop instead of the previous per-character recursion — long string
@@ -67,4 +68,39 @@ export const parseStringContent = ({ source, start, quote }: ParseStringContentO
     end += 1;
   }
   return source.slice(start, end);
+};
+
+/**
+ * Decodes backslash escape pairs in raw string content, mirroring the original
+ * lexer's `_parseString` switch: `\n`/`\t`/`\r` become real control characters and
+ * every other escape drops the backslash, keeping the bare character.
+ */
+export const decodeStringEscapes = (raw: string): string => {
+  // WHY: while loop instead of per-character recursion — long escaped literals
+  // overflowed the native stack. Loop exemption: lexer/tokenizer engine.
+  let decoded = '';
+  let index = 0;
+  while (index < raw.length) {
+    const char = raw[index] ?? '';
+    if (char !== '\\' || index + 1 >= raw.length) {
+      decoded += char;
+      index += 1;
+      continue;
+    }
+    switch (raw[index + 1]) {
+      case 'n':
+        decoded += '\n';
+        break;
+      case 't':
+        decoded += '\t';
+        break;
+      case 'r':
+        decoded += '\r';
+        break;
+      default:
+        decoded += raw[index + 1] ?? '';
+    }
+    index += 2;
+  }
+  return decoded;
 };

@@ -234,9 +234,6 @@ const handleTrailingComma = ({
       }
       return ok({ node, sawRest, continueLoop: false });
     }
-    if (after.type === TOKEN_COMMA) {
-      return ok({ node: appendChild(node, hole(loc(after))), sawRest, continueLoop: true });
-    }
   }
   return ok({ node, sawRest, continueLoop: true });
 };
@@ -281,6 +278,21 @@ const parseArrayIteration = ({
 
   let node = initialNode;
   let sawRest = initialSawRest;
+  // WHY: right after a consumed separator, another comma is an ELIDED element (hole),
+  // mirroring the aggregate list parser's `prepareAfterComma` — `{% for [a, , b] in x %}`
+  // and `{% when [a, , b] %}` previously failed with "expected symbol in pattern".
+  if (skipTrailingCommaCheck && tok.type === TOKEN_COMMA) {
+    const consumedR = nextToken(parserContext);
+    if (isErr(consumedR)) {
+      return consumedR;
+    }
+    return ok({
+      node: appendChild(node, hole(loc(tok))),
+      sawRest,
+      skipCommaNext: true,
+      done: false,
+    });
+  }
   if (!skipTrailingCommaCheck) {
     const commaResult = handleTrailingComma({
       terminationToken: TOKEN_RIGHT_BRACKET,

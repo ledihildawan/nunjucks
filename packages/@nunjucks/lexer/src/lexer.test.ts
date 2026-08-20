@@ -97,6 +97,34 @@ describe('createTokenizer', () => {
   });
 });
 
+describe('createTokenizer lstripBlocks integration', () => {
+  const tokensWithLstrip = (src: string) => {
+    const tk = createTokenizer(src, { lstripBlocks: true });
+    const result = [];
+    let t = tk.nextToken();
+    while (t) {
+      result.push(t);
+      t = tk.nextToken();
+    }
+    return result;
+  };
+
+  test('keeps mid-line whitespace between a variable tag and a block tag', () => {
+    // WHY: regression — the data chunk after `}}` starts mid-line, so its whitespace
+    // run is NOT line-leading and must survive (original `colno <= tok.length` check).
+    const tks = tokensWithLstrip('A{{ x }}   {% if c %}z{% endif %}');
+    const data = tks.filter((t) => t.type === 'data').map((t) => t.value);
+    expect(data).toContain('   ');
+  });
+
+  test('strips line-leading whitespace before a block tag', () => {
+    const tks = tokensWithLstrip('A\n   {% if c %}z{% endif %}');
+    const data = tks.filter((t) => t.type === 'data').map((t) => t.value);
+    expect(data).toContain('A\n');
+    expect(data).not.toContain('A\n   ');
+  });
+});
+
 describe('createTokenizer large-input regression (no stack overflow)', () => {
   test('tokenizes a single ~100KB text run as one data token', () => {
     const textRun = 'a'.repeat(100 * 1024);

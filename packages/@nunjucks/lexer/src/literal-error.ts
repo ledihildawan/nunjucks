@@ -1,5 +1,5 @@
-import { createLog } from '@nunjucks/error-formatter';
 import type { TemplateError } from '@nunjucks/error-formatter';
+import { createLog } from '@nunjucks/error-formatter';
 import { MATCH_ANY_RE } from '@nunjucks/lib';
 import type { LexerState } from './types.ts';
 

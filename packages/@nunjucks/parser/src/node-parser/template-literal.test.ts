@@ -39,4 +39,26 @@ describe('parseTemplateLiteral', () => {
   test('throws for a complex expression inside the template', () => {
     expect(() => parseLit('`$' + '{a + b}`')).toThrow(/simple identifiers only/);
   });
+
+  test('throws for member-access interpolations like a[0]', () => {
+    // WHY: regression — the denylist missed `[`, so `a[0]` parsed into a bogus symbol.
+    expect(() => parseLit('`x$' + '{a[0]}y`')).toThrow(/simple identifiers only/);
+  });
+
+  test('throws for comma sequences like a,b', () => {
+    expect(() => parseLit('`x$' + '{a,b}y`')).toThrow(/simple identifiers only/);
+  });
+
+  test('throws for quoted interpolations like "q"', () => {
+    expect(() => parseLit('`x$' + '{"q"}y`')).toThrow(/simple identifiers only/);
+  });
+
+  test('throws for digit-leading interpolations like 1a', () => {
+    expect(() => parseLit('`x$' + '{1a}y`')).toThrow(/simple identifiers only/);
+  });
+
+  test('accepts dollar and underscore identifiers', () => {
+    const node = parseLit('`x$' + '{_v1}y`') as TemplateLiteralNode;
+    expect(getNodeTypeName(node)).toBe('templateLiteral');
+  });
 });

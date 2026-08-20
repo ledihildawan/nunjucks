@@ -63,4 +63,29 @@ describe('tokenizeTemplateText lstripBlocks', () => {
     const r = runLstrip('{% if %}');
     expect(r?.token.type).toBe('block-start');
   });
+
+  test('keeps mid-line whitespace when the chunk starts mid-line', () => {
+    // WHY: regression — `A{{ x }}   {% if %}` must keep the 3 spaces; the strip only
+    // applies to runs that begin at column 0 of the line (original `colno <= tok.length`).
+    const r = tokenizeTemplateText({ ...createState('   {% if %}'), colno: 9, lstripBlocks: true });
+    expect(r?.token.type).toBe('data');
+    expect(r?.token.value).toBe('   ');
+  });
+
+  test('strips when the chunk starts mid-line but a newline precedes the run', () => {
+    // WHY: the run after the embedded newline does begin at column 0 of its line.
+    const r = tokenizeTemplateText({
+      ...createState('a\n  {% if %}'),
+      colno: 9,
+      lstripBlocks: true,
+    });
+    expect(r?.token.value).toBe('a\n');
+  });
+
+  test('strips line-leading non-breaking space like the original \\s class', () => {
+    // WHY: the original engine tested the run against /^\s+$/, which matches \u00A0.
+    const r = runLstrip('\u00A0\u00A0{% if %}');
+    expect(r?.token.type).toBe('block-start');
+    expect(r?.token.value).toBe('{%');
+  });
 });

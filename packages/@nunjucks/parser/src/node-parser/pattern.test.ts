@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { createTokenizer } from '@nunjucks/lexer';
-import { getNodeTypeName } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
+import { getNodeTypeName, isHole } from '@nunjucks/nodes';
 import { nextTokenOrNull } from '../cursor.ts';
 import { createParser } from '../index.ts';
 import { unwrap } from '../test-helpers.ts';
@@ -61,6 +62,28 @@ describe('parsePattern: array destructuring', () => {
     const ctx = ctxFor('[a, b,]');
     const node = unwrap(parsePattern(ctx));
     expect(getNodeTypeName(node!)).toBe('arrayPattern');
+  });
+  test('holes [a, , b] produce hole elements', () => {
+    // WHY: regression — holes were only supported in aggregate/walrus patterns; for
+    // and match patterns failed with "expected symbol in pattern".
+    const ctx = ctxFor('[a, , b]');
+    const node = unwrap(parsePattern(ctx));
+    const children = (node as { children: readonly Node[] }).children;
+    expect(children).toHaveLength(3);
+    expect(isHole(children[1]!)).toBe(true);
+  });
+  test('multiple holes [a, , , b] and trailing hole [a, , ]', () => {
+    const twoHoles = unwrap(parsePattern(ctxFor('[a, , , b]'))) as {
+      children: readonly Node[];
+    };
+    expect(twoHoles.children).toHaveLength(4);
+    expect(isHole(twoHoles.children[1]!)).toBe(true);
+    expect(isHole(twoHoles.children[2]!)).toBe(true);
+    const trailing = unwrap(parsePattern(ctxFor('[a, , ]'))) as {
+      children: readonly Node[];
+    };
+    expect(trailing.children).toHaveLength(2);
+    expect(isHole(trailing.children[1]!)).toBe(true);
   });
 });
 

@@ -8,25 +8,11 @@ import { find, map } from 'remeda';
 import type { ParserContext } from '../cursor.ts';
 import { fail, nextToken } from '../cursor.ts';
 
-const SIMPLE_IDENTIFIER_PATTERN = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
-
-const UNSAFE_CHARS = [
-  '(',
-  ')',
-  '=>',
-  '{',
-  '+',
-  '-',
-  '*',
-  '/',
-  '||',
-  '&&',
-  '??',
-  '=',
-  ':',
-  '.',
-] as const;
-const UNSAFE_PATTERNS = [/^\d/, /\s/];
+// WHY: positive identifier check (matching the codegen boundary's SAFE_IDENTIFIER_RE)
+// instead of the previous denylist — the denylist missed `[ ] , ; " ' # @ % ^ ! ? & | < > ~`
+// etc., so `a[0]` slipped through as a bogus symbol and failed (or rendered undefined)
+// far from the documented parse-time error.
+const SIMPLE_IDENTIFIER_PATTERN = /^[A-Za-z_$][\w$]*$/u;
 
 const isSafeTemplateExpression = (expr: string): boolean => {
   if (!expr) {
@@ -36,16 +22,7 @@ const isSafeTemplateExpression = (expr: string): boolean => {
   if (!trimmed) {
     return true;
   }
-  if (SIMPLE_IDENTIFIER_PATTERN.test(trimmed)) {
-    return true;
-  }
-  if (UNSAFE_PATTERNS.some((p) => p.test(trimmed))) {
-    return false;
-  }
-  if (UNSAFE_CHARS.some((c) => trimmed.includes(c))) {
-    return false;
-  }
-  return true;
+  return SIMPLE_IDENTIFIER_PATTERN.test(trimmed);
 };
 
 /**

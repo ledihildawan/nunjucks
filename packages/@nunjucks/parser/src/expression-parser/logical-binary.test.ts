@@ -117,10 +117,12 @@ describe('ternary / inline if', () => {
 });
 
 describe('primary expressions', () => {
-  test('string with escapes is kept literally', () => {
+  test('string escapes decode into the literal value', () => {
+    // WHY: updated from the raw-backslash pin — the lexer now decodes escapes like the
+    // original `_parseString`, so `"a\nb"` carries a real newline in the literal node.
     const node = parsePrim('"a\\nb"');
     expect(getNodeTypeName(node)).toBe('literal');
-    expect(node.value).toBe('a\\nb');
+    expect(node.value).toBe('a\nb');
   });
 
   test('none keyword', () => {

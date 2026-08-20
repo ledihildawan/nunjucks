@@ -44,4 +44,16 @@ describe('parseMatch', () => {
     expect(getNodeTypeName(node)).toBe('match');
     expect(getNodeTypeName(node.expr)).toBe('lookupVal');
   });
+
+  test('parses holes in an array when-pattern', () => {
+    // WHY: regression — `{% when [a, , b] %}` failed with "expected symbol in pattern";
+    // the pattern parser now mirrors the aggregate parser's hole handling.
+    const node = parseFirst('{% match p %}{% when [a, , b] %}x{% endmatch %}') as MatchNode;
+    expect(getNodeTypeName(node)).toBe('match');
+    const pattern = node.cases[0]?.pattern;
+    expect(getNodeTypeName(pattern as Node)).toBe('arrayPattern');
+    const children = (pattern as { children: readonly Node[] }).children;
+    expect(children).toHaveLength(3);
+    expect(children.filter((c) => getNodeTypeName(c) === 'hole')).toHaveLength(1);
+  });
 });

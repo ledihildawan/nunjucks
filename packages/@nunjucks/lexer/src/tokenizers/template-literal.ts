@@ -2,7 +2,7 @@ import { createLog } from '@nunjucks/error-formatter';
 import { MATCH_ANY_RE } from '@nunjucks/lib';
 import { createUnterminatedLiteralError } from '../literal-error.ts';
 import { advance, getChar, getPeek, isFinished } from '../state.ts';
-import { TOKEN_TEMPLATE_LITERAL, type TemplateQuasi } from '../token-types.ts';
+import { type TemplateQuasi, TOKEN_TEMPLATE_LITERAL } from '../token-types.ts';
 import { createToken } from '../tokens.ts';
 import type { LexerState, Tokenizer } from '../types.ts';
 

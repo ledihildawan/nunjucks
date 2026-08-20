@@ -12,6 +12,11 @@ const makeCtx = (src: string) => {
   return createParser(tk);
 };
 
+const makeCtxWithTags = (src: string, tags: Record<string, string>) => {
+  const tk = createTokenizer(src, { tags });
+  return createParser(tk);
+};
+
 const parse = (src: string, ...blocks: string[]) =>
   unwrap(parseUntilBlocks(makeCtx(src), ...blocks));
 
@@ -19,6 +24,23 @@ const isOutputNode = (n: Node): n is ChildrenNode => getNodeTypeName(n) === 'out
 
 const childrenOf = (n: Node): readonly Node[] =>
   isNodeList(n) ? n.children : isOutputNode(n) ? n.children : [];
+
+const dataTexts = (nodes: readonly Node[]): string[] => {
+  const texts: string[] = [];
+  const visit = (n: Node): void => {
+    for (const child of childrenOf(n)) {
+      if (isTemplateData(child)) {
+        texts.push(child.value);
+      } else {
+        visit(child);
+      }
+    }
+  };
+  for (const n of nodes) {
+    visit(n);
+  }
+  return texts;
+};
 
 describe('parseUntilBlocks', () => {
   describe('block boundaries', () => {
@@ -125,6 +147,66 @@ describe('parseUntilBlocks', () => {
       const tail = childrenOf(children[2] as Node)[0];
       expect(isTemplateData(head) ? head.value : undefined).toBe('x   ');
       expect(isTemplateData(tail) ? tail.value : undefined).toBe('   z');
+    });
+  });
+
+  describe('raw block strip variants', () => {
+    const rawData = (src: string): string[] => {
+      const ctx = makeCtx(src);
+      return dataTexts(unwrap(parseNodes(ctx)));
+    };
+
+    test('{% raw -%} is recognized instead of leaking the tag text', () => {
+      expect(rawData('A{% raw -%}hi{% endraw %}B')).toEqual(['A', 'hi', 'B']);
+    });
+
+    test('{% endraw -%} is recognized and arms the whitespace drop', () => {
+      expect(rawData('A{% raw %}hi{% endraw -%}   B')).toEqual(['A', 'hi', 'B']);
+    });
+
+    test('{%- raw %} strips trailing whitespace of the preceding data token', () => {
+      expect(rawData('A   {%- raw %}hi{% endraw %}B')).toEqual(['A', 'hi', 'B']);
+    });
+
+    test('{%- endraw %} strips trailing whitespace of the raw content', () => {
+      expect(rawData('A{% raw %}hi   {%- endraw %}B')).toEqual(['A', 'hi', 'B']);
+    });
+
+    test('a `-%}` open tag strips the leading whitespace of the raw content', () => {
+      expect(rawData('A{% raw -%}   hi{% endraw %}B')).toEqual(['A', 'hi', 'B']);
+    });
+
+    test('plain raw blocks keep all surrounding whitespace', () => {
+      expect(rawData('A   {% raw %}hi{% endraw %}   B')).toEqual(['A   ', 'hi', '   B']);
+    });
+
+    test('raw blocks written with custom block delimiters extract their content', () => {
+      const ctx = makeCtxWithTags('A<< raw >>hi<< endraw >>B', {
+        blockStart: '<<',
+        blockEnd: '>>',
+      });
+      expect(dataTexts(unwrap(parseNodes(ctx)))).toEqual(['A', 'hi', 'B']);
+    });
+  });
+
+  describe('custom-delimiter strip flags', () => {
+    test('-}} strip works with a custom-length variableEnd', () => {
+      // WHY: regression — the old index arithmetic (`len - variableEnd.length - 1`)
+      // misread the strip marker whenever variableEnd was not 2 characters long.
+      const ctx = makeCtxWithTags('<< x -}}   y', { variableStart: '<<', variableEnd: '>>>' });
+      expect(dataTexts(unwrap(parseNodes(ctx)))).toEqual(['y']);
+    });
+
+    test('a custom blockEnd that merely starts with a dash does not arm the drop', () => {
+      // WHY: regression — the old `value[0] === '-'` sniff false-positived on custom
+      // blockEnd delimiters like `-%>`; only the canonical strip flag may arm the drop.
+      const ctx = makeCtxWithTags('A<% if true -%> x<% endif -%>', {
+        blockStart: '<%',
+        blockEnd: '-%>',
+      });
+      const nodes = unwrap(parseNodes(ctx));
+      const body = (nodes[1] as { body: Node }).body;
+      expect(dataTexts([body])).toEqual([' x']);
     });
   });
 });

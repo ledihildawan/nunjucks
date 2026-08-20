@@ -1,5 +1,5 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
-import type { Token } from '@nunjucks/lexer';
+import type { Delimiters, Token } from '@nunjucks/lexer';
 import {
   TOKEN_BLOCK_START,
   TOKEN_COMMENT,
@@ -7,7 +7,7 @@ import {
   TOKEN_RAW,
   TOKEN_VARIABLE_START,
 } from '@nunjucks/lexer';
-import { isErr, ok, type Result, replace } from '@nunjucks/lib';
+import { isErr, ok, type Result } from '@nunjucks/lib';
 import type { Node } from '@nunjucks/nodes';
 import { nodeList, output, templateData } from '@nunjucks/nodes';
 import { loc, ZERO_LOC } from '@nunjucks/shared';
@@ -40,22 +40,40 @@ const parseUntilBlocks = (
 
 const LEADING_WHITESPACE_RE = /^\s*/;
 const TRAILING_WHITESPACE_RE = /\s*$/;
-const RAW_OPEN_TAG_RE = /^({%\s*(?:raw|verbatim)\s*%})/;
-const RAW_CLOSE_TAG_RE = /({%\s*(?:endraw|endverbatim)\s*%})$/;
 
-const shouldStripTrailingWhitespace = (nextTok: Token, parserContext: ParserContext): boolean => {
-  if (!nextTok) {
-    return false;
-  }
-  const nextVal = String(nextTok.value);
+const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+interface RawTagRegexes {
+  open: RegExp;
+  close: RegExp;
+}
+
+// WHY: raw tag texts are matched against the ACTIVE delimiters (custom block tags
+// included) with the fixed dash strip forms as alternatives, so `{% raw -%}` and
+// `{%- endraw %}` are recognized instead of leaking into the output.
+const buildRawTagRegexes = (tags: Delimiters): RawTagRegexes => {
+  const openStart = `(?:${escapeRegExp(tags.stripBlockStart)}|${escapeRegExp(tags.blockStart)})`;
+  const closeEnd = `(?:${escapeRegExp(tags.stripBlockEnd)}|${escapeRegExp(tags.blockEnd)})`;
+  return {
+    open: new RegExp(`^${openStart}\\s*(?:raw|verbatim)\\s*${closeEnd}`),
+    close: new RegExp(`${openStart}\\s*(?:endraw|endverbatim)\\s*${closeEnd}$`),
+  };
+};
+
+// WHY: reads the lexer's canonical strip flags instead of string-sniffing the token
+// value — index arithmetic against delimiter lengths broke for custom-length tags.
+const shouldStripTrailingWhitespace = (nextTok: Token): boolean => {
   if (nextTok.type === TOKEN_BLOCK_START) {
-    return nextVal.at(-1) === '-';
+    return nextTok.stripLeft === true;
   }
   if (nextTok.type === TOKEN_VARIABLE_START) {
-    return nextVal[parserContext.tokens.tags.variableStart.length] === '-';
+    return nextTok.stripLeft === true;
   }
   if (nextTok.type === TOKEN_COMMENT) {
-    return nextVal[parserContext.tokens.tags.commentStart.length] === '-';
+    return nextTok.stripLeft === true;
+  }
+  if (nextTok.type === TOKEN_RAW) {
+    return nextTok.stripLeft === true;
   }
   return false;
 };
@@ -66,7 +84,7 @@ const parseDataToken = (
   { stripLeading }: { stripLeading: boolean }
 ): Node => {
   const nextTok = peekTokenOrNull(parserContext);
-  const stripTrailing = Boolean(nextTok && shouldStripTrailingWhitespace(nextTok, parserContext));
+  const stripTrailing = Boolean(nextTok && shouldStripTrailingWhitespace(nextTok));
   const templateText = pipe(
     String(tok.value),
     (s) => (stripLeading ? s.replace(LEADING_WHITESPACE_RE, '') : s),
@@ -76,8 +94,21 @@ const parseDataToken = (
   return output(loc(tok), [templateData(loc(tok), templateText)]);
 };
 
-const parseRawToken = (tok: Token & { type: 'raw' }): Node => {
-  const content = pipe(tok.value, replace(RAW_OPEN_TAG_RE, ''), replace(RAW_CLOSE_TAG_RE, ''));
+const parseRawToken = (parserContext: ParserContext, tok: Token & { type: 'raw' }): Node => {
+  const { open, close } = buildRawTagRegexes(parserContext.tokens.tags);
+  const value = String(tok.value);
+  const openTagText = value.match(open)?.[0] ?? '';
+  const closeTagText = value.match(close)?.[0] ?? '';
+  const contentEnd = closeTagText ? value.length - closeTagText.length : undefined;
+  let content = openTagText ? value.slice(openTagText.length, contentEnd) : value;
+  // WHY: strip markers on the raw tags themselves trim the ADJACENT raw content —
+  // `-%}` on the open tag trims the content head, `{%-` on the close tag its tail.
+  if (openTagText.endsWith(parserContext.tokens.tags.stripBlockEnd)) {
+    content = content.replace(LEADING_WHITESPACE_RE, '');
+  }
+  if (closeTagText.startsWith(parserContext.tokens.tags.stripBlockStart)) {
+    content = content.replace(TRAILING_WHITESPACE_RE, '');
+  }
   return output(loc(tok), [templateData(loc(tok), content)]);
 };
 
@@ -96,10 +127,10 @@ const parseVariableToken = (
   return ok(output(loc(tok), [exprR.value]));
 };
 
+// WHY: reads the lexer's canonical strip flag so every strip decision flows from the
+// same source of truth instead of per-site index arithmetic on the token value.
 const parseCommentToken = (parserContext: ParserContext, tok: Token): void => {
-  const tokVal = String(tok.value);
-  parserContext.dropLeadingWhitespace =
-    tokVal.at(tokVal.length - parserContext.tokens.tags.commentEnd.length - 1) === '-';
+  parserContext.dropLeadingWhitespace = tok.stripRight === true;
 };
 
 interface HandleTokenResult {
@@ -138,7 +169,11 @@ const handleToken = (
     return ok({ continue: true, nodes: [] });
   }
   if (tok.type === TOKEN_RAW) {
-    const node = parseRawToken(tok);
+    // WHY: a `-%}`-style close on endraw arms the drop for the data AFTER the block —
+    // same contract as advanceAfterBlockEnd; the flag is assigned (clobbered) like the
+    // original parser does at every block tag.
+    parserContext.dropLeadingWhitespace = tok.stripRight === true;
+    const node = parseRawToken(parserContext, tok);
     return ok({ continue: true, nodes: [node] });
   }
   return fail(parserContext, {

@@ -252,7 +252,9 @@ export const advanceAfterBlockEnd = (
   const tok = tokResult.value;
 
   if (isBlockEndToken(tok)) {
-    if (tok.value[0] === '-') {
+    // WHY: canonical strip flag instead of sniffing `value[0]` — a custom blockEnd
+    // that merely STARTS with '-' would false-positive the old check.
+    if (tok.stripRight === true) {
       parserContext.dropLeadingWhitespace = true;
     }
     return ok(tok);
@@ -275,8 +277,10 @@ export const advanceAfterVariableEnd = (
   const tok = tokResult.value;
 
   if (isVariableEndToken(tok)) {
-    parserContext.dropLeadingWhitespace =
-      tok.value.at(tok.value.length - parserContext.tokens.tags.variableEnd.length - 1) === '-';
+    // WHY: canonical strip flag instead of index arithmetic — the old
+    // `length - variableEnd.length - 1` math miscomputed for custom-length variableEnd
+    // tags (a strip `-}}` always carries its dash at index 0 of the token value).
+    parserContext.dropLeadingWhitespace = tok.stripRight === true;
     return ok(undefined);
   }
   pushToken(parserContext, tok);

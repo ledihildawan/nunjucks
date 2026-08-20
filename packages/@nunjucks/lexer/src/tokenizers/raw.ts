@@ -1,5 +1,5 @@
-import { advance, getChar, isFinished, matches } from '../state.ts';
 import { WHITESPACE_CHAR_SET } from '../constants.ts';
+import { advance, getChar, isFinished, matches } from '../state.ts';
 import { TOKEN_RAW } from '../token-types.ts';
 import { createToken } from '../tokens.ts';
 import type { LexerState, Tokenizer } from '../types.ts';
@@ -8,10 +8,16 @@ type RawScanState = {
   content: string;
   depth: number;
   current: LexerState;
+  endStripRight: boolean;
 };
 
 interface RawTagOptions {
-  readonly tags: { blockStart: string; blockEnd: string };
+  readonly tags: {
+    blockStart: string;
+    blockEnd: string;
+    stripBlockStart: string;
+    stripBlockEnd: string;
+  };
 }
 
 const skipWhitespace = (state: LexerState): LexerState => {
@@ -44,16 +50,40 @@ const extractTagName = (state: LexerState): { name: string; current: LexerState 
   return { name, current };
 };
 
-// WHY: scans forward for the next blockEnd and returns the position AFTER it — a raw
-// control tag ({% raw %} / {% endraw %}) is only well-formed when its closing delimiter
-// exists; without it the candidate is treated as literal content.
-const findBlockEnd = (state: LexerState, tags: RawTagOptions['tags']): LexerState | null => {
-  // WHY: while loop instead of per-character recursion — deep raw-block scans overflowed
-  // the native stack. Loop exemption: lexer/tokenizer engine.
+interface BlockTagStart {
+  readonly afterStart: LexerState;
+  readonly stripLeft: boolean;
+}
+
+// WHY: a raw control tag opens with the plain blockStart or its strip variant
+// (`{%-`), mirroring the block-start tokenizer's strip-first matching; the returned
+// state sits just past the opening delimiter (dash included when present).
+const readBlockTagStart = (state: LexerState, tags: RawTagOptions['tags']): BlockTagStart => {
+  if (matches(state, tags.stripBlockStart)) {
+    return { afterStart: advance(state, tags.stripBlockStart.length), stripLeft: true };
+  }
+  return { afterStart: advance(state, tags.blockStart.length), stripLeft: false };
+};
+
+interface BlockTagEnd {
+  readonly afterEnd: LexerState;
+  readonly stripRight: boolean;
+}
+
+// WHY: scans forward for the tag's closing delimiter, preferring the strip variant
+// (`-%}`) over the plain blockEnd exactly like the block-end tokenizer, so
+// `{% raw -%}` is recognized as ONE strip close rather than `-` + `%}`; `null` when
+// no closing delimiter exists (the candidate then stays literal content).
+const findBlockEnd = (state: LexerState, tags: RawTagOptions['tags']): BlockTagEnd | null => {
+  // WHY: while loop instead of the previous per-character recursion — deep raw-block
+  // scans overflowed the native stack. Loop exemption: lexer/tokenizer engine.
   let current = state;
   while (!isFinished(current)) {
+    if (matches(current, tags.stripBlockEnd)) {
+      return { afterEnd: advance(current, tags.stripBlockEnd.length), stripRight: true };
+    }
     if (matches(current, tags.blockEnd)) {
-      return advance(current, tags.blockEnd.length);
+      return { afterEnd: advance(current, tags.blockEnd.length), stripRight: false };
     }
     current = advance(current);
   }
@@ -67,13 +97,15 @@ interface ProcessRawContentOptions {
   current: LexerState;
   name: string;
   endTagName: string;
-  tags: { blockStart: string; blockEnd: string };
+  tags: RawTagOptions['tags'];
 }
 
 interface InnerControlTag {
   readonly tagText: string;
   readonly afterTag: LexerState;
   readonly isEndTag: boolean;
+  readonly stripLeft: boolean;
+  readonly stripRight: boolean;
 }
 
 interface InnerControlTagInput {
@@ -83,29 +115,32 @@ interface InnerControlTagInput {
   readonly tags: RawTagOptions['tags'];
 }
 
-// WHY: reads the tag that starts at `state` (already known to sit on blockStart) and
-// decides whether it is a well-formed raw control tag — a nested open (raw/verbatim)
-// or the matching close (endraw/endverbatim). Returns null for anything else so the
-// caller keeps the `{%` as literal content.
+// WHY: reads the tag that starts at `state` (already known to sit on blockStart or its
+// strip variant) and decides whether it is a well-formed raw control tag — a nested
+// open (raw/verbatim) or the matching close (endraw/endverbatim). Returns null for
+// anything else so the caller keeps the `{%` as literal content.
 const readInnerControlTag = ({
   state,
   name,
   endTagName,
   tags,
 }: InnerControlTagInput): InnerControlTag | null => {
-  const afterInnerName = skipWhitespace(advance(state, tags.blockStart.length));
+  const { afterStart, stripLeft } = readBlockTagStart(state, tags);
+  const afterInnerName = skipWhitespace(afterStart);
   const { name: innerName, current: afterTagName } = extractTagName(afterInnerName);
   if (innerName !== name && innerName !== endTagName) {
     return null;
   }
-  const afterBlockEnd = findBlockEnd(afterTagName, tags);
-  if (afterBlockEnd === null) {
+  const blockEnd = findBlockEnd(afterTagName, tags);
+  if (blockEnd === null) {
     return null;
   }
   return {
-    tagText: sliceSource(state, afterBlockEnd),
-    afterTag: afterBlockEnd,
+    tagText: sliceSource(state, blockEnd.afterEnd),
+    afterTag: blockEnd.afterEnd,
     isEndTag: innerName === endTagName,
+    stripLeft,
+    stripRight: blockEnd.stripRight,
   };
 };
 
@@ -135,27 +170,35 @@ const processRawContent = ({
       continue;
     }
     if (innerTag.isEndTag && depth === 1) {
-      return { content: content + innerTag.tagText, depth: 0, current: innerTag.afterTag };
+      return {
+        content: content + innerTag.tagText,
+        depth: 0,
+        current: innerTag.afterTag,
+        endStripRight: innerTag.stripRight,
+      };
     }
     content += innerTag.tagText;
     depth += innerTag.isEndTag ? -1 : 1;
     scanState = innerTag.afterTag;
   }
-  return { content, depth, current: scanState };
+  return { content, depth, current: scanState, endStripRight: false };
 };
 
 /**
  * Tokenizes `{% raw %}`/`{% verbatim %}` blocks whose content is kept verbatim,
  * tracking nested open/close control tags by depth; the value reproduces the original
  * source text, and an unterminated block consumes the remainder without throwing.
+ * Strip variants (`{%- raw`, `raw -%}`, `{%- endraw`, `endraw -%}`) are recognized,
+ * flagging `stripLeft`/`stripRight` from the outermost open/close tags.
  */
 export const tokenizeRaw: Tokenizer = (state) => {
   if (!matches(state, state.tags.blockStart)) {
     return null;
   }
 
-  const afterBlockStart = skipWhitespace(advance(state, state.tags.blockStart.length));
-  const { name, current: afterName } = extractTagName(afterBlockStart);
+  const { afterStart, stripLeft: openStripLeft } = readBlockTagStart(state, state.tags);
+  const afterInnerName = skipWhitespace(afterStart);
+  const { name, current: afterName } = extractTagName(afterInnerName);
 
   if (name !== 'raw' && name !== 'verbatim') {
     return null;
@@ -167,9 +210,13 @@ export const tokenizeRaw: Tokenizer = (state) => {
   // regexes (RAW_OPEN_TAG_RE / RAW_CLOSE_TAG_RE) stay symmetric — content is sliced from
   // source, never reconstructed from parts.
   const openTagText =
-    openTagEnd !== null ? sliceSource(state, openTagEnd) : sliceSource(state, afterName);
-  const scanStart = openTagEnd ?? afterName;
-  const { content, current: finalState } = processRawContent({
+    openTagEnd !== null ? sliceSource(state, openTagEnd.afterEnd) : sliceSource(state, afterName);
+  const scanStart = openTagEnd !== null ? openTagEnd.afterEnd : afterName;
+  const {
+    content,
+    current: finalState,
+    endStripRight,
+  } = processRawContent({
     current: scanStart,
     name,
     endTagName,
@@ -182,6 +229,7 @@ export const tokenizeRaw: Tokenizer = (state) => {
       value: openTagText + content,
       lineno: state.lineno,
       colno: state.colno,
+      strip: { stripLeft: openStripLeft, stripRight: endStripRight },
     }),
     state: finalState,
   };

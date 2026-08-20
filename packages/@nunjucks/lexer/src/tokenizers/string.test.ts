@@ -24,8 +24,28 @@ describe('tokenizeString', () => {
     expect(run('""')?.token.value).toBe('');
   });
 
-  test('escaped quote preserved literally', () => {
-    expect(run('"a\\"b"')?.token.value).toBe('a\\"b');
+  test('escaped quote decodes to the bare quote', () => {
+    // WHY: updated from the raw-backslash pin — the original lexer's `_parseString`
+    // decapces `\"` to `"`, and the tokenizer now decodes escapes into the token value.
+    expect(run('"a\\"b"')?.token.value).toBe('a"b');
+  });
+
+  test('control escapes decode to real control characters', () => {
+    expect(run('"a\\nb"')?.token.value).toBe('a\nb');
+    expect(run('"a\\tb"')?.token.value).toBe('a\tb');
+    expect(run('"a\\rb"')?.token.value).toBe('a\rb');
+  });
+
+  test('escaped backslash decodes to a single backslash', () => {
+    expect(run('"a\\\\b"')?.token.value).toBe('a\\b');
+  });
+
+  test('unknown escape drops the backslash keeping the character', () => {
+    expect(run('"a\\qb"')?.token.value).toBe('aqb');
+  });
+
+  test('escaped single quote inside single-quoted string decodes', () => {
+    expect(run("'don\\'t'")?.token.value).toBe("don't");
   });
 
   test('contains other quote type', () => {

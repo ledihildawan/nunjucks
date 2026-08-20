@@ -37,6 +37,18 @@ describe('parseFor', () => {
     expect((name as { children: readonly Node[] }).children).toHaveLength(2);
   });
 
+  test('parses holes in array-pattern targets', () => {
+    // WHY: regression — `{% for [a, , b] in x %}` failed with "expected symbol in
+    // pattern"; holes mirror the aggregate parser's elision handling.
+    const node = parseFirst('{% for [a, , b] in items %}x{% endfor %}');
+    expect(getNodeTypeName(node)).toBe('for');
+    const name = (node as { name: Node }).name;
+    expect(getNodeTypeName(name)).toBe('arrayPattern');
+    const children = (name as { children: readonly Node[] }).children;
+    expect(children).toHaveLength(3);
+    expect(children.filter((c) => getNodeTypeName(c) === 'hole')).toHaveLength(1);
+  });
+
   test('parses an array literal as the iterable', () => {
     const node = parseFirst('{% for i in [1, 2, 3] %}x{% endfor %}');
     expect(getNodeTypeName(node)).toBe('for');

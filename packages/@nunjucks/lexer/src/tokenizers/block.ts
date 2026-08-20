@@ -1,6 +1,6 @@
+import { advance, getChar } from '../state.ts';
 import { TOKEN_BLOCK_END, TOKEN_BLOCK_START } from '../token-types.ts';
 import type { LexerState } from '../types.ts';
-import { advance, getChar } from '../state.ts';
 import { createDelimiterTokenizer } from './delimiter.ts';
 
 /** Tokenizes `{%` and its strip form `{%-`, flagging `stripLeft` for the strip variant. */

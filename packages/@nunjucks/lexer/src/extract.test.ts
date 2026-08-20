@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { extractUntil, extractWhile, parseStringContent } from './extract.ts';
+import { decodeStringEscapes, extractUntil, extractWhile, parseStringContent } from './extract.ts';
 
 describe('extractWhile', () => {
   test('consumes chars while they are in the allowed set', () => {
@@ -44,5 +44,31 @@ describe('parseStringContent', () => {
     expect(parseStringContent({ source: 'no quote here', start: 0, quote: '"' })).toBe(
       'no quote here'
     );
+  });
+});
+
+describe('decodeStringEscapes', () => {
+  test('decodes \\n \\t \\r to real control characters', () => {
+    expect(decodeStringEscapes('a\\nb')).toBe('a\nb');
+    expect(decodeStringEscapes('a\\tb')).toBe('a\tb');
+    expect(decodeStringEscapes('a\\rb')).toBe('a\rb');
+  });
+
+  test('decapes escaped quotes and backslashes to the bare character', () => {
+    expect(decodeStringEscapes('a\\"b')).toBe('a"b');
+    expect(decodeStringEscapes("don\\'t")).toBe("don't");
+    expect(decodeStringEscapes('a\\\\b')).toBe('a\\b');
+  });
+
+  test('drops the backslash for any other escape, keeping the character', () => {
+    expect(decodeStringEscapes('a\\qb')).toBe('aqb');
+  });
+
+  test('leaves plain text untouched', () => {
+    expect(decodeStringEscapes('plain text')).toBe('plain text');
+  });
+
+  test('keeps a dangling trailing backslash', () => {
+    expect(decodeStringEscapes('abc\\')).toBe('abc\\');
   });
 });

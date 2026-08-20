@@ -58,3 +58,51 @@ describe('tokenizeRaw', () => {
     expect(r?.state.index).toBe('{% raw %}no close here'.length);
   });
 });
+
+describe('tokenizeRaw strip variants', () => {
+  test('{%- raw %} flags stripLeft', () => {
+    const r = run('{%- raw %}{{ x }}{% endraw %}');
+    expect(r?.token.type).toBe('raw');
+    expect(r?.token.value).toBe('{%- raw %}{{ x }}{% endraw %}');
+    expect(r?.token.stripLeft).toBe(true);
+    expect(r?.token.stripRight).toBeUndefined();
+  });
+
+  test('{% raw -%} is recognized and keeps full tag text', () => {
+    const r = run('{% raw -%}{{ x }}{% endraw %}');
+    expect(r?.token.value).toBe('{% raw -%}{{ x }}{% endraw %}');
+    expect(r?.token.stripLeft).toBeUndefined();
+  });
+
+  test('{% endraw -%} flags stripRight', () => {
+    const r = run('{% raw %}{{ x }}{% endraw -%}');
+    expect(r?.token.value).toBe('{% raw %}{{ x }}{% endraw -%}');
+    expect(r?.token.stripRight).toBe(true);
+  });
+
+  test('{%- endraw %} terminates the block', () => {
+    const src = '{% raw %}a{%- endraw %}tail';
+    const r = run(src);
+    expect(r?.token.value).toBe('{% raw %}a{%- endraw %}');
+    expect(r?.state.index).toBe(src.length - 'tail'.length);
+  });
+
+  test('{%- raw -%} combined with {%- endraw -%} tracks depth', () => {
+    const src = '{%- raw -%}a{%- raw -%}b{% endraw %}c{% endraw -%}';
+    const r = run(src);
+    expect(r?.token.value).toBe(src);
+    expect(r?.token.stripLeft).toBe(true);
+    expect(r?.token.stripRight).toBe(true);
+    expect(r?.state.index).toBe(src.length);
+  });
+
+  test('recognizes raw blocks written with custom block delimiters', () => {
+    const r = tokenizeRaw(
+      createState('<< raw >>a<< endraw >>', {
+        tags: { blockStart: '<<', blockEnd: '>>' },
+      })
+    );
+    expect(r?.token.value).toBe('<< raw >>a<< endraw >>');
+    expect(r?.state.index).toBe('<< raw >>a<< endraw >>'.length);
+  });
+});
