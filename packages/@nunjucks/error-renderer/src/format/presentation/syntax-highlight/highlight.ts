@@ -51,6 +51,13 @@ interface Chunk {
   inTag: boolean;
 }
 
+/** Per-chunk scan cursor: the source, the scan position, and the in-tag flag. */
+interface ScanState {
+  code: string;
+  index: number;
+  inTag: boolean;
+}
+
 /** Per-language scan behavior: rule table plus how rule-matched and plain text render. */
 interface ScannerMode {
   rules: readonly StickyRule[];
@@ -59,14 +66,9 @@ interface ScannerMode {
   plainRuns: boolean;
 }
 
-const matchRule = (
-  rules: readonly StickyRule[],
-  code: string,
-  index: number,
-  inTag: boolean,
-  wrap: ScannerMode['wrap']
-): Chunk | null => {
-  for (const rule of rules) {
+const matchRule = (mode: ScannerMode, cursor: ScanState): Chunk | null => {
+  const { code, index, inTag } = cursor;
+  for (const rule of mode.rules) {
     // WHY: inline tagOnly skip — filtering the rule list per chunk allocated a
     // fresh array for every character of scanned input.
     if (rule.tagOnly && !inTag) {
@@ -75,19 +77,20 @@ const matchRule = (
     const matched = matchSticky(rule.re, code, index);
     if (matched !== null) {
       const nextInTag = rule.toggle ? matched === '{{' || matched === '{%' : inTag;
-      return { output: wrap(rule.type, matched), length: matched.length, inTag: nextInTag };
+      return { output: mode.wrap(rule.type, matched), length: matched.length, inTag: nextInTag };
     }
   }
   return null;
 };
 
-const nextChunk = (code: string, index: number, inTag: boolean, mode: ScannerMode): Chunk => {
+const nextChunk = (mode: ScannerMode, cursor: ScanState): Chunk => {
+  const { code, index, inTag } = cursor;
   const whitespace = matchSticky(LEADING_WHITESPACE_RE, code, index);
   if (whitespace !== null) {
     return { output: whitespace, length: whitespace.length, inTag };
   }
 
-  const matched = matchRule(mode.rules, code, index, inTag, mode.wrap);
+  const matched = matchRule(mode, cursor);
   if (matched) {
     return matched;
   }
@@ -116,7 +119,7 @@ const scan = (code: string, mode: ScannerMode): string => {
   let out = '';
   let inTag = false;
   while (index < code.length) {
-    const chunk = nextChunk(code, index, inTag, mode);
+    const chunk = nextChunk(mode, { code, index, inTag });
     out += chunk.output;
     inTag = chunk.inTag;
     index += chunk.length;
