@@ -126,7 +126,16 @@ const formatFix = ({ fixCode, fixComment, documentationUrl }: FormatFixInput): s
 
 const formatStack = (error: unknown): string => {
   const stack = isErrorRecord(error) ? (error.stack ?? '') : '';
-  return pipe(stack, split('\n'), slice(1), map(formatStackLine), join('\n'));
+  // WHY: same frame filtering as the ANSI path — non-`at ` stack lines (message
+  // continuation, internal junk) are dropped instead of rendered as raw text.
+  return pipe(
+    stack,
+    split('\n'),
+    slice(1),
+    filter((line) => line.trim().startsWith('at ')),
+    map(formatStackLine),
+    join('\n')
+  );
 };
 
 /**

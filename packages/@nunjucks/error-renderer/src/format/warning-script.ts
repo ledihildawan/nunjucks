@@ -18,8 +18,11 @@ const getLocationString = (warning: Warning): string => {
   // WHY: engine warnings are zero-based; a future one-based producer would otherwise
   // display a line one short of the truth.
   const lineBase = warning.lineBase ?? 'zero';
-  const lineNum = lineBase === 'one' ? warning.lineno : warning.lineno + 1;
-  const colNum = warning.colno != null ? `:${warning.colno}` : '';
+  const oneBased = lineBase === 'one';
+  const lineNum = oneBased ? warning.lineno : warning.lineno + 1;
+  // WHY: columns follow the same base adjustment as toDisplayLocation — zero-based
+  // colno is off by one for display; one-based values pass through unchanged.
+  const colNum = warning.colno != null ? `:${oneBased ? warning.colno : warning.colno + 1}` : '';
   const fileName = basename(warning.templateName);
   return ` at ${fileName}:${lineNum}${colNum}`;
 };

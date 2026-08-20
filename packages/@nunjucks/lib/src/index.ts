@@ -3,7 +3,7 @@
 
 export { getAttrGetter } from './attribute-getter.ts';
 export { collectStream, collectString } from './collect-stream.ts';
-export { compareValues, createSortComparator } from './compare.ts';
+export { createSortComparator } from './compare.ts';
 export {
   escapeAttribute,
   escapeHtml,

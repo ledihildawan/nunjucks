@@ -376,10 +376,40 @@ describe('watch', () => {
       new Promise<string>((resolve) => setTimeout(() => resolve(timeoutSentinel), 3000)),
     ]);
     expect(eventName).not.toBe(timeoutSentinel);
-    expect(eventName).toContain('live.njk');
+    // WHY: the update payload must be the template NAME (the cache key callers
+    // invalidate), resolved via pathsToNames — not the raw fs-reported filename.
+    expect(eventName).toBe('live.njk');
 
     const second = await loader.getSource('live.njk');
     expect(second !== null && isOk(second) && second.value.src === 'after').toBe(true);
+
+    loader.unwatchAll();
+  });
+
+  test('update emits the template NAME including its directory, not the bare filename', async () => {
+    const dir = await makeDir();
+    const subDir = join(dir, 'sub');
+    await mkdir(subDir);
+    const file = join(subDir, 'page.njk');
+    await writeFile(file, 'before');
+    const loader = createFileSystemLoader(dir, { watch: true });
+
+    await loader.getSource('sub/page.njk');
+
+    const updateArrived = new Promise<string>((resolve) => {
+      loader.on('update', (name) => resolve(String(name)));
+    });
+    const staleTime = new Date(Date.now() - 60_000);
+    await utimes(file, staleTime, staleTime);
+    await writeFile(file, 'after');
+
+    const timeoutSentinel = '_timeout_';
+    const eventName = await Promise.race([
+      updateArrived,
+      new Promise<string>((resolve) => setTimeout(() => resolve(timeoutSentinel), 3000)),
+    ]);
+    expect(eventName).not.toBe(timeoutSentinel);
+    expect(eventName).toBe('sub/page.njk');
 
     loader.unwatchAll();
   });

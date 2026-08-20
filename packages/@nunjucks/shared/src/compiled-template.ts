@@ -10,15 +10,10 @@ export const BLOCK_META_KEY = '__blockMeta';
 /**
  * Defines the async-generator render contract every compiled template's `root` (and each
  * `b_`-prefixed block) satisfies — each `yield` contributes one output chunk as a string.
+ * Blocks are deliberately typed by the same signature: they are rendered exactly like
+ * `root`, so a separate block-only type would be byte-identical.
  */
 export type CompiledRenderSignature = (
-  env: unknown,
-  context: unknown,
-  frame: unknown,
-  runtime: unknown
-) => AsyncGenerator<string, unknown>;
-
-type CompiledBlockSignature = (
   env: unknown,
   context: unknown,
   frame: unknown,
@@ -31,7 +26,7 @@ type CompiledBlockSignature = (
  */
 export interface CompiledTemplateExports {
   root: CompiledRenderSignature;
-  [blockName: string]: CompiledRenderSignature | CompiledBlockSignature | Record<string, unknown>;
+  [blockName: string]: CompiledRenderSignature | Record<string, unknown>;
   [BLOCK_META_KEY]: Record<string, unknown>;
 }
 

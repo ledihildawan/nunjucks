@@ -72,16 +72,22 @@ interface CreateWatchHandlerOptions {
   filePath: string;
   emit: (event: string, ...args: unknown[]) => void;
   onRename: (filePath: string) => void;
+  // WHY: resolves the watched path back to the template NAME callers asked for —
+  // the fs-reported filename is a bare basename and useless for cache invalidation.
+  resolveName: (filePath: string) => string | undefined;
 }
 
 const createWatchHandler =
-  ({ filePath, emit, onRename }: CreateWatchHandlerOptions) =>
+  ({ filePath, emit, onRename, resolveName }: CreateWatchHandlerOptions) =>
   (eventType: string, filename: string | null) => {
     if (!isFileChangeEvent(eventType)) {
       return;
     }
 
-    emit('update', filename ?? filePath, filePath);
+    // WHY: upstream semantics — the first update argument is the template NAME the
+    // loader resolved (what a cache keys on), with the raw fs filename/path as
+    // fallbacks for files watched before any getSource resolution.
+    emit('update', resolveName(filePath) ?? filename ?? filePath, filePath);
 
     if (eventType === 'rename') {
       onRename(filePath);
@@ -159,7 +165,12 @@ export const createFileSystemLoader = (
     try {
       watcher = watch(
         filePath,
-        createWatchHandler({ filePath, emit: base.emit, onRename: unwatchFile })
+        createWatchHandler({
+          filePath,
+          emit: base.emit,
+          onRename: unwatchFile,
+          resolveName: (watched) => pathsToNames.get(watched),
+        })
       );
     } catch (watchSetupError: unknown) {
       // WHY: the loader's error channel carries catalog TemplateErrors everywhere —
@@ -267,7 +278,6 @@ export const createFileSystemLoader = (
     if (verified === null || !verified.ok) {
       return verified;
     }
-    base.emit('load', name, verified.value);
     return ok(verified.value);
   };
 

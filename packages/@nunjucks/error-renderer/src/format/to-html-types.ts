@@ -9,14 +9,6 @@ interface Csp {
   nonce?: string;
 }
 
-/** Inputs for resolving a human-facing title from a classified code name and plain message. */
-interface HumanTitleInput {
-  name: string | null;
-  undefinedName: string | null;
-  plain: string;
-  fallback: string;
-}
-
 /** Catalog classification merged with the renderer-specific fields the HTML page displays. */
 interface ClassifiedError {
   category: string;
@@ -66,4 +58,4 @@ interface ToHtmlOptions {
   projectRoot?: string;
 }
 
-export type { ClassifiedError, Csp, HumanTitleInput, LocationInfo, ToHtmlOptions };
+export type { ClassifiedError, Csp, LocationInfo, ToHtmlOptions };

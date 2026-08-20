@@ -1,10 +1,11 @@
-import { normalizeLineBase, ERROR_CODES } from '@nunjucks/error-catalog';
+import { ERROR_CODES, normalizeLineBase } from '@nunjucks/error-catalog';
 import type { ColnoAdjustmentError } from './create-log-types.ts';
 
 /**
- * Repoints a `NULL_VALUE` error's column at the accessed property on the
- * parent object instead of the raw null position, so the source-trace caret
- * lands on the offending member (the `.name` in `user.name`, not the null).
+ * Repoints a `NULL_VALUE` error's column at the parent object in the source line
+ * instead of the raw null position, so the source-trace caret lands on the
+ * parent expression (the `user` in `user.name`, not the null and not the
+ * accessed member).
  *
  * Non-`NULL_VALUE` errors, missing source/line, or messages without a
  * parseable "on null/undefined 'parent'" suffix pass `err.colno` through

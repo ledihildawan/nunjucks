@@ -37,7 +37,7 @@ const JS_RULES: SyntaxRule[] = [
   { type: 'comment', re: /^\/\*[\s\S]*?\*\//u },
   {
     type: 'string',
-    re: /^(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`|$'(?:[^'\\]|\\.)*')/u,
+    re: /^(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/u,
   },
   { type: 'number', re: /^\d+(?:\.\d+)?/u },
   {
@@ -56,7 +56,7 @@ const CSS_RULES: SyntaxRule[] = [
   { type: 'string', re: /^"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/u },
   {
     type: 'number',
-    re: /^(?:\d+(?:\.\d+)?(?:px|em|rem|vh|vw|ch|ex|cm|mm|in|pt|pc|deg|rad|grad|turn|s|ms|%)?|\d+(?:\.\d+)?)/u,
+    re: /^\d+(?:\.\d+)?(?:px|em|rem|vh|vw|ch|ex|cm|mm|in|pt|pc|deg|rad|grad|turn|s|ms|%)?/u,
   },
   {
     type: 'keyword',

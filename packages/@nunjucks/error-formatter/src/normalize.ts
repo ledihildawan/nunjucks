@@ -1,6 +1,6 @@
-import { normalizeLineBase, type LineBase } from '@nunjucks/error-catalog';
+import { type LineBase, normalizeLineBase } from '@nunjucks/error-catalog';
+import { isKeyedObject, readNumber, readObject, readString } from '@nunjucks/lib';
 import type { Phase } from '@nunjucks/shared';
-import { readObject, readString, readNumber, isKeyedObject } from '@nunjucks/lib';
 
 /**
  * Supplies fallback values for `normalizeErrorMetadata` when the thrown value
@@ -88,12 +88,11 @@ const stringifyThrown = (thrown: unknown): string => {
   if (thrown === null || thrown === undefined) {
     return String(thrown);
   }
-  const object = readObject(thrown);
-  if (object !== null) {
-    const message = readOwnStringSafe(object, 'message');
-    if (message !== null) {
-      return message;
-    }
+  // WHY: readObject never yields null (non-objects degrade to {}), so the message
+  // probe can run unconditionally — a primitive throw simply finds no own 'message'.
+  const message = readOwnStringSafe(readObject(thrown), 'message');
+  if (message !== null) {
+    return message;
   }
   try {
     const serialized = JSON.stringify(thrown);
@@ -156,5 +155,5 @@ const normalizeErrorMetadata = (
   };
 };
 
-export { normalizeErrorMetadata };
 export type { ErrorMetadataFallback, NormalizedErrorMetadata };
+export { normalizeErrorMetadata };

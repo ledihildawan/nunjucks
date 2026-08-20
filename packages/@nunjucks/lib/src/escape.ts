@@ -14,8 +14,17 @@ const escapeHtml = (str: string): string => {
 
 /**
  * Escapes a quoted HTML attribute value: the same entity set as `escapeHtml`
- * except the backslash pass is swapped for a backtick pass, matching the
- * historical nunjucks attribute encoder.
+ * except the backslash pass is swapped for a backtick pass.
+ *
+ * WHY: deliberate hardening, not parity — nunjucks-original has a single
+ * `escape` (backslash → `&#92;`, no backtick) used for both text and
+ * attributes. Here the backtick is entity-encoded because it is an attribute-
+ * context metacharacter: it terminates none of the HTML quote styles but IS
+ * consumed by template literals and legacy/unquoted attribute parsing, so
+ * `&#96;` blocks template-literal breakout when a value flows from an
+ * attribute into a JS string. Backslash is intentionally NOT escaped —
+ * browsers give it no escape meaning inside attribute values (unlike JS
+ * string literals), so encoding it would be inert noise.
  */
 const escapeAttribute = (str: string): string => {
   const htmlEscaped = str.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');

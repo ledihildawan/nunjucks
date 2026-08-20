@@ -101,6 +101,19 @@ describe('toHtmlMarker — iframe srcdoc escaping', () => {
   });
 });
 
+describe('toHtmlMarker — iframe hardening', () => {
+  test('lazy iframe is created with sandbox="allow-scripts" in both variants', () => {
+    // WHY: the dev error page ships its own toggle script, so allow-scripts is the
+    // minimum viable sandbox; srcdoc frames are originless either way, denying
+    // same-origin access to the host document while keeping the page interactive.
+    const block = toHtmlMarker({ message: 'boom' });
+    const inline = toHtmlMarker({ message: 'boom' }, { severity: 'inline' });
+    expect(block).toContain(`f.setAttribute('sandbox','allow-scripts')`);
+    expect(inline).toContain(`f.setAttribute('sandbox','allow-scripts')`);
+    expect(block).not.toContain(`sandbox="allow-same-origin"`);
+  });
+});
+
 describe('toHtmlMarker — script binds its own marker', () => {
   // WHY: regression pin — the script used to querySelector the FIRST
   // '[data-nj-err-open]' in the document, so with multiple markers every later

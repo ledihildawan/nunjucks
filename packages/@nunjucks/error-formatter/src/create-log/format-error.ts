@@ -3,33 +3,34 @@
 // of the barrel means every domain package importing `createLog` (lexer, parser,
 // compiler, runtime, filters, validators) loads zero presentation code (ANSI/HTML
 // rendering, picocolors) in its import closure.
-import { classifyAndBuildTitle } from '@nunjucks/error-catalog';
+import { classifyAndBuildTitle, type LineBase, normalizeLineBase } from '@nunjucks/error-catalog';
 import {
-  toAnsi,
-  toText,
-  toHtml,
-  createFormatterState,
   buildSourceTrace,
+  createFormatterState,
   parseStackFrame,
   type SourceTrace,
+  toAnsi,
+  toHtml,
+  toText,
 } from '@nunjucks/error-renderer';
-import type { ProjectSourceContent, SourceFileReader } from './create-log-types.ts';
-import { normalizeLineBase, type LineBase } from '@nunjucks/error-catalog';
-import type { TemplateError, TemplateWarning, OutputOptions } from './create-log-types.ts';
 import { adjustColnoForNullValue } from './adjust-colno.ts';
+import { isTemplateError } from './create-log.ts';
+import type {
+  OutputOptions,
+  ProjectSourceContent,
+  SourceFileReader,
+  TemplateError,
+} from './create-log-types.ts';
 
-const isTemplateError = (log: TemplateError | TemplateWarning): log is TemplateError =>
-  (log as TemplateError).templatePath !== undefined;
-
-const toFormatterMetadata = (
-  log: TemplateError | TemplateWarning,
-  renderContext?: Record<string, unknown>
-) => ({
+// WHY: narrowed to TemplateError — formatError's entry guard guarantees a branded
+// TemplateError (or a toTemplateError rebuild) before metadata is read, so the
+// error/warning discrimination and its cast are unnecessary here.
+const toFormatterMetadata = (log: TemplateError, renderContext?: Record<string, unknown>) => ({
   lineno: log.lineno,
   colno: log.colno,
   phase: log.phase,
   templateName: log.templateName,
-  templatePath: isTemplateError(log) ? log.templatePath : null,
+  templatePath: log.templatePath,
   code: log.code,
   subject: log.subject,
   renderContext,
@@ -108,7 +109,7 @@ const formatErrorOutput = ({ err, options, format }: FormatErrorOutputInput): st
  * @returns The formatted error report as a string.
  */
 const formatError = (err: Error | TemplateError, options: OutputOptions = {}): string => {
-  const templateError = isTemplateErrorLog(err) ? err : toTemplateError(err, options);
+  const templateError = isTemplateError(err) ? err : toTemplateError(err, options);
   const sourceTrace = buildSourceTraceIfNeeded(templateError, options);
   const humanTitle = classifyAndBuildTitle(templateError);
 
@@ -119,9 +120,6 @@ const formatError = (err: Error | TemplateError, options: OutputOptions = {}): s
 
   return formatErrorOutput({ err: templateError, options: opts, format: options.format });
 };
-
-const isTemplateErrorLog = (err: Error | TemplateError): err is TemplateError =>
-  (err as TemplateError).templatePath !== undefined || err.name === 'Template render error';
 
 const isProjectSource = (path: string): boolean => {
   // WHY: backslashes are normalized away first, so the posix check below is exhaustive.

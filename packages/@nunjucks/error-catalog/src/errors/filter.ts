@@ -24,7 +24,9 @@ export const FILTER_ERRORS = {
   FILTER_ERROR: {
     name: 'FILTER_ERROR',
     message: 'Filter failed',
-    pattern: /^Error: Filter .+? threw|filter threw|Filter .+? failed/iu,
+    // WHY: non-capturing group inside the anchor — a bare `^` would pin only the first
+    // alternative, letting `filter threw` match mid-message anywhere.
+    pattern: /^(?:Error: Filter .+? threw|filter threw|Filter .+? failed)/iu,
     category: 'filter_error',
     titleTemplate: 'A filter threw an error',
     causes: [

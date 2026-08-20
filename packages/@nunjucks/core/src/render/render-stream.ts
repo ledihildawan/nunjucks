@@ -1,13 +1,8 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { adjustColnoForNullValue } from '@nunjucks/error-formatter';
 import type { LineBase } from '@nunjucks/error-catalog';
-import {
-  buildSourceTrace,
-  classifyAndBuildTitle,
-  DEFAULT_IDE,
-  injectWarningsScript,
-  toHtmlMarker,
-} from '@nunjucks/error-renderer';
+import { classifyAndBuildTitle } from '@nunjucks/error-catalog';
+import { buildSourceTrace, DEFAULT_IDE, injectWarningsScript, toHtmlMarker } from '@nunjucks/error-renderer';
 import { isErr } from '@nunjucks/lib';
 import {
   createFrame,

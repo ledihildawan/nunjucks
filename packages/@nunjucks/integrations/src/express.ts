@@ -1,6 +1,6 @@
 import path from 'node:path';
+import type { NunjucksConfig, PerRenderOverrides } from '@nunjucks/core';
 import { nunjucks, PACKAGE_VERSION } from '@nunjucks/core';
-import type { NunjucksConfig } from '@nunjucks/core';
 import { isOk, isPlainObject } from '@nunjucks/lib';
 
 /**
@@ -29,6 +29,35 @@ const sanitizeExpressOptions = (options: unknown): Record<string, unknown> => {
   );
 };
 
+// WHY: Express's `settings['view options']` convention (per-app defaults for the view
+// engine, delivered inside the per-call options bag's `settings` key). Extracted BEFORE
+// sanitization strips `settings`, and merged as DEFAULTS — per-call engine overrides
+// (views/templatePath from the rendered file) win, matching Express's merge order.
+type ViewOptionDefaults = Partial<
+  Pick<PerRenderOverrides, 'executionTimeout' | 'streamContentType'>
+>;
+
+const readViewOptionDefaults = (options: unknown): ViewOptionDefaults => {
+  if (!isPlainObject(options) || !isPlainObject(options.settings)) {
+    return {};
+  }
+  const viewOptions = options.settings['view options'];
+  if (!isPlainObject(viewOptions)) {
+    return {};
+  }
+  return {
+    ...(typeof viewOptions.executionTimeout === 'number' &&
+    Number.isFinite(viewOptions.executionTimeout)
+      ? { executionTimeout: viewOptions.executionTimeout }
+      : {}),
+    ...(viewOptions.streamContentType === 'html' ||
+    viewOptions.streamContentType === 'json' ||
+    viewOptions.streamContentType === 'text'
+      ? { streamContentType: viewOptions.streamContentType }
+      : {}),
+  };
+};
+
 // WHY: createEngine closes over a nunjucks() factory instance built once at registration time (loader, filters,
 // globals merged once). The returned Express view-engine function delegates each request to engine.render with
 // two Express-specific per-call overrides — views (the file's directory) and templatePath (the full file path).
@@ -41,7 +70,8 @@ const sanitizeExpressOptions = (options: unknown): Record<string, unknown> => {
  *   overridden per call with the rendered file's directory.
  * @returns The Express view-engine function. Each call sanitizes Express's
  *   merged options bag (locals + engine-internal keys are stripped) into
- *   template context, then delegates to `engine.render` with the file's
+ *   template context, applies `settings['view options']` as per-app default
+ *   render overrides, then delegates to `engine.render` with the file's
  *   directory as `views` and its path as `templatePath`. All failures flow
  *   through the Express `callback(err)` channel — `Result` errors pass through
  *   as-is, unexpected rejections are wrapped in `Error` — so the function
@@ -55,7 +85,11 @@ const createEngine = (config: NunjucksConfig = {}): ExpressEngineFunction => {
     callback: (err: Error | null, rendered?: string) => void
   ): void {
     const renderContext = sanitizeExpressOptions(options);
-    const renderOptions = { views: path.dirname(filePath), templatePath: filePath };
+    const renderOptions = {
+      ...readViewOptionDefaults(options),
+      views: path.dirname(filePath),
+      templatePath: filePath,
+    };
     // WHY: Express mandates a sync-void engine signature — the async render runs in a
     // fire-and-forget IIFE so every outcome lands in `callback`, never as a floating
     // rejection.
@@ -74,6 +108,5 @@ const createEngine = (config: NunjucksConfig = {}): ExpressEngineFunction => {
   };
 };
 
+export type { ExpressEngineFunction, NunjucksConfig as ExpressEngineConfig };
 export { createEngine, PACKAGE_VERSION };
-export type { ExpressEngineFunction };
-export type { NunjucksConfig as ExpressEngineConfig };

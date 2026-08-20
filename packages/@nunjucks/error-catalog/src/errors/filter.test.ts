@@ -114,6 +114,8 @@ describe('FILTER_ERROR', () => {
     expect(pattern.test('filter threw')).toBe(true);
     expect(pattern.test('Filter upper failed')).toBe(true);
     expect(pattern.test('Filter did something else')).toBe(false);
+    // WHY: every branch is anchored — `filter threw` must not match mid-message.
+    expect(pattern.test('discussed how the filter threw earlier')).toBe(false);
     expect(classifyFromError({ message: 'Error: Filter upper threw' }).category).toBe(
       'filter_error'
     );

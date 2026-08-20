@@ -87,6 +87,13 @@ const isTypedArray = (value: unknown): boolean =>
 const isResultLike = (value: unknown): value is { ok: boolean } =>
   isKeyedObject(value) && typeof value.ok === 'boolean';
 
+// WHY: remeda's guards are re-exported one-per-statement so each public name carries its
+// contract here — remeda's own types are the implementation, this file is the documented API.
+/** Type guard narrowing to arrays: passes only genuine `Array` values (remeda `isArray`). */
+/** Type guard narrowing to callables: plain, async, generator, and bound functions pass (remeda `isFunction`). */
+/** Type guard excluding both nullish values: everything else — including `false`/`0`/`''` — passes (remeda `isNonNullish`). */
+/** Type guard narrowing to literal-created objects: own prototype is `Object.prototype` or `null` (remeda `isPlainObject`). */
+/** Type guard narrowing to primitive strings: boxed `String` objects fail (remeda `isString`). */
 export { isArray, isFunction, isNonNullish, isPlainObject, isString } from 'remeda';
 export {
   hasOwn,

@@ -1,8 +1,6 @@
-export { classifyAndBuildTitle } from '@nunjucks/error-catalog';
 export type {
   AnsiOptions,
   ClassifiedError,
-  HumanTitleInput,
   ToHtmlOptions,
   ToTextOptions,
   WarningScriptOptions,

@@ -106,6 +106,29 @@ const buildLocationHtml = (loc: LocData, ide: string): string => {
 // WHY: severity is injected by the render stream based on the error's catalog code.
 // BLOCK = structural/security/system failure — full block with header, message, location.
 // INLINE = expression-level recoverable failure — compact icon inline in the text flow.
+/**
+ * Renders a compact in-document error marker: a clickable block or inline icon that
+ * lazily opens an overlay whose iframe loads the full `toHtml` error page as `srcdoc`.
+ *
+ * @param error - Error-like payload: `message` (fallback `'Unknown error'`), optional
+ *   `templatePath`/`templateName`, `lineno`/`colno` drive the location row and the
+ *   marker's stable id.
+ * @param options - `ToHtmlOptions` forwarded verbatim to the embedded page (`dev`
+ *   gates diagnostics, `csp.nonce` threads onto its tags, `humanTitle` overrides the
+ *   header text, `projectRoot`/`ide` shape the location link) plus `severity`:
+ *   `'block'` (default) renders the full header + location bar, `'inline'` renders
+ *   only the inline icon. Escaping is applied to every interpolated value; the
+ *   `srcdoc` JSON literal escapes `<`/`>` so it cannot break out of the script.
+ * @returns The `<style>` + marker + overlay + `<script>` HTML fragment. Never throws —
+ *   absent fields degrade to placeholders, and a non-file path renders a plain span
+ *   instead of an IDE link.
+ */
+// WHY: lazy iframe — the full error page is only built into the DOM when the marker is
+// first opened; sandbox="allow-scripts" permits the page's own toggle script (the only
+// interactivity it has) while srcdoc keeps the frame originless, so scripts run without
+// same-origin access to the host document.
+const IFRAME_SETUP = `f.className='nj-err-frame';f.setAttribute('sandbox','allow-scripts');`;
+
 const toHtmlMarker = (
   error: ErrorLike,
   options: ToHtmlOptions & { severity?: MarkerSeverity } = {}
@@ -134,7 +157,7 @@ const toHtmlMarker = (
 <div class="nj-err-overlay" id="${idAttr}" hidden>
   <button class="nj-err-close" type="button" aria-label="Close error overlay">${CLOSE_ICON}</button>
 </div>
-<script>(function(){const b=document.querySelector('${openSel}');const o=document.getElementById('${idAttr}');if(!b||!o)return;const c=o.querySelector(".nj-err-close");let loaded=false;const open=function(){if(!loaded){loaded=true;const f=document.createElement('iframe');f.className='nj-err-frame';f.srcdoc=${srcdocLiteral};o.appendChild(f);}o.removeAttribute("hidden");document.body.style.overflow="hidden";};const close=function(){o.setAttribute("hidden","");document.body.style.overflow="";};b.addEventListener("click",open);b.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});c.addEventListener("click",close);o.addEventListener("click",function(e){if(e.target===o){close();}});})()</script>`;
+<script>(function(){const b=document.querySelector('${openSel}');const o=document.getElementById('${idAttr}');if(!b||!o)return;const c=o.querySelector(".nj-err-close");let loaded=false;const open=function(){if(!loaded){loaded=true;const f=document.createElement('iframe');${IFRAME_SETUP}f.srcdoc=${srcdocLiteral};o.appendChild(f);}o.removeAttribute("hidden");document.body.style.overflow="hidden";};const close=function(){o.setAttribute("hidden","");document.body.style.overflow="";};b.addEventListener("click",open);b.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});c.addEventListener("click",close);o.addEventListener("click",function(e){if(e.target===o){close();}});})()</script>`;
   }
 
   const idAttr = escapeAttribute(id);
@@ -151,7 +174,7 @@ const toHtmlMarker = (
 <div class="nj-err-overlay" id="${idAttr}" hidden>
   <button class="nj-err-close" type="button" aria-label="Close error overlay">${CLOSE_ICON}</button>
 </div>
-<script>(function(){const b=document.querySelector('${openSel}');const o=document.getElementById('${idAttr}');if(!b||!o)return;const m=o.closest('.nj-err-block')?.querySelector('.nj-err-msg[data-nj-err-full]');const checkOverflow=function(){if(!m)return;const full=m.getAttribute('data-nj-err-full');if(m.scrollWidth>m.clientWidth){m.setAttribute('title',full);}else{m.removeAttribute('title');}};checkOverflow();window.addEventListener('resize',checkOverflow);const c=o.querySelector(".nj-err-close");let loaded=false;const open=function(){if(!loaded){loaded=true;const f=document.createElement('iframe');f.className='nj-err-frame';f.srcdoc=${srcdocLiteral};o.appendChild(f);}o.removeAttribute("hidden");document.body.style.overflow="hidden";};const close=function(){o.setAttribute("hidden","");document.body.style.overflow="";};b.addEventListener("click",open);b.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});c.addEventListener("click",close);o.addEventListener("click",function(e){if(e.target===o){close();}});})()</script>`;
+<script>(function(){const b=document.querySelector('${openSel}');const o=document.getElementById('${idAttr}');if(!b||!o)return;const m=o.closest('.nj-err-block')?.querySelector('.nj-err-msg[data-nj-err-full]');const checkOverflow=function(){if(!m)return;const full=m.getAttribute('data-nj-err-full');if(m.scrollWidth>m.clientWidth){m.setAttribute('title',full);}else{m.removeAttribute('title');}};checkOverflow();window.addEventListener('resize',checkOverflow);const c=o.querySelector(".nj-err-close");let loaded=false;const open=function(){if(!loaded){loaded=true;const f=document.createElement('iframe');${IFRAME_SETUP}f.srcdoc=${srcdocLiteral};o.appendChild(f);}o.removeAttribute("hidden");document.body.style.overflow="hidden";};const close=function(){o.setAttribute("hidden","");document.body.style.overflow="";};b.addEventListener("click",open);b.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});c.addEventListener("click",close);o.addEventListener("click",function(e){if(e.target===o){close();}});})()</script>`;
 };
 
 export { toHtmlMarker };

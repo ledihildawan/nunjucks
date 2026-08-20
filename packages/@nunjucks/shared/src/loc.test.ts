@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { LOC_BRAND, loc, ZERO_LOC } from './loc.ts';
+import { loc, ZERO_LOC } from './loc.ts';
 
 describe('loc', () => {
   test('creates a location from non-null lineno and colno', () => {
@@ -28,12 +28,6 @@ describe('loc', () => {
 
     expect(position.lineno).toBe(0);
     expect(position.colno).toBe(0);
-  });
-
-  test('stamps the loc brand symbol', () => {
-    const position = loc({ lineno: 1, colno: 1 });
-
-    expect(position[LOC_BRAND]).toBe(true);
   });
 
   test('exposes lineno and colno as readonly numeric fields', () => {
@@ -65,25 +59,7 @@ describe('ZERO_LOC', () => {
     expect(ZERO_LOC.colno).toBe(0);
   });
 
-  test('carries the loc brand symbol', () => {
-    expect(ZERO_LOC[LOC_BRAND]).toBe(true);
-  });
-
   test('matches a freshly created zero location', () => {
     expect(ZERO_LOC).toEqual(loc({ lineno: 0, colno: 0 }));
-  });
-});
-
-describe('LOC_BRAND', () => {
-  test('is a unique symbol', () => {
-    expect(typeof LOC_BRAND).toBe('symbol');
-  });
-
-  test('is described as Loc', () => {
-    expect(LOC_BRAND.description).toBe('Loc');
-  });
-
-  test('is not equal to a freshly minted symbol with the same description', () => {
-    expect(LOC_BRAND).not.toBe(Symbol('Loc'));
   });
 });

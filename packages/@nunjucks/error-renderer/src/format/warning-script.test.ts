@@ -18,13 +18,14 @@ describe('injectWarningsScript', () => {
     expect(injectWarningsScript([])).toBe('');
   });
 
-  test('full verbosity: message, mode, basename location with +1 zero-based line, code', () => {
+  test('full verbosity: message, mode, basename location with +1 zero-based line and col, code', () => {
+    // WHY: colno is zero-based like lineno — the display form bumps both by one.
     expect(injectWarningsScript([baseWarning])).toContain(
-      '[WARNING] Variable is undefined or null (debug) at home.njk:3:7 [UNDEFINED_VARIABLE]'
+      '[WARNING] Variable is undefined or null (debug) at home.njk:3:8 [UNDEFINED_VARIABLE]'
     );
   });
 
-  test("lineBase 'one' keeps the raw line number", () => {
+  test("lineBase 'one' keeps the raw line number and column", () => {
     expect(injectWarningsScript([{ ...baseWarning, lineBase: 'one' }])).toContain(
       'at home.njk:2:7'
     );
@@ -50,7 +51,7 @@ describe('injectWarningsScript', () => {
 
   test('medium verbosity keeps mode and location but drops the code', () => {
     const script = injectWarningsScript([baseWarning], { verbosity: 'medium' });
-    expect(script).toContain('(debug) at home.njk:3:7');
+    expect(script).toContain('(debug) at home.njk:3:8');
     expect(script).not.toContain('[UNDEFINED_VARIABLE]');
   });
 

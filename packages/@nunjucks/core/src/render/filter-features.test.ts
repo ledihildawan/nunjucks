@@ -202,9 +202,12 @@ describe('default filter', () => {
     expect(result).toBe('bar');
   });
 
-  test('default - null value', async () => {
+  // WHY: upstream parity — default substitutes for undefined only; null passes through
+  // and renders as '' (output position suppresses nullish). The old pin (null → 'def')
+  // captured the audit-flagged nullish-substitution divergence.
+  test('default - null value passes through (upstream parity)', async () => {
     const result = await renderTemplate('{{ value |> default("def") }}', { value: null });
-    expect(result).toBe('def');
+    expect(result).toBe('');
   });
 
   test('default - defined value', async () => {
@@ -331,8 +334,15 @@ describe('SafeString tests (is safe / is escaped)', () => {
     const result = await renderTemplate('{{ x is safe }}', { x: 'hi' });
     expect(result).toBe('false');
   });
+  // WHY: upstream parity — `escaped` is true when the value IS a SafeString; the old
+  // pin (plain string → 'true') captured the audit-flagged inversion.
   test('is escaped with plain string', async () => {
     const result = await renderTemplate('{{ x is escaped }}', { x: 'hi' });
+    expect(result).toBe('false');
+  });
+  test('is escaped with SafeString value', async () => {
+    const { createSafeString } = await import('@nunjucks/runtime');
+    const result = await renderTemplate('{{ x is escaped }}', { x: createSafeString('hi') });
     expect(result).toBe('true');
   });
 });

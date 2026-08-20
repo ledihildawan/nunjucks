@@ -1,4 +1,4 @@
-import { isRecord } from './types.ts';
+import { isErrorLike } from './types.ts';
 
 /** Defines the unique symbol that brands an `Error` as an internal engine invariant violation. */
 const INTERNAL_INVARIANT = Symbol('InternalInvariant');
@@ -16,7 +16,7 @@ interface InternalInvariantError extends Error {
 // reads the brand directly off the narrowed record.
 /** Narrows to the internal-invariant branded error. */
 const isInternalInvariantError = (value: unknown): value is InternalInvariantError =>
-  isRecord(value) && INTERNAL_INVARIANT in value && value[INTERNAL_INVARIANT] === true;
+  isErrorLike(value) && INTERNAL_INVARIANT in value && value[INTERNAL_INVARIANT] === true;
 
 /**
  * Constructs a programmer-bug error branded as an internal engine invariant violation.

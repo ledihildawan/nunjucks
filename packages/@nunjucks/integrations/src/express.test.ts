@@ -79,6 +79,34 @@ describe('Express integration', () => {
     expect(rendered).toBe('<em>ok</em>');
   });
 
+  test('merges settings["view options"] as default engine options (per-call values win)', async () => {
+    const viewsDirectory = await mkdtemp(join(tmpdir(), 'nunjucks-express-'));
+    temporaryDirectories.push(viewsDirectory);
+    const templatePath = join(viewsDirectory, 'viewopts.njk');
+    await writeFile(templatePath, '<p>{{ name }}</p>');
+
+    // WHY: fake settings bag mirroring what Express injects into the options —
+    // view options must act as per-app defaults and never leak into the context.
+    const rendered = await new Promise<string>((resolve, reject) => {
+      createEngine()(
+        templatePath,
+        {
+          name: 'Ada',
+          settings: { 'view options': { executionTimeout: 5000, junk: 'ignored' } },
+        },
+        (err, html) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(html ?? '');
+        }
+      );
+    });
+
+    expect(rendered).toBe('<p>Ada</p>');
+  });
+
   test('broken template surfaces the error via the callback (Result err path)', async () => {
     const viewsDirectory = await mkdtemp(join(tmpdir(), 'nunjucks-express-'));
     temporaryDirectories.push(viewsDirectory);

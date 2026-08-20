@@ -1,8 +1,8 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import {
-  resolveMessage,
-  isErrorDefinitionEntry,
   extractExtraFromContext,
+  isErrorDefinitionEntry,
+  resolveMessage,
 } from './create-log-helpers.ts';
 
 describe('resolveMessage', () => {

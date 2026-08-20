@@ -1,11 +1,11 @@
+import { createErrorEnvelope, resolveMessage } from './create-log-helpers.ts';
 import type {
-  TemplateError,
-  TemplateWarning,
   ErrorDefinitionEntry,
   NormalizedErrorContext,
   NormalizedWarningContext,
+  TemplateError,
+  TemplateWarning,
 } from './create-log-types.ts';
-import { resolveMessage, createErrorEnvelope } from './create-log-helpers.ts';
 
 const buildErrorJson = (err: TemplateError) => (): Record<string, unknown> => ({
   name: err.name,
@@ -62,7 +62,7 @@ const createErrorFromDef = ({
   }
   err.templatePath = normalized.templateName;
   if (errorDef.causes?.length) {
-    err.causes = [...(errorDef.causes ?? [])];
+    err.causes = [...errorDef.causes];
   }
   if (errorDef.fixCode) {
     err.fixCode = errorDef.fixCode;
@@ -106,7 +106,7 @@ const createWarningFromDef = ({
     ...normalizedWarning,
   } as TemplateWarning;
   if (errorDef.causes?.length) {
-    warn.causes = [...(errorDef.causes ?? [])];
+    warn.causes = [...errorDef.causes];
   }
   if (errorDef.fixCode) {
     warn.fixCode = errorDef.fixCode;

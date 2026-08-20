@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
+import type { ErrorContext, ErrorDefinitionEntry, WarningContext } from './create-log.ts';
 import { createLog, isTemplateError, prettifyError } from './create-log.ts';
-import type { ErrorDefinitionEntry, ErrorContext, WarningContext } from './create-log.ts';
 
 const def: ErrorDefinitionEntry = {
   name: 'TEST_ERR',

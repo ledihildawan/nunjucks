@@ -25,8 +25,11 @@ export interface ErrorLike {
   environment?: string | null;
 }
 
-/** Narrows any non-null object to the structural `ErrorLike` shape. */
-export const isRecord = (value: unknown): value is ErrorLike =>
+/**
+ * Narrows any non-null object to the structural `ErrorLike` view — the name promises
+ * only the ErrorLike *shape* (all fields optional), not structural verification.
+ */
+export const isErrorLike = (value: unknown): value is ErrorLike =>
   typeof value === 'object' && value !== null;
 
 /**

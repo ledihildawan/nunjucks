@@ -160,6 +160,34 @@ describe('validateConfig - reserved keyword validation', () => {
   });
 });
 
+describe('validateConfig - null-as-unset semantics', () => {
+  test('numeric fields treat null as unset (unified with string arrays)', () => {
+    // WHY: JS callers passing explicit null for unset numerics must not trip
+    // INVALID_CONFIG — null parses as unset across every field kind.
+    const result = validateConfig({
+      executionTimeout: null,
+      maxTemplateSize: null,
+      maxOutputSize: null,
+      cacheMaxEntries: null,
+    });
+    expect(isOk(result)).toBe(true);
+  });
+
+  test('numeric fields still reject non-finite and negative values', () => {
+    expect(isErr(validateConfig({ executionTimeout: Number.NaN }))).toBe(true);
+    expect(isErr(validateConfig({ maxOutputSize: Number.POSITIVE_INFINITY }))).toBe(true);
+    expect(isErr(validateConfig({ maxTemplateSize: -1 }))).toBe(true);
+  });
+
+  test('string arrays treat null as unset', () => {
+    // WHY: runtime-shape probe — the declared array type excludes null because TS
+    // callers use omission, but the flat options bag preserves null for JS callers.
+    const nullArray = null as unknown as readonly string[];
+    const result = validateConfig({ blockedContextKeys: nullArray, allowedGlobals: nullArray });
+    expect(isOk(result)).toBe(true);
+  });
+});
+
 describe('RESERVED_KEYWORDS', () => {
   test('includes nunjucks template keywords', () => {
     expect(RESERVED_KEYWORDS.has('if')).toBe(true);

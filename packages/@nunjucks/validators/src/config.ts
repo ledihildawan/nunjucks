@@ -24,12 +24,12 @@ type ConfigValidationResult = Result<
 >;
 
 interface Config {
-  executionTimeout?: number;
-  maxTemplateSize?: number;
-  maxOutputSize?: number;
-  streamingCoalesceBytes?: number;
-  cacheMaxEntries?: number;
-  streamingIdleTimeout?: number;
+  executionTimeout?: number | null;
+  maxTemplateSize?: number | null;
+  maxOutputSize?: number | null;
+  streamingCoalesceBytes?: number | null;
+  cacheMaxEntries?: number | null;
+  streamingIdleTimeout?: number | null;
   undefined?: string;
   sandboxMode?: string;
   sandboxEnvironment?: Environment;
@@ -55,11 +55,15 @@ const VALID_SANDBOX_MODES: ReadonlySet<string> = new Set(SANDBOX_MODES);
 const VALID_UNDEFINED_MODES: ReadonlySet<string> = new Set(UNDEFINED_MODES);
 const VALID_CONTENT_TYPES: ReadonlySet<string> = new Set(CONTENT_TYPES);
 
+// WHY: null is tolerated as "unset" across ALL field kinds — the flat options bag
+// preserves null for keys a JS caller left empty (see factory compact()), so numerics
+// follow the same rule as string arrays: null parses as unset, while non-finite
+// non-null values (NaN, Infinity) and negatives stay INVALID_CONFIG errors.
 const validateNonNegativeNumeric = (
-  value: number | undefined,
+  value: number | null | undefined,
   subject: string
 ): ConfigValidationError[] =>
-  value !== undefined && (!Number.isFinite(value) || value < 0)
+  value !== undefined && value !== null && (!Number.isFinite(value) || value < 0)
     ? [
         {
           code: ERROR_CODES.INVALID_CONFIG,
@@ -141,9 +145,10 @@ const validateStringArray = ({
   subject,
   type,
 }: StringArrayInput): ConfigValidationError[] =>
-  // WHY: null is tolerated as "unset" — the flat options bag preserves null for keys
-  // like blockedContextKeys (see factory compact()), and a JS caller passing null must
-  // get the catalogued INVALID_CONFIG error, not a TypeError from value.every.
+  // WHY: null is tolerated as "unset" — the unified rule shared with the numeric
+  // validators: the flat options bag preserves null for keys like blockedContextKeys
+  // (see factory compact()), and a JS caller passing null must get the catalogued
+  // INVALID_CONFIG error, not a TypeError from value.every.
   value !== undefined && value !== null && !value.every((entry) => typeof entry === 'string')
     ? [
         {

@@ -144,4 +144,14 @@ describe('toText — full verbosity stack trace', () => {
     };
     expect(toText(errorWithRawStack, { dev: true })).toContain('  at somewhere anonymous');
   });
+
+  test('drops non-"at " stack lines, matching the ANSI path filtering', () => {
+    const errorWithJunkStack: ErrorLike = {
+      message: 'boom',
+      stack: 'Error: boom\n    at foo (bar.njk:1:1)\n    internal junk continuation',
+    };
+    const output = toText(errorWithJunkStack, { dev: true });
+    expect(output).toContain('at foo (bar.njk:1)');
+    expect(output).not.toContain('internal junk continuation');
+  });
 });

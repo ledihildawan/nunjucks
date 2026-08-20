@@ -29,4 +29,4 @@ const loc = <T extends { lineno: number | null; colno: number | null }>(source: 
 const ZERO_LOC: Loc = Object.freeze(loc({ lineno: 0, colno: 0 })) as Loc;
 
 export type { Loc };
-export { LOC_BRAND, loc, ZERO_LOC };
+export { loc, ZERO_LOC };

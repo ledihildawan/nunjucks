@@ -63,3 +63,6 @@ const createSortComparator = ({ sortAttr, sortReverse, caseSens }: SortComparato
 };
 
 export { compareValues, createSortComparator };
+// WHY: compareValues stays module-exported for the internal createSortComparator path and
+// its unit tests, but is deliberately NOT re-exported from the package barrel — it is an
+// implementation detail of sorting, not a public @nunjucks/lib name.

@@ -1,5 +1,5 @@
 import type { LineBase } from '@nunjucks/error-catalog';
-import { classifyFromError, type HumanTitleInput } from '@nunjucks/error-catalog';
+import { classifyFromError } from '@nunjucks/error-catalog';
 import { mergeErrorParts } from './presentation/error/error-parts.ts';
 import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import { escapeAttribute, escapeHtml } from './presentation/syntax-highlight/highlight.ts';
@@ -78,5 +78,4 @@ const buildErrorDisplay = (
   return { classified, displayLine, displayCol, displayPath };
 };
 
-export type { HumanTitleInput };
 export { buildErrorDisplay, classifyError, renderBadge };

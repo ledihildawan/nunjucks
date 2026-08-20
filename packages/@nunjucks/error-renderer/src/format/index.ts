@@ -3,7 +3,7 @@ export { toAnsi } from './to-ansi.ts';
 export type { ToHtmlOptions } from './to-html.ts';
 export { toHtml } from './to-html.ts';
 export { toHtmlMarker } from './to-html-marker.ts';
-export type { ClassifiedError, HumanTitleInput } from './to-html-types.ts';
+export type { ClassifiedError } from './to-html-types.ts';
 export type { ToTextOptions } from './to-text.ts';
 export { toText } from './to-text.ts';
 export type { WarningScriptOptions } from './warning-script.ts';

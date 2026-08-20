@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createErrorFromDef, createWarningFromDef } from './create-log-defs.ts';
 import type {
   ErrorDefinitionEntry,
