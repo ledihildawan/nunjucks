@@ -2,8 +2,8 @@ import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Token } from '@nunjucks/lexer';
 import { TOKEN_BLOCK_END, TOKEN_COMMA } from '@nunjucks/lexer';
 import { isErr, ok, type Result } from '@nunjucks/lib';
-import type { ChildrenNode, Node } from '@nunjucks/nodes';
-import { appendChild, fromImportNode, nodeList, pair } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
+import { fromImportNode, nodeList, pair } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
 import { advanceAfterBlockEnd, fail, peekToken, skip, skipSymbol } from '../cursor.ts';
@@ -19,8 +19,8 @@ const isUnderscore = (name: Node): boolean => {
 
 const parseImportName = (
   parserContext: ParserContext,
-  names: ChildrenNode
-): Result<{ names: ChildrenNode; withContext: boolean | null | undefined }, TemplateError> => {
+  names: Node[]
+): Result<boolean | null | undefined, TemplateError> => {
   const nameR = parsePrimary(parserContext);
   if (isErr(nameR)) {
     return nameR;
@@ -35,30 +35,29 @@ const parseImportName = (
   }
 
   const hasAlias = skipSymbol(parserContext, 'as');
-  let newNames: ChildrenNode;
   if (hasAlias) {
     const aliasR = parsePrimary(parserContext);
     if (isErr(aliasR)) {
       return aliasR;
     }
-    newNames = appendChild(names, pair(loc(name), { key: name, val: aliasR.value }));
+    names.push(pair(loc(name), { key: name, val: aliasR.value }));
   } else {
-    newNames = appendChild(names, name);
+    names.push(name);
   }
 
   const withContextR = parseWithContext(parserContext);
   if (isErr(withContextR)) {
     return withContextR;
   }
-  return ok({ names: newNames, withContext: withContextR.value });
+  return ok(withContextR.value);
 };
 
 const handleBlockEnd = (
   parserContext: ParserContext,
-  names: ChildrenNode,
+  names: Node[],
   fromTok: Token
 ): Result<void, TemplateError> => {
-  if (names.children.length === 0) {
+  if (names.length === 0) {
     return fail(parserContext, {
       message: 'parseFrom: Expected at least one import name',
       lineno: fromTok.lineno,
@@ -78,12 +77,9 @@ const handleBlockEnd = (
 
 const parseFromImportIteration = (
   parserContext: ParserContext,
-  names: ChildrenNode,
+  names: Node[],
   fromTok: Token
-): Result<
-  { names: ChildrenNode; withContext: boolean | null | undefined; done: boolean },
-  TemplateError
-> => {
+): Result<{ withContext: boolean | null | undefined; done: boolean }, TemplateError> => {
   const nextTokR = peekToken(parserContext);
   if (isErr(nextTokR)) {
     return nextTokR;
@@ -93,10 +89,10 @@ const parseFromImportIteration = (
     if (isErr(endR)) {
       return endR;
     }
-    return ok({ names, withContext: undefined, done: true });
+    return ok({ withContext: undefined, done: true });
   }
 
-  if (names.children.length > 0 && !skip(parserContext, TOKEN_COMMA)) {
+  if (names.length > 0 && !skip(parserContext, TOKEN_COMMA)) {
     return fail(parserContext, {
       message: 'parseFrom: expected comma',
       lineno: fromTok.lineno,
@@ -108,7 +104,7 @@ const parseFromImportIteration = (
   if (isErr(result)) {
     return result;
   }
-  return ok({ names: result.value.names, withContext: result.value.withContext, done: false });
+  return ok({ withContext: result.value, done: false });
 };
 
 /**
@@ -139,32 +135,30 @@ export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateEr
     });
   }
 
-  const importLoop = (
-    accNames: ChildrenNode,
-    accWithContext: boolean | null | undefined
-  ): Result<{ names: ChildrenNode; withContext: boolean | null | undefined }, TemplateError> => {
-    const iterR = parseFromImportIteration(parserContext, accNames, fromTok);
+  // WHY: iterative loop with a local accumulator (parser loop exemption) — the
+  // recursive importLoop recursed once per imported name and threaded each one
+  // through the copying appendChild (O(n²)), so `{% from x import a,b,c,... %}`
+  // overflowed the stack and crawled on long lists.
+  const names: Node[] = [];
+  let withContext: boolean | null | undefined;
+  while (true) {
+    const iterR = parseFromImportIteration(parserContext, names, fromTok);
     if (isErr(iterR)) {
       return iterR;
     }
     if (iterR.value.done) {
-      return ok({ names: accNames, withContext: accWithContext });
+      break;
     }
     // WHY: OR-accumulate — a mid-list `with context` marker must survive later
     // iterations; plain overwrite silently dropped it for every following name.
-    return importLoop(iterR.value.names, iterR.value.withContext ?? accWithContext);
-  };
-
-  const loopR = importLoop(nodeList(loc(fromTok)), undefined);
-  if (isErr(loopR)) {
-    return loopR;
+    withContext = iterR.value.withContext ?? withContext;
   }
 
   return ok(
     fromImportNode(loc(fromTok), {
       template: templateR.value,
-      names: loopR.value.names,
-      withContext: loopR.value.withContext ?? false,
+      names: nodeList(loc(fromTok), names),
+      withContext: withContext ?? false,
     })
   );
 };

@@ -99,16 +99,18 @@ const parseMatchCases = (
   parserContext: ParserContext,
   tag: Token
 ): Result<{ cases: WhenNode[]; defaultCase: Node | null }, TemplateError> => {
-  const collectCases = (
-    accCases: WhenNode[]
-  ): Result<{ cases: WhenNode[]; defaultCase: Node | null }, TemplateError> => {
+  // WHY: iterative loop (parser loop exemption) — the recursive collectCases recursed
+  // once per `when` branch AND re-spread the accumulator per case (O(n²)), so long
+  // when-chains overflowed the stack and crawled before that.
+  const cases: WhenNode[] = [];
+  while (true) {
     const peekR = peekToken(parserContext);
     if (isErr(peekR)) {
       return peekR;
     }
     const peeked = peekR.value;
     if (!(peeked.type === TOKEN_SYMBOL && peeked.value === 'when')) {
-      return ok({ cases: accCases, defaultCase: null });
+      return ok({ cases, defaultCase: null });
     }
     const oneR = parseOneWhen(parserContext, tag);
     if (isErr(oneR)) {
@@ -116,12 +118,10 @@ const parseMatchCases = (
     }
     const one = oneR.value;
     if (one.kind === 'default') {
-      return ok({ cases: accCases, defaultCase: one.node });
+      return ok({ cases, defaultCase: one.node });
     }
-    return collectCases([...accCases, one.node]);
-  };
-
-  return collectCases([]);
+    cases.push(one.node);
+  }
 };
 
 /**

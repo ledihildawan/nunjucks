@@ -41,28 +41,24 @@ const parseCompare = (parserContext: ParserContext): Result<Node, TemplateError>
   const expr = exprR.value;
   const ops: Node[] = [];
 
-  const parseLoop = (): Result<void, TemplateError> => {
+  // WHY: iterative loop (parser loop exemption) — the recursive loop recursed once per
+  // comparison operator, so `a < b < c...` overflowed the stack on long chains.
+  while (true) {
     const tokR = nextToken(parserContext);
     if (isErr(tokR)) {
       return tokR;
     }
     const tok = tokR.value;
 
-    if (COMPARE_OPS.includes(String(tok.value))) {
-      const operandR = parseConcat(parserContext);
-      if (isErr(operandR)) {
-        return operandR;
-      }
-      ops.push(compareOperand(loc(tok), { expr: operandR.value, operator: String(tok.value) }));
-      return parseLoop();
+    if (!COMPARE_OPS.includes(String(tok.value))) {
+      pushToken(parserContext, tok);
+      break;
     }
-    pushToken(parserContext, tok);
-    return ok(undefined);
-  };
-
-  const loopR = parseLoop();
-  if (isErr(loopR)) {
-    return loopR;
+    const operandR = parseConcat(parserContext);
+    if (isErr(operandR)) {
+      return operandR;
+    }
+    ops.push(compareOperand(loc(tok), { expr: operandR.value, operator: String(tok.value) }));
   }
 
   const [firstOp] = ops;
@@ -178,8 +174,9 @@ const parseBitwiseOr = (parserContext: ParserContext): Result<Node, TemplateErro
 
   // WHY: left-fold like every sibling binary level — the previous single-shot form
   // consumed at most one operator and silently dropped the rest of the chain
-  // (`a | b | c` parsed as `a | b`).
-  const foldLoop = (): Result<void, TemplateError> => {
+  // (`a | b | c` parsed as `a | b`). Iterative loop (parser loop exemption): the
+  // recursive fold recursed once per bitwise operator and overflowed the stack.
+  while (true) {
     const tokR = nextToken(parserContext);
     if (isErr(tokR)) {
       return tokR;
@@ -189,7 +186,7 @@ const parseBitwiseOr = (parserContext: ParserContext): Result<Node, TemplateErro
     const createNode = bitwiseNodeMap[String(tok.value)];
     if (!createNode) {
       pushToken(parserContext, tok);
-      return ok(undefined);
+      break;
     }
 
     const rightR = parseIs(parserContext);
@@ -197,12 +194,6 @@ const parseBitwiseOr = (parserContext: ParserContext): Result<Node, TemplateErro
       return rightR;
     }
     node = createNode(loc(tok), { left: node, right: rightR.value });
-    return foldLoop();
-  };
-
-  const loopR = foldLoop();
-  if (isErr(loopR)) {
-    return loopR;
   }
   return ok(node);
 };
@@ -211,88 +202,69 @@ const isInToken = (tok: Token): boolean => tok?.type === TOKEN_SYMBOL && tok?.va
 
 const isNotInversion = (tok: Token): boolean => tok?.type === TOKEN_SYMBOL && tok?.value === 'not';
 
-interface HandleInExpressionOptions {
-  parserContext: ParserContext;
-  node: Node;
-  invert: boolean;
-  inTok: Token;
-}
-
-const handleInExpression = ({
-  parserContext,
-  node,
-  invert,
-  inTok,
-}: HandleInExpressionOptions): Result<Node, TemplateError> => {
-  const rightOperandR = parseIs(parserContext);
-  if (isErr(rightOperandR)) {
-    return rightOperandR;
+/**
+ * Resolves the `in` token following an operand: a bare `in` passes through,
+ * `not` pulls the following `in`, and anything else is pushed back (chain
+ * over, `null`).
+ */
+const resolveInToken = (
+  parserContext: ParserContext,
+  tok: Token
+): Result<Token | null, TemplateError> => {
+  if (isInToken(tok)) {
+    return ok(tok);
   }
-  const newNode = inNode(loc(inTok), { left: node, right: rightOperandR.value });
-  return ok(invert ? not(loc(inTok), newNode) : newNode);
-};
-
-interface ProcessInTokenOptions {
-  parserContext: ParserContext;
-  node: Node;
-  invert: boolean;
-  inTok: Token;
-}
-
-const processInToken = ({
-  parserContext,
-  node,
-  invert,
-  inTok,
-}: ProcessInTokenOptions): Result<Node | null, TemplateError> => {
-  if (isInToken(inTok)) {
-    const handledR = handleInExpression({ parserContext, node, invert, inTok });
-    if (isErr(handledR)) {
-      return handledR;
-    }
-    return parseInLoop(parserContext, handledR.value);
-  }
-  pushToken(parserContext, inTok);
-  return ok(null);
-};
-
-const parseInLoop = (parserContext: ParserContext, node: Node): Result<Node, TemplateError> => {
-  const tokR = nextToken(parserContext);
-  if (isErr(tokR)) {
-    return tokR;
-  }
-  const tok = tokR.value;
-
-  const invert = isNotInversion(tok);
-  if (!invert && !isInToken(tok)) {
+  if (!isNotInversion(tok)) {
     pushToken(parserContext, tok);
-    return ok(node);
+    return ok(null);
   }
-
-  let inTok: Token;
-  if (invert) {
-    const inTokR = nextToken(parserContext);
-    if (isErr(inTokR)) {
-      return inTokR;
-    }
-    inTok = inTokR.value;
-  } else {
-    inTok = tok;
+  const inTokR = nextToken(parserContext);
+  if (isErr(inTokR)) {
+    return inTokR;
   }
-  const resultR = processInToken({ parserContext, node, invert, inTok });
-  if (isErr(resultR)) {
-    return resultR;
+  if (!isInToken(inTokR.value)) {
+    pushToken(parserContext, inTokR.value);
+    return ok(null);
   }
-  return ok(resultR.value ?? node);
+  return ok(inTokR.value);
 };
 
-/** Parses an expression, then chains any `in` / `not in` membership tests onto it. */
+/**
+ * Parses an expression, then chains any `in` / `not in` membership tests onto it.
+ */
 const parseIn = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const nodeR = parseBitwiseOr(parserContext);
   if (isErr(nodeR)) {
     return nodeR;
   }
-  return parseInLoop(parserContext, nodeR.value);
+  let node = nodeR.value;
+
+  // WHY: iterative loop (parser loop exemption) — the previous mutual recursion
+  // (parseInLoop → processInToken → parseInLoop) left frames on the stack per `in`
+  // segment, so `a in b in c...` overflowed on token-count-long chains. Each turn
+  // keeps the exact old token order: consume `in` (or `not` then `in`), parse the
+  // right operand, and left-fold.
+  while (true) {
+    const tokR = nextToken(parserContext);
+    if (isErr(tokR)) {
+      return tokR;
+    }
+    const inTokR = resolveInToken(parserContext, tokR.value);
+    if (isErr(inTokR)) {
+      return inTokR;
+    }
+    if (inTokR.value === null) {
+      return ok(node);
+    }
+
+    const rightOperandR = parseIs(parserContext);
+    if (isErr(rightOperandR)) {
+      return rightOperandR;
+    }
+    const invert = isNotInversion(tokR.value);
+    const newNode = inNode(loc(inTokR.value), { left: node, right: rightOperandR.value });
+    node = invert ? not(loc(inTokR.value), newNode) : newNode;
+  }
 };
 
 export { parseIn };

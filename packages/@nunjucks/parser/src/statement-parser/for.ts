@@ -1,8 +1,8 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { TOKEN_COMMA } from '@nunjucks/lexer';
 import { isErr, ok, type Result } from '@nunjucks/lib';
-import type { ChildrenNode, Node } from '@nunjucks/nodes';
-import { appendChild, array, forNode, isSymbol } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
+import { array, forNode, isSymbol } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
 import { advanceAfterBlockEnd, fail, peekToken, skip, skipSymbol } from '../cursor.ts';
@@ -38,18 +38,19 @@ const parseForTarget = (parserContext: ParserContext): Result<Node, TemplateErro
   }
 
   const key = name;
-  const result = appendChild(array(loc(key)), key);
-  const collectCommaList = (acc: ChildrenNode): Result<Node, TemplateError> => {
-    if (!skip(parserContext, TOKEN_COMMA)) {
-      return ok(acc);
-    }
+  // WHY: iterative loop with a local accumulator (parser loop exemption) — the recursive
+  // collectCommaList recursed once per comma-separated target and threaded each one
+  // through the copying appendChild (O(n²)), so `{% for a,b,c,... %}` lists
+  // overflowed the stack and crawled on long lists.
+  const targets: Node[] = [key];
+  while (skip(parserContext, TOKEN_COMMA)) {
     const primR = parsePrimary(parserContext);
     if (isErr(primR)) {
       return primR;
     }
-    return collectCommaList(appendChild(acc, primR.value));
-  };
-  return collectCommaList(result);
+    targets.push(primR.value);
+  }
+  return ok(array(loc(key), targets));
 };
 
 /**

@@ -9,6 +9,12 @@ import { advanceAfterBlockEnd, fail, peekToken, skipSymbol } from '../cursor.ts'
 import { parseExpression } from '../expression-parser/index.ts';
 import { parseUntilBlocks } from '../parse-root.ts';
 
+interface IfBranch {
+  tag: Token;
+  cond: Node;
+  body: Node;
+}
+
 const parseIfElseAlternate = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const elseEndR = advanceAfterBlockEnd(parserContext);
   if (isErr(elseEndR)) {
@@ -25,48 +31,22 @@ const parseIfElseAlternate = (parserContext: ParserContext): Result<Node, Templa
   return ok(altBodyR.value);
 };
 
-const parseIfAlternate = (
+const parseIfBranch = (
   parserContext: ParserContext,
-  tok: Token
-): Result<Node | null, TemplateError> => {
-  switch (tok?.value) {
-    case 'elseif':
-    case 'elif':
-      return parseIf(parserContext);
-    case 'else':
-      return parseIfElseAlternate(parserContext);
-    case 'endif': {
-      const endifEndR = advanceAfterBlockEnd(parserContext);
-      if (isErr(endifEndR)) {
-        return endifEndR;
-      }
-      return ok(null);
-    }
-    default:
-      return fail(parserContext, {
-        message: 'parseIf: expected elif, else, or endif, got end of file',
-      });
-  }
-};
-
-/**
- * Parses `{% if %}`/`{% elif %}` branches recursively, including `else`
- * alternates, and consumes the terminating `{% endif %}`.
- */
-export const parseIf = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  first: boolean
+): Result<IfBranch, TemplateError> => {
   const tagR = peekToken(parserContext);
   if (isErr(tagR)) {
     return tagR;
   }
   const tag = tagR.value;
 
-  if (
-    !(
-      skipSymbol(parserContext, 'if') ||
+  const accepted = first
+    ? skipSymbol(parserContext, 'if') ||
       skipSymbol(parserContext, 'elif') ||
       skipSymbol(parserContext, 'elseif')
-    )
-  ) {
+    : skipSymbol(parserContext, 'elif') || skipSymbol(parserContext, 'elseif');
+  if (!accepted) {
     return fail(parserContext, {
       message: 'parseIf: expected if, elif, or elseif',
       lineno: tag.lineno,
@@ -87,17 +67,79 @@ export const parseIf = (parserContext: ParserContext): Result<Node, TemplateErro
   if (isErr(bodyR)) {
     return bodyR;
   }
+  return ok({ tag, cond: condR.value, body: bodyR.value });
+};
+
+/**
+ * Reads the token after a branch body: `elif`/`elseif` continues the loop
+ * (`undefined`), `else` yields the final alternate body, and `endif` yields
+ * `null`; anything else fails loudly.
+ */
+const parseIfTerminator = (
+  parserContext: ParserContext
+): Result<Node | null | undefined, TemplateError> => {
   const tokR = peekToken(parserContext);
   if (isErr(tokR)) {
     return tokR;
   }
-
-  const alternateR = parseIfAlternate(parserContext, tokR.value);
-  if (isErr(alternateR)) {
-    return alternateR;
+  const terminator = tokR.value;
+  switch (terminator.value) {
+    case 'elseif':
+    case 'elif':
+      return ok(undefined);
+    case 'else':
+      return parseIfElseAlternate(parserContext);
+    case 'endif': {
+      const endifEndR = advanceAfterBlockEnd(parserContext);
+      if (isErr(endifEndR)) {
+        return endifEndR;
+      }
+      return ok(null);
+    }
+    default:
+      return fail(parserContext, {
+        message: 'parseIf: expected elif, else, or endif, got end of file',
+      });
   }
+};
 
-  return ok(
-    ifNode(loc(tag), { cond: condR.value, body: bodyR.value, alternate: alternateR.value })
-  );
+const foldIfBranches = (branches: readonly IfBranch[], alternate: Node | null): Node => {
+  let node: Node | null = alternate;
+  for (let i = branches.length - 1; i >= 0; i--) {
+    const branch = branches[i];
+    if (branch) {
+      node = ifNode(loc(branch.tag), { cond: branch.cond, body: branch.body, alternate: node });
+    }
+  }
+  return node as Node;
+};
+
+/**
+ * Parses `{% if %}`/`{% elif %}` branches, including `else` alternates, and
+ * consumes the terminating `{% endif %}`.
+ */
+export const parseIf = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const branches: IfBranch[] = [];
+
+  // WHY: iterative loop (parser loop exemption) — the recursive form recursed once per
+  // `elif` branch (parseIf → parseIfAlternate → parseIf), so long elif chains
+  // overflowed the stack. Branches are collected first, then folded right-to-left
+  // into the exact nested ifNode shape the recursion produced.
+  let first = true;
+  while (true) {
+    const branchR = parseIfBranch(parserContext, first);
+    if (isErr(branchR)) {
+      return branchR;
+    }
+    branches.push(branchR.value);
+    first = false;
+
+    const terminatorR = parseIfTerminator(parserContext);
+    if (isErr(terminatorR)) {
+      return terminatorR;
+    }
+    if (terminatorR.value !== undefined) {
+      return ok(foldIfBranches(branches, terminatorR.value));
+    }
+  }
 };

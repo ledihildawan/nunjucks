@@ -45,21 +45,21 @@ const isTerminatorSymbol = (peeked: Token, endTag: string): boolean =>
 const isSlotSymbol = (peeked: Token): boolean => isSymbolToken(peeked) && peeked.value === 'slot';
 
 const parseSlotParams = (parserContext: ParserContext): string[] => {
+  // WHY: iterative loop (parser loop exemption) — the recursive collect recursed once
+  // per param/comma token, so pathological slot param lists overflowed the stack.
   const params: string[] = [];
-  const collect = (): string[] => {
+  while (true) {
     const inner = nextTokenOrNull(parserContext);
     if (!inner || inner.type === TOKEN_RIGHT_PAREN) {
       return params;
     }
     if (inner.type === TOKEN_COMMA) {
-      return collect();
+      continue;
     }
     if (isSymbolToken(inner)) {
       params.push(inner.value);
     }
-    return collect();
-  };
-  return collect();
+  }
 };
 
 const parseSlotBlock = (parserContext: ParserContext): Result<ParsedSlot, TemplateError> => {
@@ -133,7 +133,10 @@ export const parseSlottedBody = (
   const implicitSlots: SlotBlock[] = [];
   const defaultParts: Node[] = [];
 
-  const parseLoop = (): Result<SlottedBody, TemplateError> => {
+  // WHY: iterative loop (parser loop exemption) — the recursive parseLoop recursed
+  // once per slot/chunk segment, so slotted bodies with many segments relied on
+  // engine tail-calls and overflowed the stack where those are unavailable.
+  while (true) {
     const peekedR = peekToken(parserContext);
     if (isErr(peekedR)) {
       return peekedR;
@@ -148,17 +151,14 @@ export const parseSlottedBody = (
         return slotR;
       }
       categorizeSlot(slotR.value, namedSlots, implicitSlots);
-      return parseLoop();
+      continue;
     }
     const chunkR = parseUntilBlocks(parserContext, 'slot', endTag);
     if (isErr(chunkR)) {
       return chunkR;
     }
     appendDefaultChunk(defaultParts, chunkR.value);
-    return parseLoop();
-  };
-
-  return parseLoop();
+  }
 };
 
 /** Combines default-slot chunks into one body node, using empty output when there are none. */

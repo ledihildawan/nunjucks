@@ -10,7 +10,7 @@ import {
 } from '@nunjucks/lexer';
 import { isErr, ok, type Result } from '@nunjucks/lib';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
-import { appendChild, literal, nodeList, optionalCall, optionalChain } from '@nunjucks/nodes';
+import { literal, nodeList, optionalCall, optionalChain } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../../cursor.ts';
 import { fail, nextToken, peekToken } from '../../cursor.ts';
@@ -21,85 +21,78 @@ type OptionalChainOperatorToken = Token & { type: typeof TOKEN_OPERATOR };
 
 const isEndOfArgs = (next: Token): boolean => !next || next.type === TOKEN_RIGHT_PAREN;
 
-const handleComma = (
+const skipOptionalArgComma = (
   parserContext: ParserContext,
+  next: Token,
   expectComma: boolean
-): Result<boolean, TemplateError> => {
+): Result<void, TemplateError> => {
   if (!expectComma) {
-    return ok(true);
+    return ok(undefined);
   }
-  const nextR = peekToken(parserContext);
-  if (isErr(nextR)) {
-    return nextR;
-  }
-  if (nextR.value.type !== TOKEN_COMMA) {
+  if (next.type !== TOKEN_COMMA) {
     return fail(parserContext, {
       message: 'expected comma after expression',
-      lineno: nextR.value.lineno ?? 0,
-      colno: nextR.value.colno ?? 0,
+      lineno: next.lineno ?? 0,
+      colno: next.colno ?? 0,
     });
   }
   const consumedR = nextToken(parserContext);
   if (isErr(consumedR)) {
     return consumedR;
   }
-  return ok(true);
+  return ok(undefined);
 };
 
-const consumeEndOfArgs = (
+const consumeOptionalArgsEnd = (
   parserContext: ParserContext,
   next: Token
-): Result<boolean, TemplateError> => {
-  if (!isEndOfArgs(next)) {
-    return ok(false);
-  }
+): Result<void, TemplateError> => {
   if (next) {
     const consumedR = nextToken(parserContext);
     if (isErr(consumedR)) {
       return consumedR;
     }
   }
-  return ok(true);
+  return ok(undefined);
 };
 
 const parseOptionalCallArgs = (
   parserContext: ParserContext,
   tok: Token
 ): Result<ChildrenNode, TemplateError> => {
-  const parseLoop = (
-    args: ChildrenNode,
-    expectComma: boolean
-  ): Result<ChildrenNode, TemplateError> => {
+  // WHY: iterative loop with a local accumulator (parser loop exemption) — the recursive
+  // loop recursed once per argument and threaded each one through the copying
+  // appendChild (O(n²)), so `a?.(a,a,...)` overflowed the stack and crawled on
+  // argument-count-long lists.
+  const children: Node[] = [];
+  let expectComma = false;
+  while (true) {
     const nextR = peekToken(parserContext);
     if (isErr(nextR)) {
       return nextR;
     }
     const next = nextR.value;
 
-    const endR = consumeEndOfArgs(parserContext, next);
-    if (isErr(endR)) {
-      return endR;
-    }
-    if (endR.value) {
-      return ok(args);
+    if (isEndOfArgs(next)) {
+      const endR = consumeOptionalArgsEnd(parserContext, next);
+      if (isErr(endR)) {
+        return endR;
+      }
+      return ok(nodeList(loc(tok), children));
     }
 
-    const commaR = handleComma(parserContext, expectComma);
+    const commaR = skipOptionalArgComma(parserContext, next, expectComma);
     if (isErr(commaR)) {
       return commaR;
-    }
-    if (!commaR.value) {
-      return ok(args);
     }
 
     const argumentR = parseExpression(parserContext);
     if (isErr(argumentR)) {
       return argumentR;
     }
-    return parseLoop(appendChild(args, argumentR.value), true);
-  };
-
-  return parseLoop(nodeList(loc(tok)), false);
+    children.push(argumentR.value);
+    expectComma = true;
+  }
 };
 
 const parseOptionalCall = (

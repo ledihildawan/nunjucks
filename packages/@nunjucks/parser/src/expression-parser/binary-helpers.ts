@@ -29,8 +29,12 @@ const binaryOp = (
   if (isErr(firstR)) {
     return firstR;
   }
+  let node = firstR.value;
 
-  const fold = (node: Node): Result<Node, TemplateError> => {
+  // WHY: iterative loop (parser loop exemption) — the recursive fold recursed once per
+  // operator, so `a+a+a+...` overflowed the stack on token-count-long chains. The loop
+  // keeps the exact left-fold order (and `**`'s existing left associativity) intact.
+  while (true) {
     const tokR = peekToken(parserContext);
     if (isErr(tokR)) {
       return tokR;
@@ -42,10 +46,8 @@ const binaryOp = (
     if (isErr(rightR)) {
       return rightR;
     }
-    return fold(create(loc(tokR.value), { left: node, right: rightR.value }));
-  };
-
-  return fold(firstR.value);
+    node = create(loc(tokR.value), { left: node, right: rightR.value });
+  }
 };
 
 /** Builds a `consume` callback matching a single operator literal, e.g. `+`. */

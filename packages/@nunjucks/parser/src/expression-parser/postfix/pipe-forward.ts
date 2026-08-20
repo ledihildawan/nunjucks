@@ -23,23 +23,18 @@ export const parseFilterCallName = (parserContext: ParserContext): Result<Node, 
   const tok = tokR.value;
   const initialName = isSymbolToken(tok) ? tok.value : String(tok.value);
 
-  const buildName = (name: string): Result<string, TemplateError> => {
-    if (!skipValue(parserContext, TOKEN_OPERATOR, '.')) {
-      return ok(name);
-    }
+  let name = initialName;
+  // WHY: iterative loop (parser loop exemption) — the recursive buildName recursed once
+  // per dot segment, so a pathological `f.a.b.c...` filter name overflowed the stack.
+  while (skipValue(parserContext, TOKEN_OPERATOR, '.')) {
     const symR = expect(parserContext, TOKEN_SYMBOL);
     if (isErr(symR)) {
       return symR;
     }
     const sym = symR.value;
-    return buildName(`${name}.${isSymbolToken(sym) ? sym.value : String(sym.value)}`);
-  };
-
-  const nameR = buildName(initialName);
-  if (isErr(nameR)) {
-    return nameR;
+    name = `${name}.${isSymbolToken(sym) ? sym.value : String(sym.value)}`;
   }
-  return ok(symbol(loc(tok), nameR.value));
+  return ok(symbol(loc(tok), name));
 };
 
 /** Parses a filter's parenthesized argument list when present, otherwise returns `[]`. */
@@ -71,10 +66,10 @@ export const parsePipeForward = (
   parserContext: ParserContext,
   node: Node
 ): Result<Node, TemplateError> => {
-  const parseLoop = (current: Node): Result<Node, TemplateError> => {
-    if (!skip(parserContext, TOKEN_PIPEFORWARD)) {
-      return ok(current);
-    }
+  // WHY: iterative loop (parser loop exemption) — the recursive loop recursed once per
+  // `|>` segment, so `a |> f |> f...` overflowed the stack on long filter chains.
+  let current = node;
+  while (skip(parserContext, TOKEN_PIPEFORWARD)) {
     const nameR = parseFilterCallName(parserContext);
     if (isErr(nameR)) {
       return nameR;
@@ -84,18 +79,16 @@ export const parsePipeForward = (
       return argsR;
     }
 
-    return parseLoop(
-      // WHY: the Pipe node's loc is the LHS expression's START, not the filter-name
-      // token — the html-context tracker classifies the prefix before this position;
-      // a filter-name loc makes the prefix contain the `>` of `|>`, defeating
-      // open-tag detection and misclassifying unquoted attributes as html context
-      // (live attribute-injection vector under autoescape).
-      pipe(loc(current), {
-        name: nameR.value,
-        args: nodeList(loc(nameR.value), [current, ...argsR.value]).children,
-      })
-    );
-  };
+    // WHY: the Pipe node's loc is the LHS expression's START, not the filter-name
+    // token — the html-context tracker classifies the prefix before this position;
+    // a filter-name loc makes the prefix contain the `>` of `|>`, defeating
+    // open-tag detection and misclassifying unquoted attributes as html context
+    // (live attribute-injection vector under autoescape).
+    current = pipe(loc(current), {
+      name: nameR.value,
+      args: nodeList(loc(nameR.value), [current, ...argsR.value]).children,
+    });
+  }
 
-  return parseLoop(node);
+  return ok(current);
 };

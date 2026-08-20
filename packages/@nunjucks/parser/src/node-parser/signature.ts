@@ -16,8 +16,8 @@ import { fail, nextToken, peekToken, peekTokenOrNull, skip, skipValue } from '..
 import { parseExpression } from '../expression-parser/index.ts';
 
 interface SignatureArgState {
-  args: ChildrenNode;
-  kwargs: ChildrenNode;
+  args: Node[];
+  kwargs: Node[];
   checkComma: boolean;
 }
 
@@ -28,8 +28,8 @@ const isEqualsToken = (parserContext: ParserContext): boolean => {
 
 interface ParseSignatureArgOptions {
   parserContext: ParserContext;
-  args: ChildrenNode;
-  kwargs: ChildrenNode;
+  args: Node[];
+  kwargs: Node[];
   checkComma: boolean;
 }
 
@@ -67,24 +67,19 @@ const parseSignatureArg = ({
     if (isErr(valueR)) {
       return valueR;
     }
-    return ok({
-      args,
-      kwargs: appendChild(kwargs, pair(loc(argument), { key: argument.target, val: valueR.value })),
-      checkComma: true,
-    });
+    kwargs.push(pair(loc(argument), { key: argument.target, val: valueR.value }));
+    return ok({ args, kwargs, checkComma: true });
   }
   if (skipValue(parserContext, TOKEN_OPERATOR, '=')) {
     const valueR = parseExpression(parserContext);
     if (isErr(valueR)) {
       return valueR;
     }
-    return ok({
-      args,
-      kwargs: appendChild(kwargs, pair(loc(argument), { key: argument, val: valueR.value })),
-      checkComma: true,
-    });
+    kwargs.push(pair(loc(argument), { key: argument, val: valueR.value }));
+    return ok({ args, kwargs, checkComma: true });
   }
-  return ok({ args: appendChild(args, argument), kwargs, checkComma: true });
+  args.push(argument);
+  return ok({ args, kwargs, checkComma: true });
 };
 
 const isNoParensEnd = (tok: Token): boolean => tok?.type === TOKEN_BLOCK_END;
@@ -119,11 +114,14 @@ const parseSignatureLoop = ({
     return ok(undefined);
   };
 
-  const parseLoop = (
-    currentArgs: ChildrenNode,
-    currentKwargs: ChildrenNode,
-    checkComma: boolean
-  ): Result<{ args: ChildrenNode; kwargs: ChildrenNode }, TemplateError> => {
+  // WHY: iterative loop with local accumulators (parser loop exemption) — the recursive
+  // loop recursed once per argument and threaded each one through the copying
+  // appendChild (O(n²)), so `f(a,a,...)` overflowed the stack and crawled on
+  // argument-count-long calls.
+  const argChildren: Node[] = [];
+  const kwargChildren: Node[] = [];
+  let checkComma = false;
+  while (true) {
     const tokR = peekToken(parserContext);
     if (isErr(tokR)) {
       return tokR;
@@ -134,22 +132,23 @@ const parseSignatureLoop = ({
       if (isErr(endR)) {
         return endR;
       }
-      return ok({ args: currentArgs, kwargs: currentKwargs });
+      return ok({
+        args: { ...args, children: argChildren },
+        kwargs: { ...kwargs, children: kwargChildren },
+      });
     }
 
     const result = parseSignatureArg({
       parserContext,
-      args: currentArgs,
-      kwargs: currentKwargs,
+      args: argChildren,
+      kwargs: kwargChildren,
       checkComma,
     });
     if (isErr(result)) {
       return result;
     }
-    return parseLoop(result.value.args, result.value.kwargs, result.value.checkComma);
-  };
-
-  return parseLoop(args, kwargs, false);
+    checkComma = result.value.checkComma;
+  }
 };
 
 interface ParseSignatureOptions {

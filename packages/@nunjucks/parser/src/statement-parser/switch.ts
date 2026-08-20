@@ -1,5 +1,4 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
-import type { Token } from '@nunjucks/lexer';
 import { isErr, ok, type Result } from '@nunjucks/lib';
 import type { Node } from '@nunjucks/nodes';
 import { caseNode, switchNode } from '@nunjucks/nodes';
@@ -20,15 +19,15 @@ const parseSwitchCases = (
   parserContext: ParserContext,
   cases: Node[]
 ): Result<void, TemplateError> => {
-  const tokR = peekToken(parserContext);
+  // WHY: iterative loop (parser loop exemption) — the recursive parseLoop recursed once
+  // per `case` branch, so long switch-case chains overflowed the stack.
+  let tokR = peekToken(parserContext);
   if (isErr(tokR)) {
     return tokR;
   }
 
-  const parseLoop = (tok: Token): Result<void, TemplateError> => {
-    if (tok?.value !== SWITCH_TOKENS.caseStart) {
-      return ok(undefined);
-    }
+  while (tokR.value.value === SWITCH_TOKENS.caseStart) {
+    const tok = tokR.value;
     skipSymbol(parserContext, SWITCH_TOKENS.caseStart);
     const condR = parseExpression(parserContext);
     if (isErr(condR)) {
@@ -48,14 +47,12 @@ const parseSwitchCases = (
       return bodyR;
     }
     cases.push(caseNode(loc(tok), { cond: condR.value, body: bodyR.value }));
-    const nextTokR = peekToken(parserContext);
-    if (isErr(nextTokR)) {
-      return nextTokR;
+    tokR = peekToken(parserContext);
+    if (isErr(tokR)) {
+      return tokR;
     }
-    return parseLoop(nextTokR.value);
-  };
-
-  return parseLoop(tokR.value);
+  }
+  return ok(undefined);
 };
 
 const handleSwitchEnd = (parserContext: ParserContext): Result<Node | undefined, TemplateError> => {

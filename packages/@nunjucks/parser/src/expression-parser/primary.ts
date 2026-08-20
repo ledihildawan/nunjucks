@@ -18,7 +18,7 @@ import { isDangerousRegexPattern } from '@nunjucks/security';
 import { type Loc, loc } from '@nunjucks/shared';
 import { find } from 'remeda';
 import type { ParserContext } from '../cursor.ts';
-import { fail, nextToken, peekToken, peekTokenOrNull, pushToken, skipValue } from '../cursor.ts';
+import { fail, nextToken, peekToken, pushToken, skipValue } from '../cursor.ts';
 import { EXPECTED_COLON_AFTER_DICT_KEY } from '../error.ts';
 import { parseAggregate } from '../node-parser/aggregate/index.ts';
 import { tryParsePattern } from '../node-parser/pattern.ts';
@@ -199,46 +199,41 @@ const PREFIX_OPERATORS: ReadonlyArray<{
   },
 ];
 
-const tryParsePrefixOperator = (
-  parserContext: ParserContext,
-  tok: Token
-): Result<Node | null, TemplateError> => {
-  const peeked = peekTokenOrNull(parserContext);
-  const matched = find(
-    PREFIX_OPERATORS,
-    ({ operator }) => peeked?.type === TOKEN_OPERATOR && peeked?.value === operator
-  );
-  if (!matched) {
-    return ok(null);
-  }
-  skipValue(parserContext, TOKEN_OPERATOR, matched.operator);
-  const innerR = parseUnaryWithoutPipes(parserContext);
-  if (isErr(innerR)) {
-    return innerR;
-  }
-  return ok(matched.build(loc(tok), innerR.value));
-};
-
 const parseUnaryWithoutPipes = (parserContext: ParserContext): Result<Node, TemplateError> => {
-  const tokR = peekToken(parserContext);
-  if (isErr(tokR)) {
-    return tokR;
+  // WHY: collect prefix operators, parse the operand once, then wrap inside-out —
+  // the recursive form recursed once per prefix token, so `~~~~...x` overflowed the
+  // stack on token-count-long chains (parser loop exemption applies).
+  const prefixes: { origin: Loc; build: (origin: Loc, inner: Node) => Node }[] = [];
+  while (true) {
+    const tokR = peekToken(parserContext);
+    if (isErr(tokR)) {
+      return tokR;
+    }
+    const tok = tokR.value;
+    const matched = find(
+      PREFIX_OPERATORS,
+      ({ operator }) => tok.type === TOKEN_OPERATOR && tok.value === operator
+    );
+    if (!matched) {
+      break;
+    }
+    skipValue(parserContext, TOKEN_OPERATOR, matched.operator);
+    prefixes.push({ origin: loc(tok), build: matched.build });
   }
-  const tok = tokR.value;
 
-  const prefixR = tryParsePrefixOperator(parserContext, tok);
-  if (isErr(prefixR)) {
-    return prefixR;
+  const baseR = parsePrimary(parserContext);
+  if (isErr(baseR)) {
+    return baseR;
   }
-
-  if (prefixR.value !== null) {
-    return ok(prefixR.value);
+  let node = baseR.value;
+  for (let i = prefixes.length - 1; i >= 0; i--) {
+    const prefix = prefixes[i];
+    if (prefix) {
+      node = prefix.build(prefix.origin, node);
+    }
   }
-
-  return parsePrimary(parserContext);
-};
-
-/**
+  return ok(node);
+}; /**
  * Parses a unary expression: optional prefix operators (`-`, `+`, `~`,
  * `++`, `--`) applied to a primary, followed by `|>` pipe-forward calls.
  */

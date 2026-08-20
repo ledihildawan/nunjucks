@@ -58,10 +58,10 @@ const parseScopeAssignments = (
   }
   assignments.push(firstR.value);
 
-  const collect = (): Result<Node[], TemplateError> => {
-    if (!skip(parserContext, TOKEN_COMMA)) {
-      return ok(assignments);
-    }
+  // WHY: iterative loop (parser loop exemption) — the recursive collect recursed once
+  // per comma-separated assignment, so long `{% scope a = 1, b = 2, ... %}` lists
+  // overflowed the stack.
+  while (skip(parserContext, TOKEN_COMMA)) {
     const nextNameTokR = peekToken(parserContext);
     if (isErr(nextNameTokR)) {
       return nextNameTokR;
@@ -79,10 +79,8 @@ const parseScopeAssignments = (
       return nextR;
     }
     assignments.push(nextR.value);
-    return collect();
-  };
-
-  return collect();
+  }
+  return ok(assignments);
 };
 
 /**

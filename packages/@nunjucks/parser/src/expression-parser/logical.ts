@@ -1,4 +1,5 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
+import type { Token } from '@nunjucks/lexer';
 import { TOKEN_COLON, TOKEN_OPERATOR } from '@nunjucks/lexer';
 import { isErr, ok, type Result } from '@nunjucks/lib';
 import type { Node } from '@nunjucks/nodes';
@@ -17,32 +18,45 @@ const parseNullishCoalesce = (parserContext: ParserContext): Result<Node, Templa
   });
 
 const parseNot = (parserContext: ParserContext): Result<Node, TemplateError> => {
-  const tokR = peekToken(parserContext);
-  if (isErr(tokR)) {
-    return tokR;
-  }
-  const tok = tokR.value;
-  if (tok.type === TOKEN_OPERATOR && tok.value === '!') {
-    const consumedR = nextToken(parserContext);
-    if (isErr(consumedR)) {
-      return consumedR;
+  // WHY: collect prefix operators, parse the operand once, then wrap inside-out —
+  // the recursive form recursed once per `!`/`not` token, so `!!!!...a` overflowed
+  // the stack on token-count-long chains (parser loop exemption applies).
+  const negationTokens: Token[] = [];
+  while (true) {
+    const tokR = peekToken(parserContext);
+    if (isErr(tokR)) {
+      return tokR;
     }
-    const innerR = parseNot(parserContext);
-    if (isErr(innerR)) {
-      return innerR;
+    const tok = tokR.value;
+    if (tok.type === TOKEN_OPERATOR && tok.value === '!') {
+      const consumedR = nextToken(parserContext);
+      if (isErr(consumedR)) {
+        return consumedR;
+      }
+      negationTokens.push(tok);
+      continue;
     }
-    return ok(not(loc(tok), innerR.value));
-  }
-  if (skipSymbol(parserContext, 'not')) {
-    const innerR = parseNot(parserContext);
-    if (isErr(innerR)) {
-      return innerR;
+    if (skipSymbol(parserContext, 'not')) {
+      negationTokens.push(tok);
+      continue;
     }
-    return ok(not(loc(tok), innerR.value));
+    // WHY: no third `!` branch — the peeked-operator branch above already consumed that
+    // case; the old skipOperator re-test of the same peeked token was unreachable.
+    break;
   }
-  // WHY: no third `!` branch — the peeked-operator branch above already consumed that
-  // case; the old skipOperator re-test of the same peeked token was unreachable.
-  return parseIn(parserContext);
+
+  const innerR = parseIn(parserContext);
+  if (isErr(innerR)) {
+    return innerR;
+  }
+  let node = innerR.value;
+  for (let i = negationTokens.length - 1; i >= 0; i--) {
+    const negTok = negationTokens[i];
+    if (negTok) {
+      node = not(loc(negTok), node);
+    }
+  }
+  return ok(node);
 };
 
 const parseAnd = (parserContext: ParserContext): Result<Node, TemplateError> =>
@@ -64,12 +78,15 @@ const parseOr = (parserContext: ParserContext): Result<Node, TemplateError> =>
   });
 
 /**
- * Parses a `? :` ternary onto an already-parsed condition; a consumed `?`
+ * Parses `? :` ternaries onto an already-parsed condition; a consumed `?`
  * without its closing `:` fails loudly rather than silently returning the
  * condition.
  */
 const parseTernary = (parserContext: ParserContext, node: Node): Result<Node, TemplateError> => {
-  if (skipValue(parserContext, TOKEN_OPERATOR, '?')) {
+  // WHY: iterative loop (parser loop exemption) — the recursive form recursed once per
+  // `?`, so `a ? a : a ? a : a...` overflowed the stack on token-count-long chains.
+  let current = node;
+  while (skipValue(parserContext, TOKEN_OPERATOR, '?')) {
     const thenR = parseOr(parserContext);
     if (isErr(thenR)) {
       return thenR;
@@ -87,14 +104,13 @@ const parseTernary = (parserContext: ParserContext, node: Node): Result<Node, Te
     if (isErr(elseR)) {
       return elseR;
     }
-    const newNode = inlineIf(loc(node), {
-      cond: node,
+    current = inlineIf(loc(current), {
+      cond: current,
       body: thenR.value,
       alternate: elseR.value,
     });
-    return parseTernary(parserContext, newNode);
   }
-  return ok(node);
+  return ok(current);
 };
 
 export { parseOr, parseTernary };

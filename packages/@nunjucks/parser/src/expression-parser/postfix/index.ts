@@ -93,7 +93,11 @@ export const parsePostfix = (
   parserContext: ParserContext,
   node: Node
 ): Result<Node, TemplateError> => {
-  const parseLoop = (current: Node): Result<Node, TemplateError> => {
+  // WHY: iterative loop (parser loop exemption) — the recursive loop recursed once per
+  // `.member`/`(call)`/`[lookup]` segment, so `a.b.c...` overflowed the stack on
+  // token-count-long chains.
+  let current = node;
+  while (true) {
     const stepR = applyPostfixStep(parserContext, current);
     if (isErr(stepR)) {
       return stepR;
@@ -101,9 +105,8 @@ export const parsePostfix = (
     if (stepR.value.stop) {
       return ok(stepR.value.node);
     }
-    return parseLoop(stepR.value.node);
-  };
-  return parseLoop(node);
+    current = stepR.value.node;
+  }
 };
 
 export { parseFilterCallArgs, parseFilterCallName, parsePipeForward } from './pipe-forward.ts';
