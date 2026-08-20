@@ -27,7 +27,10 @@ const parseBoundedRepetition = (
     // `{n}` repeats a fixed count — deterministic, never backtracks by itself.
     return { length: match[0].length, variableLength: false };
   }
-  const max = match[3] === undefined || match[3] === '' ? Number.POSITIVE_INFINITY : Number.parseInt(match[3], 10);
+  const max =
+    match[3] === undefined || match[3] === ''
+      ? Number.POSITIVE_INFINITY
+      : Number.parseInt(match[3], 10);
   return { length: match[0].length, variableLength: max !== min };
 };
 
@@ -45,6 +48,7 @@ const parseBoundedRepetition = (
  * false positives on exotic-but-linear patterns — rejecting a template regex outright
  * is always safer than stalling the render loop.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: a regex scanner is a single cohesive state machine — its branches share inClass/escaped/canQuantify/closedGroupDangerous state, and fragmenting them into helper functions would force threading a mutable state object through every call. Same exemption class as the lexer/highlighter scanners.
 export const isDangerousRegexPattern = (source: string): boolean => {
   // WHY: hand-rolled scanner (not a regex-of-a-regex) — quantifier nesting is
   // inherently recursive, and a structural scan is the only way to skip character
@@ -129,7 +133,7 @@ export const isDangerousRegexPattern = (source: string): boolean => {
       continue;
     }
 
-    if (isQuantifierChar(char)) {
+    if (char !== undefined && isQuantifierChar(char)) {
       if (canQuantify && consumeQuantifier()) {
         return true;
       }

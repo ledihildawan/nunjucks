@@ -42,8 +42,8 @@ export { collectStream, collectString } from './collect-stream.ts';
 export { fromIterator } from './from-iterator.ts';
 export { toWebReadableStream } from './web-readable-stream.ts';
 export { coalesceStream } from './stream-coalesce.ts';
-export { basename } from './path-basename.ts';
 export { isDigit } from './is-digit.ts';
+export { basename } from './path-basename.ts';
 export {
   copySafeness,
   createSafeString,

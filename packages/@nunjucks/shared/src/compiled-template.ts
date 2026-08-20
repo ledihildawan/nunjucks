@@ -2,7 +2,8 @@ import { filter, map, pipe } from 'remeda';
 
 /**
  * Freezes the reserved property name under which compiled templates stash block metadata —
- * single-sourced here so emitter and loader agree without a shared runtime import.
+ * single-sourced here so the compiler emitter and the runtime template wrapper agree
+ * without either importing the other.
  */
 export const BLOCK_META_KEY = '__blockMeta';
 

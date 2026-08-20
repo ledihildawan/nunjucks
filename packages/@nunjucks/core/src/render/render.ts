@@ -41,13 +41,17 @@ const setupRenderConfig = (
   if (isErr(testsResult)) {
     return testsResult;
   }
-  const filters = filtersResult.value;
-
-  if (options.dompurify) {
-    const baseSanitize = filters.sanitize;
-    filters.sanitize = (str: unknown, config?: unknown): unknown =>
-      baseSanitize ? baseSanitize(str, config ?? options.dompurify) : undefined;
-  }
+  const filters = options.dompurify
+    ? // WHY: copy-on-write — the validated map is never mutated in place; the sanitize
+      // default is rebound to the host's DOMPurify config in a fresh object.
+      {
+        ...filtersResult.value,
+        sanitize: (str: unknown, config?: unknown): unknown => {
+          const baseSanitize = filtersResult.value.sanitize;
+          return baseSanitize ? baseSanitize(str, config ?? options.dompurify) : undefined;
+        },
+      }
+    : filtersResult.value;
 
   // WHY: explicit scanContextValues wins (§9); downgrade only when sandbox/contextStrict set.
   const layeredSecurityExplicitlySet =

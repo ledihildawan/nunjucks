@@ -34,8 +34,10 @@ const replacePlaceholders = ({
     return str ?? null;
   }
   const replacement = undefinedName ?? '';
-  let result = str;
-  result = SUBJECT_PLACEHOLDERS.reduce((acc, p) => acc.replaceAll(`{${p}}`, replacement), result);
+  const result = SUBJECT_PLACEHOLDERS.reduce(
+    (acc, p) => acc.replaceAll(`{${p}}`, replacement),
+    str
+  );
   if (!extra) {
     return result;
   }

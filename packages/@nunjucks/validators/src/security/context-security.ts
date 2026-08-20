@@ -11,7 +11,7 @@ const BUILTIN_GLOBALS = new Set(JS_BUILTIN_CONSTRUCTORS);
 const isBuiltIn = (name: string): boolean => BUILTIN_GLOBALS.has(name);
 
 interface ScanContext {
-  allowedGlobals?: readonly string[] | null;
+  allowedGlobals: ReadonlySet<string> | null;
   seen: WeakSet<object>;
 }
 
@@ -62,8 +62,8 @@ const checkValueDangerous = ({
   const dangerous =
     isDangerousGlobal(fnName) ||
     (!!scan.allowedGlobals &&
-      !scan.allowedGlobals.includes(fnName) &&
-      !scan.allowedGlobals.includes(key) &&
+      !scan.allowedGlobals.has(fnName) &&
+      !scan.allowedGlobals.has(key) &&
       !isBuiltIn(fnName));
   return dangerous ? [currentPath] : [];
 };
@@ -122,8 +122,10 @@ export const findDangerousValues = (
   context: unknown,
   allowedGlobals?: readonly string[] | null
 ): string[] => {
+  // WHY: Set built once per scan — the per-key checks below run for every context
+  // entry, so O(1) has() replaces O(n) includes() scans on this security path.
   const paths = scanForDangerousValues({
-    scan: { allowedGlobals, seen: new WeakSet() },
+    scan: { allowedGlobals: allowedGlobals ? new Set(allowedGlobals) : null, seen: new WeakSet() },
     isTopLevel: true,
     currentPath: '',
     value: context,
