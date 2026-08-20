@@ -2,9 +2,6 @@ import { escapeHtml } from '@nunjucks/lib';
 import picocolors from 'picocolors';
 import { CSS_RULES, JS_RULES, SYNTAX_RULES, type SyntaxRule } from './syntax-rules.ts';
 
-const LEADING_WHITESPACE_RE = /^\s+/u;
-const PLAIN_RUN_RE = /^[^<{}"'|\s]+/u;
-
 /**
  * Escapes HTML first, then converts the supported inline markers — `` `code` `` and
  * `**bold**` — into styled `<code>`/`<strong>` elements.
@@ -21,53 +18,95 @@ const renderInlineMarkdown = (text: string): string => {
 const span = (type: string, text: string): string =>
   `<span class="syntax-${type}">${escapeHtml(text)}</span>`;
 
-interface HighlightChunk {
-  html: string;
+// WHY: sticky variants of the ^-anchored rule tables — scanning in place via
+// `lastIndex` avoids the per-chunk `code.slice(index)` tail copies that made
+// multi-megabyte lines O(n²) in substrings, defeating the iterative loop's own
+// recursion-safety rationale. Sticky also pins the match to the scan position,
+// where a sliced unanchored `.match()` would have matched anywhere in the tail.
+interface StickyRule {
+  type: string;
+  re: RegExp;
+  tagOnly?: boolean;
+  toggle?: boolean;
+}
+
+const toStickyRule = (rule: SyntaxRule): StickyRule => ({
+  type: rule.type,
+  tagOnly: rule.tagOnly,
+  toggle: rule.toggle,
+  re: new RegExp(rule.re.source.replace(/^\^/u, ''), `${rule.re.flags}y`),
+});
+
+const LEADING_WHITESPACE_RE = /\s+/uy;
+const PLAIN_RUN_RE = /[^<{}"'|\s]+/uy;
+
+const matchSticky = (re: RegExp, code: string, index: number): string | null => {
+  re.lastIndex = index;
+  return re.exec(code)?.[0] ?? null;
+};
+
+interface Chunk {
+  output: string;
   length: number;
   inTag: boolean;
 }
 
-const matchHtmlRule = (
-  rules: SyntaxRule[],
-  rest: string,
-  inTag: boolean
-): HighlightChunk | null => {
+/** Per-language scan behavior: rule table plus how rule-matched and plain text render. */
+interface ScannerMode {
+  rules: readonly StickyRule[];
+  wrap: (type: string, text: string) => string;
+  plain: (text: string) => string;
+  plainRuns: boolean;
+}
+
+const matchRule = (
+  rules: readonly StickyRule[],
+  code: string,
+  index: number,
+  inTag: boolean,
+  wrap: ScannerMode['wrap']
+): Chunk | null => {
   for (const rule of rules) {
-    const matched = rest.match(rule.re)?.[0];
-    if (matched) {
+    // WHY: inline tagOnly skip — filtering the rule list per chunk allocated a
+    // fresh array for every character of scanned input.
+    if (rule.tagOnly && !inTag) {
+      continue;
+    }
+    const matched = matchSticky(rule.re, code, index);
+    if (matched !== null) {
       const nextInTag = rule.toggle ? matched === '{{' || matched === '{%' : inTag;
-      return { html: span(rule.type, matched), length: matched.length, inTag: nextInTag };
+      return { output: wrap(rule.type, matched), length: matched.length, inTag: nextInTag };
     }
   }
   return null;
 };
 
-const nextHtmlChunk = (rest: string, inTag: boolean): HighlightChunk => {
-  const ws = rest.match(LEADING_WHITESPACE_RE)?.[0];
-  if (ws) {
-    return { html: ws, length: ws.length, inTag };
+const nextChunk = (code: string, index: number, inTag: boolean, mode: ScannerMode): Chunk => {
+  const whitespace = matchSticky(LEADING_WHITESPACE_RE, code, index);
+  if (whitespace !== null) {
+    return { output: whitespace, length: whitespace.length, inTag };
   }
 
-  const applicableRules = SYNTAX_RULES.filter((r) => !r.tagOnly || inTag);
-  const matched = matchHtmlRule(applicableRules, rest, inTag);
+  const matched = matchRule(mode.rules, code, index, inTag, mode.wrap);
   if (matched) {
     return matched;
   }
 
-  const plain = rest.match(PLAIN_RUN_RE)?.[0];
-  if (plain) {
-    return { html: escapeHtml(plain), length: plain.length, inTag };
+  if (mode.plainRuns) {
+    const plain = matchSticky(PLAIN_RUN_RE, code, index);
+    if (plain !== null) {
+      return { output: mode.plain(plain), length: plain.length, inTag };
+    }
   }
 
-  return { html: escapeHtml(rest[0] ?? ''), length: 1, inTag };
+  return { output: mode.plain(code[index] ?? ''), length: 1, inTag };
 };
 
 /**
- * Highlights HTML with escaped `<span class="syntax-*">` markup. Tag-interior rules
- * (`keyword`, `variable`) apply only between `{{`/`{%` delimiters and their closers,
- * and the scan is iterative so multi-megabyte lines cannot overflow the stack.
+ * Iterative scanner shared by every highlighter — whitespace run, first matching
+ * rule, optional plain run, single-character fallback.
  */
-const highlightHtml = (code: string): string => {
+const scan = (code: string, mode: ScannerMode): string => {
   if (!code) {
     return '';
   }
@@ -77,96 +116,33 @@ const highlightHtml = (code: string): string => {
   let out = '';
   let inTag = false;
   while (index < code.length) {
-    const chunk = nextHtmlChunk(code.slice(index), inTag);
-    out += chunk.html;
+    const chunk = nextChunk(code, index, inTag, mode);
+    out += chunk.output;
     inTag = chunk.inTag;
     index += chunk.length;
   }
   return out;
 };
 
-const matchJsRule = (rules: SyntaxRule[], rest: string): HighlightChunk | null => {
-  for (const rule of rules) {
-    const matched = rest.match(rule.re)?.[0];
-    if (matched) {
-      return { html: span(rule.type, matched), length: matched.length, inTag: false };
-    }
-  }
-  return null;
+const HTML_MODE: ScannerMode = {
+  rules: SYNTAX_RULES.map(toStickyRule),
+  wrap: span,
+  plain: escapeHtml,
+  plainRuns: true,
 };
 
-const nextJsChunk = (rest: string): HighlightChunk => {
-  const ws = rest.match(LEADING_WHITESPACE_RE)?.[0];
-  if (ws) {
-    return { html: ws, length: ws.length, inTag: false };
-  }
-
-  const matched = matchJsRule(JS_RULES, rest);
-  if (matched) {
-    return matched;
-  }
-
-  return { html: escapeHtml(rest[0] ?? ''), length: 1, inTag: false };
+const JS_MODE: ScannerMode = {
+  rules: JS_RULES.map(toStickyRule),
+  wrap: span,
+  plain: escapeHtml,
+  plainRuns: false,
 };
 
-const matchCssRule = (rules: SyntaxRule[], rest: string): HighlightChunk | null => {
-  for (const rule of rules) {
-    const matched = rest.match(rule.re)?.[0];
-    if (matched) {
-      return { html: span(rule.type, matched), length: matched.length, inTag: false };
-    }
-  }
-  return null;
-};
-
-const nextCssChunk = (rest: string): HighlightChunk => {
-  const ws = rest.match(LEADING_WHITESPACE_RE)?.[0];
-  if (ws) {
-    return { html: ws, length: ws.length, inTag: false };
-  }
-
-  const matched = matchCssRule(CSS_RULES, rest);
-  if (matched) {
-    return matched;
-  }
-
-  return { html: escapeHtml(rest[0] ?? ''), length: 1, inTag: false };
-};
-
-/**
- * Highlights JavaScript with the same escaped-span scheme as `highlightHtml` (minus the
- * tag-interior toggle), via an iterative scan for recursion safety.
- */
-const highlightJs = (code: string): string => {
-  if (!code) {
-    return '';
-  }
-  // WHY: iterative scan — same recursion-safety rationale as highlightHtml.
-  let index = 0;
-  let out = '';
-  while (index < code.length) {
-    const chunk = nextJsChunk(code.slice(index));
-    out += chunk.html;
-    index += chunk.length;
-  }
-  return out;
-};
-
-/**
- * Highlights CSS with the same escaped-span scheme as `highlightJs`.
- */
-const highlightCss = (code: string): string => {
-  if (!code) {
-    return '';
-  }
-  let index = 0;
-  let out = '';
-  while (index < code.length) {
-    const chunk = nextCssChunk(code.slice(index));
-    out += chunk.html;
-    index += chunk.length;
-  }
-  return out;
+const CSS_MODE: ScannerMode = {
+  rules: CSS_RULES.map(toStickyRule),
+  wrap: span,
+  plain: escapeHtml,
+  plainRuns: false,
 };
 
 // WHY: ANSI syntax coloring — mirrors the HTML tokenizer (SYNTAX_RULES + inTag toggle) but outputs picocolors terminal colors instead of HTML spans. Color scheme matches the HTML CSS (tag=red, delimiter=cyan, string=green, keyword=magenta, etc.) so ANSI and HTML output look consistent.
@@ -187,68 +163,32 @@ const ANSI_COLOR_MAP: Record<string, ((text: string) => string) | undefined> = {
 const colorize = (type: string, text: string): string =>
   (ANSI_COLOR_MAP[type] ?? ((t: string) => t))(text);
 
-interface AnsiChunk {
-  text: string;
-  length: number;
-  inTag: boolean;
-}
-
-const matchAnsiRule = (
-  rules: readonly SyntaxRule[],
-  rest: string,
-  inTag: boolean
-): AnsiChunk | null => {
-  for (const rule of rules) {
-    const matched = rest.match(rule.re)?.[0];
-    if (matched) {
-      const nextInTag = rule.toggle ? matched === '{{' || matched === '{%' : inTag;
-      return { text: colorize(rule.type, matched), length: matched.length, inTag: nextInTag };
-    }
-  }
-  return null;
+const ANSI_MODE: ScannerMode = {
+  rules: SYNTAX_RULES.map(toStickyRule),
+  wrap: colorize,
+  plain: (text) => text,
+  plainRuns: true,
 };
 
-const nextAnsiChunk = (rest: string, inTag: boolean): AnsiChunk => {
-  const ws = rest.match(LEADING_WHITESPACE_RE)?.[0];
-  if (ws) {
-    return { text: ws, length: ws.length, inTag };
-  }
+/**
+ * Highlights HTML with escaped `<span class="syntax-*">` markup. Tag-interior rules
+ * (`keyword`, `variable`) apply only between `{{`/`{%` delimiters and their closers,
+ * and the scan is iterative so multi-megabyte lines cannot overflow the stack.
+ */
+const highlightHtml = (code: string): string => scan(code, HTML_MODE);
 
-  const applicableRules = SYNTAX_RULES.filter((r) => !r.tagOnly || inTag);
-  const matched = matchAnsiRule(applicableRules, rest, inTag);
-  if (matched) {
-    return matched;
-  }
+/** Highlights JavaScript with the same escaped-span scheme, minus the tag toggle. */
+const highlightJs = (code: string): string => scan(code, JS_MODE);
 
-  const plain = rest.match(PLAIN_RUN_RE)?.[0];
-  if (plain) {
-    return { text: plain, length: plain.length, inTag };
-  }
-
-  return { text: rest[0] ?? '', length: 1, inTag };
-};
+/** Highlights CSS with the same escaped-span scheme as `highlightJs`. */
+const highlightCss = (code: string): string => scan(code, CSS_MODE);
 
 /**
  * Highlights template syntax directly to ANSI colors using the same tokenizer as the
  * HTML path, so terminal and browser output stay visually consistent; unknown token
  * types pass through uncolored.
  */
-const highlightAnsi = (code: string): string => {
-  if (!code) {
-    return '';
-  }
-  // WHY: iterative scan — same recursion-safety rationale as highlightHtml.
-  let index = 0;
-  let out = '';
-  let inTag = false;
-  while (index < code.length) {
-    const chunk = nextAnsiChunk(code.slice(index), inTag);
-    out += chunk.text;
-    inTag = chunk.inTag;
-    index += chunk.length;
-  }
-  return out;
-};
+const highlightAnsi = (code: string): string => scan(code, ANSI_MODE);
 
 export { escapeAttribute, escapeHtml } from '@nunjucks/lib';
 export { highlightAnsi, highlightCss, highlightHtml, highlightJs, renderInlineMarkdown };
