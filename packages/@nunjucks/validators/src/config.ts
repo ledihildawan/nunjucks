@@ -1,5 +1,5 @@
 import { ERROR_CODES } from '@nunjucks/error-catalog';
-import { err, isErr, ok, type Result } from '@nunjucks/lib';
+import { err, isErr, isObject, ok, type Result } from '@nunjucks/lib';
 import type { Environment } from '@nunjucks/shared';
 import {
   type BaseValidationError,
@@ -10,7 +10,7 @@ import {
 } from '@nunjucks/shared';
 import { flatMap, keys, pipe } from 'remeda';
 import { isNonEmpty } from './is-non-empty.ts';
-import { validateFilterName, validateGlobalName } from './reserved.ts';
+import { type ReservedNameError, validateFilterName, validateGlobalName } from './reserved.ts';
 
 interface ConfigValidationError extends BaseValidationError {
   code: string;
@@ -23,33 +23,6 @@ type ConfigValidationResult = Result<
   readonly [ConfigValidationError, ...ConfigValidationError[]]
 >;
 
-interface Config {
-  executionTimeout?: number | null;
-  maxTemplateSize?: number | null;
-  maxOutputSize?: number | null;
-  streamingCoalesceBytes?: number | null;
-  cacheMaxEntries?: number | null;
-  streamingIdleTimeout?: number | null;
-  undefined?: string;
-  sandboxMode?: string;
-  sandboxEnvironment?: Environment;
-  streamContentType?: string;
-  blockedContextKeys?: readonly unknown[];
-  sandboxAllowlist?: readonly unknown[];
-  allowedGlobals?: readonly unknown[];
-  views?: unknown;
-  // WHY: these are the USER-supplied names only (validated for reserved/dangerous). They are deliberately a
-  // SEPARATE channel from the full merged filters/globals used at render time: the built-in defaults include
-  // intentionally "dangerous-named" but safe-curated globals (Object/Array/Math via SAFE_BUILTINS), which would
-  // false-positive if validated. The factory (core/src/factory.ts) maps its filters/globals into customFilters/
-  // customGlobals so the user's names get checked without checking the trusted built-ins.
-  customFilters?: Record<string, unknown>;
-  customGlobals?: Record<string, unknown>;
-  // WHY: user/plugin-supplied tests — same separate-channel rationale as customFilters; function-value
-  // validation runs here because tests (like filters) are invoked by name at render time.
-  customTests?: Record<string, unknown>;
-}
-
 const VALID_ENVIRONMENTS: ReadonlySet<Environment> = new Set(ENVIRONMENT_VALUES);
 const VALID_SANDBOX_MODES: ReadonlySet<string> = new Set(SANDBOX_MODES);
 const VALID_UNDEFINED_MODES: ReadonlySet<string> = new Set(UNDEFINED_MODES);
@@ -57,24 +30,24 @@ const VALID_CONTENT_TYPES: ReadonlySet<string> = new Set(CONTENT_TYPES);
 
 // WHY: null is tolerated as "unset" across ALL field kinds — the flat options bag
 // preserves null for keys a JS caller left empty (see factory compact()), so numerics
-// follow the same rule as string arrays: null parses as unset, while non-finite
-// non-null values (NaN, Infinity) and negatives stay INVALID_CONFIG errors.
-const validateNonNegativeNumeric = (
-  value: number | null | undefined,
-  subject: string
-): ConfigValidationError[] =>
-  value !== undefined && value !== null && (!Number.isFinite(value) || value < 0)
-    ? [
-        {
-          code: ERROR_CODES.INVALID_CONFIG,
-          message: `Invalid configuration: ${subject} must be >= 0`,
-          subject,
-          type: 'numeric',
-        },
-      ]
-    : [];
+// follow the same rule as string arrays: null parses as unset, while non-number values
+// (strings, NaN, Infinity) and negatives stay INVALID_CONFIG errors — the boundary is
+// `unknown`, so the typeof guard fails closed on anything the caller smuggled in.
+const validateNonNegativeNumeric = (value: unknown, subject: string): ConfigValidationError[] =>
+  value === undefined || value === null
+    ? []
+    : typeof value !== 'number' || !Number.isFinite(value) || value < 0
+      ? [
+          {
+            code: ERROR_CODES.INVALID_CONFIG,
+            message: `Invalid configuration: ${subject} must be >= 0`,
+            subject,
+            type: 'numeric',
+          },
+        ]
+      : [];
 
-const validateNumericConfig = (config: Config): ConfigValidationError[] => [
+const validateNumericConfig = (config: Record<string, unknown>): ConfigValidationError[] => [
   ...validateNonNegativeNumeric(config.executionTimeout, 'executionTimeout'),
   ...validateNonNegativeNumeric(config.maxTemplateSize, 'maxTemplateSize'),
   ...validateNonNegativeNumeric(config.maxOutputSize, 'maxOutputSize'),
@@ -84,7 +57,7 @@ const validateNumericConfig = (config: Config): ConfigValidationError[] => [
 ];
 
 interface EnumMembershipInput {
-  value: string | undefined;
+  value: unknown;
   validValues: ReadonlySet<string>;
   subject: string;
   type: string;
@@ -96,18 +69,20 @@ const validateEnumMembership = ({
   subject,
   type,
 }: EnumMembershipInput): ConfigValidationError[] =>
-  value !== undefined && !validValues.has(value)
-    ? [
-        {
-          code: ERROR_CODES.INVALID_CONFIG,
-          message: `Invalid configuration: ${subject} must be one of ${[...validValues].join(', ')}`,
-          subject,
-          type,
-        },
-      ]
-    : [];
+  value === undefined
+    ? []
+    : typeof value !== 'string' || !validValues.has(value)
+      ? [
+          {
+            code: ERROR_CODES.INVALID_CONFIG,
+            message: `Invalid configuration: ${subject} must be one of ${[...validValues].join(', ')}`,
+            subject,
+            type,
+          },
+        ]
+      : [];
 
-const validateEnumConfig = (config: Config): ConfigValidationError[] => [
+const validateEnumConfig = (config: Record<string, unknown>): ConfigValidationError[] => [
   ...validateEnumMembership({
     value: config.undefined,
     validValues: VALID_UNDEFINED_MODES,
@@ -135,7 +110,7 @@ const validateEnumConfig = (config: Config): ConfigValidationError[] => [
 ];
 
 interface StringArrayInput {
-  value: readonly unknown[] | undefined;
+  value: unknown;
   subject: string;
   type: string;
 }
@@ -148,8 +123,11 @@ const validateStringArray = ({
   // WHY: null is tolerated as "unset" — the unified rule shared with the numeric
   // validators: the flat options bag preserves null for keys like blockedContextKeys
   // (see factory compact()), and a JS caller passing null must get the catalogued
-  // INVALID_CONFIG error, not a TypeError from value.every.
-  value !== undefined && value !== null && !value.every((entry) => typeof entry === 'string')
+  // INVALID_CONFIG error, not a TypeError from value.every. The boundary is `unknown`,
+  // so non-array garbage narrows to the same catalogued error instead of crashing.
+  value !== undefined &&
+  value !== null &&
+  !(Array.isArray(value) && value.every((entry) => typeof entry === 'string'))
     ? [
         {
           code: ERROR_CODES.INVALID_CONFIG,
@@ -176,11 +154,8 @@ const validateViews = (views: unknown): ConfigValidationError[] =>
       ]
     : [];
 
-const validateCallableValues = (
-  values: Record<string, unknown> | undefined,
-  subject: string
-): ConfigValidationError[] => {
-  if (!values) {
+const validateCallableValues = (values: unknown, subject: string): ConfigValidationError[] => {
+  if (!isObject(values)) {
     return [];
   }
   return pipe(
@@ -200,31 +175,20 @@ const validateCallableValues = (
   );
 };
 
-const validateCustomFilters = (config: Config): ConfigValidationError[] => {
-  if (!config.customFilters) {
+// WHY: custom filters and globals run the exact same name-validation pipeline —
+// only the reserved-word flavor differs, so one parameterized helper serves both
+// and the error codes/messages stay identical by construction.
+const validateCustomNames = (
+  values: unknown,
+  validateName: (name: string) => Result<void, ReservedNameError>
+): ConfigValidationError[] => {
+  if (!isObject(values)) {
     return [];
   }
   return pipe(
-    keys(config.customFilters),
+    keys(values),
     flatMap((name) => {
-      const validation = validateFilterName(name);
-      if (isErr(validation)) {
-        const { code, message, subject, type } = validation.error;
-        return [{ code, message, subject, type }];
-      }
-      return [];
-    })
-  );
-};
-
-const validateCustomGlobals = (config: Config): ConfigValidationError[] => {
-  if (!config.customGlobals) {
-    return [];
-  }
-  return pipe(
-    keys(config.customGlobals),
-    flatMap((name) => {
-      const validation = validateGlobalName(name);
+      const validation = validateName(name);
       if (isErr(validation)) {
         const { code, message, subject, type } = validation.error;
         return [{ code, message, subject, type }];
@@ -238,32 +202,44 @@ const validateCustomGlobals = (config: Config): ConfigValidationError[] => {
  * Validates engine configuration at factory creation, rejecting invalid values
  * (NaN/negative numerics, bad enums, non-string arrays, non-callable or
  * reserved-named customs) as an `Err` tuple instead of crashing at render time.
+ * The parameter is `unknown` — validateConfig sits on the untyped caller
+ * boundary — and every field is narrowed by the runtime guards above.
  * Collects violations from every category before failing — no short-circuit.
  */
-export const validateConfig = (config: Config): ConfigValidationResult => {
+export const validateConfig = (config: unknown): ConfigValidationResult => {
+  // WHY: customFilters/customGlobals/customTests are the USER-supplied names only
+  // (validated for reserved/dangerous). They are deliberately a SEPARATE channel from
+  // the full merged filters/globals used at render time: the built-in defaults include
+  // intentionally "dangerous-named" but safe-curated globals (Object/Array/Math via
+  // SAFE_BUILTINS), which would false-positive if validated. The factory
+  // (core/src/factory.ts) maps its filters/globals into customFilters/customGlobals so
+  // the user's names get checked without checking the trusted built-ins. Tests are
+  // user/plugin-supplied — same separate-channel rationale; function-value validation
+  // runs here because tests (like filters) are invoked by name at render time.
+  const cfg: Record<string, unknown> = isObject(config) ? config : {};
   const errors = [
-    ...validateNumericConfig(config),
-    ...validateEnumConfig(config),
+    ...validateNumericConfig(cfg),
+    ...validateEnumConfig(cfg),
     ...validateStringArray({
-      value: config.blockedContextKeys,
+      value: cfg.blockedContextKeys,
       subject: 'blockedContextKeys',
       type: 'security',
     }),
     ...validateStringArray({
-      value: config.sandboxAllowlist,
+      value: cfg.sandboxAllowlist,
       subject: 'sandboxAllowlist',
       type: 'security',
     }),
     ...validateStringArray({
-      value: config.allowedGlobals,
+      value: cfg.allowedGlobals,
       subject: 'allowedGlobals',
       type: 'security',
     }),
-    ...validateViews(config.views),
-    ...validateCallableValues(config.customFilters, 'filters'),
-    ...validateCallableValues(config.customTests, 'tests'),
-    ...validateCustomFilters(config),
-    ...validateCustomGlobals(config),
+    ...validateViews(cfg.views),
+    ...validateCallableValues(cfg.customFilters, 'filters'),
+    ...validateCallableValues(cfg.customTests, 'tests'),
+    ...validateCustomNames(cfg.customFilters, validateFilterName),
+    ...validateCustomNames(cfg.customGlobals, validateGlobalName),
   ];
 
   if (!isNonEmpty(errors)) {

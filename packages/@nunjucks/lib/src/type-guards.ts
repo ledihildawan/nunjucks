@@ -1,3 +1,11 @@
+import {
+  isArray as remedaIsArray,
+  isFunction as remedaIsFunction,
+  isNonNullish as remedaIsNonNullish,
+  isPlainObject as remedaIsPlainObject,
+  isString as remedaIsString,
+} from 'remeda';
+
 /**
  * Type guard proving `value` owns `key` as a direct property. Built on
  * `Object.hasOwn`, so inherited and prototype-poisoned keys (`__proto__`,
@@ -87,20 +95,37 @@ const isTypedArray = (value: unknown): boolean =>
 const isResultLike = (value: unknown): value is { ok: boolean } =>
   isKeyedObject(value) && typeof value.ok === 'boolean';
 
-// WHY: remeda's guards are re-exported one-per-statement so each public name carries its
-// contract here — remeda's own types are the implementation, this file is the documented API.
+// WHY: remeda's guards are bound one-per-statement so each public name carries its
+// contract here — remeda's own types are the implementation, this file is the documented
+// API. A per-name `export { x } from 'remeda'` run cannot be used: organizeImports merges
+// consecutive same-source exports, which would stack the doc comments so only the last binds.
+
 /** Type guard narrowing to arrays: passes only genuine `Array` values (remeda `isArray`). */
+const isArray = remedaIsArray;
+
 /** Type guard narrowing to callables: plain, async, generator, and bound functions pass (remeda `isFunction`). */
+const isFunction = remedaIsFunction;
+
 /** Type guard excluding both nullish values: everything else — including `false`/`0`/`''` — passes (remeda `isNonNullish`). */
+const isNonNullish = remedaIsNonNullish;
+
 /** Type guard narrowing to literal-created objects: own prototype is `Object.prototype` or `null` (remeda `isPlainObject`). */
+const isPlainObject = remedaIsPlainObject;
+
 /** Type guard narrowing to primitive strings: boxed `String` objects fail (remeda `isString`). */
-export { isArray, isFunction, isNonNullish, isPlainObject, isString } from 'remeda';
+const isString = remedaIsString;
+
 export {
   hasOwn,
+  isArray,
+  isFunction,
   isIterable,
   isKeyedObject,
+  isNonNullish,
   isObject,
+  isPlainObject,
   isResultLike,
+  isString,
   isThenable,
   isTypedArray,
   readNumber,

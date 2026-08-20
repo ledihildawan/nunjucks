@@ -12,15 +12,6 @@ import {
   ExpressionSecurityError,
 } from './security/index.ts';
 
-export type { ExpressionSecurityConfig };
-export {
-  DANGEROUS_CALLEES,
-  DANGEROUS_PROPERTIES,
-  DEFAULT_SECURITY_CONFIG,
-  ExpressionSecurityError,
-  validateExpression,
-};
-
 const NON_CHILD_KEYS = new Set(['lineno', 'colno', 'fields']);
 
 /**
@@ -209,7 +200,7 @@ const createExpressionWalker = (blocked: readonly RegExp[]) => {
  * `DEFAULT_SECURITY_CONFIG` when unset). Only statically-known names are
  * checked — dynamic lookups fall through to the runtime sandbox.
  */
-const validateExpression = (
+export const validateExpression = (
   ast: Node,
   config: ExpressionSecurityConfig = {}
 ): ExpressionValidationResult => {

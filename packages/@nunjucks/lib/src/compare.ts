@@ -55,11 +55,13 @@ interface SortComparatorOptions {
  * a missing attribute compares as the string `"undefined"`.
  */
 const createSortComparator = ({ sortAttr, sortReverse, caseSens }: SortComparatorOptions) => {
-  return (a: unknown, b: unknown): number => {
-    const left = getCompareValue(a, sortAttr);
-    const right = getCompareValue(b, sortAttr);
-    return compareValues({ left, right, caseSens, sortReverse });
-  };
+  return (left: unknown, right: unknown): number =>
+    compareValues({
+      left: getCompareValue(left, sortAttr),
+      right: getCompareValue(right, sortAttr),
+      caseSens,
+      sortReverse,
+    });
 };
 
 export { compareValues, createSortComparator };

@@ -180,10 +180,9 @@ describe('validateConfig - null-as-unset semantics', () => {
   });
 
   test('string arrays treat null as unset', () => {
-    // WHY: runtime-shape probe — the declared array type excludes null because TS
-    // callers use omission, but the flat options bag preserves null for JS callers.
-    const nullArray = null as unknown as readonly string[];
-    const result = validateConfig({ blockedContextKeys: nullArray, allowedGlobals: nullArray });
+    // WHY: runtime-shape probe — validateConfig takes `unknown` at its boundary, so a
+    // JS caller's explicit null parses as unset without any cast.
+    const result = validateConfig({ blockedContextKeys: null, allowedGlobals: null });
     expect(isOk(result)).toBe(true);
   });
 });

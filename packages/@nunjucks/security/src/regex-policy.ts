@@ -151,7 +151,8 @@ export const isDangerousRegexPattern = (source: string): boolean => {
       }
     }
 
-    // Any other atom (literal, `.`, `^`, `$`, `|`, literal `{`).
+    // WHY: a bare atom is itself quantifiable, and a quantifier landing here binds to
+    // the atom — never to a group closed earlier (`(a)b+` must not read as `(a+)`).
     canQuantify = true;
     closedGroupDangerous = false;
   }

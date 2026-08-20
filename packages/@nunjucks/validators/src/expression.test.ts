@@ -2,12 +2,9 @@ import { describe, expect, test } from 'bun:test';
 import { isErr } from '@nunjucks/lib';
 import { nodes } from '@nunjucks/nodes';
 import { loc, ZERO_LOC } from '@nunjucks/shared';
-import type { ExpressionValidationResult } from './expression';
-import {
-  ExpressionSecurityError,
-  type ExpressionValidationError,
-  validateExpression,
-} from './expression';
+import type { ExpressionValidationResult } from './expression.ts';
+import { type ExpressionValidationError, validateExpression } from './expression.ts';
+import { ExpressionSecurityError } from './security/expression-policy.ts';
 
 const ExprErr = ExpressionSecurityError;
 

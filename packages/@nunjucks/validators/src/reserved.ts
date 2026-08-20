@@ -10,7 +10,7 @@ import { JS_BUILTIN_CONSTRUCTORS } from './js-builtins.ts';
  * (see the WHY comments inline) so this set cannot drift from the parser or
  * filter registry.
  */
-const RESERVED_KEYWORDS = new Set<string>([
+const RESERVED_KEYWORDS: ReadonlySet<string> = new Set<string>([
   'if',
   'elif',
   'else',

@@ -4,6 +4,8 @@
 import { once } from 'node:events';
 import { existsSync, readFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { errorGroups } from '../lib/domain/error-route-metadata.ts';
 
 interface ParsedLocation {
@@ -45,6 +47,14 @@ const headless = process.argv.includes('--headless') || process.env.AUDIT_HEADLE
 const positionalBase = process.argv.slice(2).find((arg) => !arg.startsWith('--'));
 const rawBase = positionalBase ?? 'http://localhost:4000';
 const BASE = rawBase.startsWith('http') ? rawBase : `http://${rawBase}`;
+
+// WHY: error pages report absolute paths scraped from a server the caller points at via
+// BASE — confine source reads to this repo so a hostile endpoint cannot aim the dev
+// audit's readFileSync at arbitrary local files (path traversal / exfiltration).
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+
+const isInsideRepo = (filePath: string): boolean =>
+  path.resolve(filePath).startsWith(`${REPO_ROOT}${path.sep}`);
 
 const discoverRoutes = async (base: string): Promise<string[]> => {
   try {
@@ -142,6 +152,13 @@ const validate = (_route: string, info: RouteInfo): ValidationResult => {
     return { status: 'OK', reason: 'factory-time error (no template location by design)' };
   }
 
+  if (!isInsideRepo(loc.path)) {
+    return {
+      status: 'MISMATCH',
+      reason: `refusing to read source outside the repo root: ${loc.path}`,
+    };
+  }
+
   const isTs = /\.(ts|js|mjs|cjs)$/u.test(loc.path);
   const isTpl = /\.(njk|nunjucks|html|htm|tmpl|tpl)$/u.test(loc.path);
   const isInline = loc.path === 'inline';
@@ -209,7 +226,7 @@ const validate = (_route: string, info: RouteInfo): ValidationResult => {
   return { status: 'OK', reason: '' };
 };
 
-const short = (p: string | null): string | null =>
+const shortenPath = (p: string | null): string | null =>
   p ? p.replace(/^.*[/\\](samples[/\\].*)$/u, '$1').replaceAll(/\\/g, '/') : p;
 
 const pad = (value: string | null | undefined, width: number): string =>
@@ -266,7 +283,7 @@ const run = async (base: string): Promise<number> => {
     rows
       .map((row) => {
         const loc = row.info.loc
-          ? `${short(row.info.loc.path)}:${row.info.loc.line}:${row.info.loc.col}`
+          ? `${shortenPath(row.info.loc.path)}:${row.info.loc.line}:${row.info.loc.col}`
           : '(none)';
         const line =
           pad(row.route, 26) + pad(row.status, 11) + pad(loc, 46) + (row.info.code || '');

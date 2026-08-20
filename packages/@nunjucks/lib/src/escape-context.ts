@@ -57,7 +57,10 @@ const UNCLOSED_OPEN_TAG_RE = /<[a-zA-Z][a-zA-Z0-9]*(?:\s+[^>]*)?$/i;
 // resolves to the wrong `=` only when the interpolation precedes that attribute —
 // and the failure mode is the stricter unquoted escaping, so it fails closed.
 const ATTRIBUTE_EQUALS_RE = /[=][\s]*/g;
-const QUOTE_CHARS = ['"', "'", '`'];
+const QUOTE_CHARS: ReadonlySet<string> = new Set(['"', "'", '`']);
+// WHY: these characters after `=` are tag syntax, not the start of an attribute
+// value — treating them as values would misclassify tag delimiters as unquoted data.
+const TAG_DELIMITER_CHARS: ReadonlySet<string> = new Set(['<', '>', '/']);
 
 // WHY: last-match lookup runs a bounded exec loop over the full source instead of
 // slicing the prefix and materializing every match ([...matchAll]) only to keep the
@@ -164,12 +167,12 @@ const detectAttributeContext = (
   // quote means the value is delimited (entity-escaping suffices); anything else after a
   // bare `=` is an unquoted value needing percent-encoding (see escapeUnquotedAttribute).
   const [valueDelimiter] = afterEquals;
-  if (valueDelimiter && QUOTE_CHARS.includes(valueDelimiter)) {
+  if (valueDelimiter !== undefined && QUOTE_CHARS.has(valueDelimiter)) {
     return 'attribute';
   }
 
   const [firstCharAfterEquals] = afterEquals.trimStart();
-  if (firstCharAfterEquals && !['<', '>', '/'].includes(firstCharAfterEquals)) {
+  if (firstCharAfterEquals !== undefined && !TAG_DELIMITER_CHARS.has(firstCharAfterEquals)) {
     return 'unquoted-attribute';
   }
 

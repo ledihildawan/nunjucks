@@ -1,6 +1,10 @@
-// WHY: single source for JS builtin constructor names — reserved.ts blocks them as
-// template identifiers while security/context-security.ts allowlists them in strict
-// scans; both derive from this list so the two surfaces cannot drift.
+/**
+ * Frozen catalog of JS builtin constructor names (`Array` through `SyntaxError`).
+ *
+ * WHY: single source for JS builtin constructor names — reserved.ts blocks them as
+ * template identifiers while security/context-security.ts allowlists them in strict
+ * scans; both derive from this list so the two surfaces cannot drift.
+ */
 const JS_BUILTIN_CONSTRUCTORS: readonly string[] = [
   'Array',
   'Object',

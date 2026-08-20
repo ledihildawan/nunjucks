@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import process from 'node:process';
-import { isOk } from '@nunjucks/lib';
+import { ERROR_CODES } from '@nunjucks/error-catalog';
+import { isErr, isOk } from '@nunjucks/lib';
 import { findContextDangerousValues, validateRenderContext } from '@nunjucks/validators';
 
 describe('findContextDangerousValues', () => {
@@ -30,9 +31,13 @@ describe('findContextDangerousValues', () => {
 });
 
 describe('validateRenderContext strict mode', () => {
-  test('throws DANGEROUS_CONTEXT_VALUES when contextStrict is error and process is nested', () => {
-    const paths = findContextDangerousValues({ user: { global: process } });
-    expect(paths).toContain('user.global');
+  test('returns Err DANGEROUS_CONTEXT_VALUES with dangerousPaths when strictMode and process is nested', () => {
+    const result = validateRenderContext({ user: { global: process } }, { strictMode: true });
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error[0].code).toBe(ERROR_CODES.DANGEROUS_CONTEXT_VALUES);
+      expect(result.error[0].dangerousPaths).toContain('user.global');
+    }
   });
 
   test('passes silently when strictMode is false', () => {
