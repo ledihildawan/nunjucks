@@ -89,6 +89,25 @@ describe('createFileSystemLoader', () => {
       await rm(file);
       expect(await loader.getSource('gone.njk')).toBeNull();
     });
+
+    test('a file created later at a higher-precedence search path displaces the memo', async () => {
+      const primarySearchDir = await makeDir();
+      const secondarySearchDir = await makeDir();
+      await writeFile(join(secondarySearchDir, 'late.njk'), 'from secondary');
+      const loader = createFileSystemLoader([primarySearchDir, secondarySearchDir]);
+      const first = await loader.getSource('late.njk');
+      expect(first !== null && isOk(first) && first.value.src === 'from secondary').toBe(true);
+
+      // WHY: the memo holds an entry keyed at the secondary path; creating the file
+      // at the primary path must win on the next getSource — the memo may not keep
+      // serving the lower-precedence entry forever.
+      await writeFile(join(primarySearchDir, 'late.njk'), 'from primary');
+      const second = await loader.getSource('late.njk');
+      expect(second !== null && isOk(second)).toBe(true);
+      if (second !== null && isOk(second)) {
+        expect(second.value.src).toBe('from primary');
+      }
+    });
   });
 
   test('creates loader with single search path', () => {

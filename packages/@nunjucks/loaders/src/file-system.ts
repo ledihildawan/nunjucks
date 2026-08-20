@@ -5,7 +5,6 @@ import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
 import { err, ok, type Result } from '@nunjucks/lib';
-import { isArray } from 'remeda';
 import { createLoader, type Loader } from './base.ts';
 import type { TemplateLoader, TemplateLoaderSource } from './loader-chain.ts';
 import { containsNullByte, isWithinBase } from './path-security.ts';
@@ -15,7 +14,7 @@ const normalizeSearchPaths = (searchPaths: string | string[] | undefined): strin
   if (!searchPaths) {
     return ['.'];
   }
-  if (isArray(searchPaths)) {
+  if (Array.isArray(searchPaths)) {
     return searchPaths.map(path.normalize);
   }
   return [path.normalize(searchPaths)];
@@ -70,7 +69,8 @@ const resolveRealPaths = async (
   }
 };
 
-type PathValidation = { exists: false } | { exists: true; realFull: string };
+// WHY: stats ride with validation — captured BEFORE the read so the memo keys on the exact traversal-proven (mtimeMs, size), never a post-read stat racing concurrent writes.
+type PathValidation = { exists: false } | { exists: true; realFull: string; stats: Stats };
 
 const existsAndWithinBase = async (
   basePath: string,
@@ -100,13 +100,13 @@ const existsAndWithinBase = async (
     return err(realPathResult.error);
   }
   const { realBase, realFull } = realPathResult.value;
-  return ok({ exists: isWithinBase(realBase, realFull), realFull });
+  return ok({ exists: isWithinBase(realBase, realFull), realFull, stats: fileStat });
 };
 
 const findFileInSearchPaths = async (
   searchPaths: readonly string[],
   name: string
-): Promise<Result<{ fullPath: string; realFull: string }, TemplateError> | null> => {
+): Promise<Result<{ fullPath: string; realFull: string; stats: Stats }, TemplateError> | null> => {
   const [first, ...rest] = searchPaths;
   if (first === undefined) {
     return null;
@@ -119,7 +119,7 @@ const findFileInSearchPaths = async (
   if (!result.value.exists) {
     return findFileInSearchPaths(rest, name);
   }
-  return ok({ fullPath, realFull: result.value.realFull });
+  return ok({ fullPath, realFull: result.value.realFull, stats: result.value.stats });
 };
 
 const readFileSource = async (
@@ -266,7 +266,7 @@ export const createFileSystemLoader = (
       return err(pathResult.error);
     }
 
-    const { fullPath, realFull } = pathResult.value;
+    const { fullPath, realFull, stats } = pathResult.value;
     pathsToNames.set(fullPath, name);
     if (watchEnabled) {
       watchFile(fullPath);
@@ -284,7 +284,7 @@ export const createFileSystemLoader = (
 
     const source: TemplateLoaderSource = { path: fullPath, src: sourceResult.value.src };
     if (sourceMemo) {
-      await sourceMemo.remember(fullPath, source);
+      await sourceMemo.remember(fullPath, source, stats);
     }
     return ok(source);
   };

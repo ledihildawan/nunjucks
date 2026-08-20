@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { mkdtemp, rm, unlink, utimes, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, stat, unlink, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { isOk } from '@nunjucks/lib';
-import { createSourceMemo } from './source-memo.ts';
 import type { TemplateLoaderSource } from './loader-chain.ts';
+import { createSourceMemo, type SourceMemo } from './source-memo.ts';
 
 const tempDirs: string[] = [];
 
@@ -25,6 +25,12 @@ const makeSource = (content: string, fullPath: string): TemplateLoaderSource => 
   path: fullPath,
 });
 
+// WHY: remember takes caller-supplied stats — capture them where validation does,
+// right after the write and before any (simulated) read.
+const rememberFile = async (memo: SourceMemo, fullPath: string, content: string) => {
+  await memo.remember(fullPath, makeSource(content, fullPath), await stat(fullPath));
+};
+
 describe('createSourceMemo', () => {
   test('consult returns null when nothing was ever remembered', async () => {
     const dir = await makeDir();
@@ -38,7 +44,7 @@ describe('createSourceMemo', () => {
     await writeFile(fullPath, 'stable content');
     const memo = createSourceMemo();
     const source = makeSource('stable content', fullPath);
-    await memo.remember(fullPath, source);
+    await memo.remember(fullPath, source, await stat(fullPath));
 
     const hit = await memo.consult([dir], 'stable.njk');
     expect(hit !== null && isOk(hit)).toBe(true);
@@ -54,7 +60,7 @@ describe('createSourceMemo', () => {
     const fullPath = join(dir, 'resized.njk');
     await writeFile(fullPath, 'short');
     const memo = createSourceMemo();
-    await memo.remember(fullPath, makeSource('short', fullPath));
+    await rememberFile(memo, fullPath, 'short');
 
     await writeFile(fullPath, 'noticeably longer content');
     expect(await memo.consult([dir], 'resized.njk')).toBeNull();
@@ -65,7 +71,7 @@ describe('createSourceMemo', () => {
     const fullPath = join(dir, 'touched.njk');
     await writeFile(fullPath, 'same size');
     const memo = createSourceMemo();
-    await memo.remember(fullPath, makeSource('same size', fullPath));
+    await rememberFile(memo, fullPath, 'same size');
 
     // WHY: backdate mtime after remember — the stored stat pair no longer matches,
     // deterministically, without sleeping or relying on write-timestamp granularity.
@@ -79,19 +85,41 @@ describe('createSourceMemo', () => {
     const fullPath = join(dir, 'doomed.njk');
     await writeFile(fullPath, 'vanishing');
     const memo = createSourceMemo();
-    await memo.remember(fullPath, makeSource('vanishing', fullPath));
+    await rememberFile(memo, fullPath, 'vanishing');
 
     await unlink(fullPath);
     expect(await memo.consult([dir], 'doomed.njk')).toBeNull();
   });
 
-  test('remember is best-effort: a vanished file never throws and stores nothing', async () => {
+  test('remember never touches the filesystem — a vanished path is consult-worthy only', async () => {
     const dir = await makeDir();
     const ghostPath = join(dir, 'ghost.njk');
     const memo = createSourceMemo();
+    // WHY: stats from an unrelated inode suffice — remember only reads mtimeMs/size,
+    // so recording a path that does not exist must succeed and store the entry.
+    const borrowedStats = await stat(dir);
 
-    await expect(memo.remember(ghostPath, makeSource('never', ghostPath))).resolves.toBeUndefined();
+    await expect(
+      memo.remember(ghostPath, makeSource('never', ghostPath), borrowedStats)
+    ).resolves.toBeUndefined();
     expect(await memo.consult([dir], 'ghost.njk')).toBeNull();
+  });
+
+  test('remember keys on pre-read stats: a post-read write busts the memo, never serves stale', async () => {
+    const dir = await makeDir();
+    const fullPath = join(dir, 'raced.njk');
+    await writeFile(fullPath, 'v1');
+    const memo = createSourceMemo();
+    // WHY: stats captured where validation captures them — BEFORE the content read.
+    const preReadStats = await stat(fullPath);
+    await memo.remember(fullPath, makeSource('v1', fullPath), preReadStats);
+
+    // WHY: deterministic read/write race — the write lands after the read (memoized
+    // content is 'v1') and the memo must keep the pre-read stat pair, so consult
+    // mismatches and defers to a fresh read instead of answering stale content.
+    // Different length guarantees the pair differs even on coarse mtime granularity.
+    await writeFile(fullPath, 'v2 with a different length');
+    expect(await memo.consult([dir], 'raced.njk')).toBeNull();
   });
 
   test('consult prefers the first search path that holds a memo entry', async () => {
@@ -105,8 +133,8 @@ describe('createSourceMemo', () => {
     const memo = createSourceMemo();
     const firstSource = makeSource('from first', firstPath);
     const secondSource = makeSource('from second', secondPath);
-    await memo.remember(firstPath, firstSource);
-    await memo.remember(secondPath, secondSource);
+    await memo.remember(firstPath, firstSource, await stat(firstPath));
+    await memo.remember(secondPath, secondSource, await stat(secondPath));
 
     const firstWins = await memo.consult([firstDir, secondDir], firstName);
     expect(firstWins !== null && isOk(firstWins)).toBe(true);
@@ -118,6 +146,43 @@ describe('createSourceMemo', () => {
     expect(reordered !== null && isOk(reordered)).toBe(true);
     if (reordered !== null && isOk(reordered)) {
       expect(reordered.value).toBe(secondSource);
+    }
+  });
+
+  test('a file created later at a higher-precedence search path displaces an older memo entry', async () => {
+    const firstDir = await makeDir();
+    const secondDir = await makeDir();
+    const name = 'precedence.njk';
+    const secondPath = join(secondDir, name);
+    await writeFile(secondPath, 'from second');
+    const memo = createSourceMemo();
+    await rememberFile(memo, secondPath, 'from second');
+
+    // WHY: the file appears at the higher-precedence path only AFTER the memo entry
+    // was keyed at the lower-precedence one — consult must miss (not serve the stale
+    // second-path entry) so full resolution can honor search-path precedence.
+    const firstPath = join(firstDir, name);
+    await writeFile(firstPath, 'from first');
+    expect(await memo.consult([firstDir, secondDir], name)).toBeNull();
+  });
+
+  test('an ENOENT at an earlier search path falls through to a memo hit at a later one', async () => {
+    const firstDir = await makeDir();
+    const secondDir = await makeDir();
+    const name = 'fallthrough.njk';
+    const firstPath = join(firstDir, name);
+    const secondPath = join(secondDir, name);
+    await writeFile(firstPath, 'from first');
+    await writeFile(secondPath, 'from second');
+    const memo = createSourceMemo();
+    const secondSource = makeSource('from second', secondPath);
+    await memo.remember(secondPath, secondSource, await stat(secondPath));
+
+    await unlink(firstPath);
+    const hit = await memo.consult([firstDir, secondDir], name);
+    expect(hit !== null && isOk(hit)).toBe(true);
+    if (hit !== null && isOk(hit)) {
+      expect(hit.value).toBe(secondSource);
     }
   });
 });

@@ -1,3 +1,4 @@
+import type { Stats } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { TemplateError } from '@nunjucks/error-formatter';
@@ -18,17 +19,30 @@ interface MemoizedSource {
   readonly size: number;
 }
 
+const hasErrorCode = (e: unknown): e is { code: string } =>
+  e !== null && typeof e === 'object' && 'code' in e;
+
+const isEnoent = (e: unknown): boolean => hasErrorCode(e) && e.code === 'ENOENT';
+
+// WHY: single-search-path probe outcome — `next` means ENOENT (move on to the next
+// path); `answer` ends the scan because an existing file — or a hard stat error —
+// settles precedence at this path either way.
+type ProbeOutcome =
+  | { readonly kind: 'next' }
+  | { readonly kind: 'answer'; answer: Result<TemplateLoaderSource, TemplateError> | null };
+
 /**
  * Defines the source-memo surface: `consult` answers from memory only when a
  * fresh `stat` still matches the memoized `(mtimeMs, size)` pair, while
- * `remember` records a traversal-proven source keyed by resolved full path.
+ * `remember` records a traversal-proven source keyed by resolved full path
+ * together with the stats captured before the content read.
  */
 export interface SourceMemo {
   consult: (
     searchPaths: readonly string[],
     name: string
   ) => Promise<Result<TemplateLoaderSource, TemplateError> | null>;
-  remember: (fullPath: string, source: TemplateLoaderSource) => Promise<void>;
+  remember: (fullPath: string, source: TemplateLoaderSource, stats: Stats) => Promise<void>;
 }
 
 /**
@@ -40,45 +54,59 @@ export interface SourceMemo {
 export const createSourceMemo = (): SourceMemo => {
   const entries = new Map<string, MemoizedSource>();
 
-  // WHY: revalidation touch — one stat() on the full path. Same mtime+size means the
-  // memoized source (already traversal-proven) is still valid; any difference falls
-  // through to the full verification pass. ENOENT on revalidation means the file was
-  // deleted — drop the memo and treat it as a miss.
-  const revalidate = async (
-    fullPath: string
-  ): Promise<Result<TemplateLoaderSource, TemplateError> | null> => {
+  // WHY: exactly one stat per probed search path — 'next' on ENOENT moves on to the
+  // next path; any other outcome ends the scan because an existing file (or a hard
+  // stat error) settles precedence at this path either way.
+  const probeSearchPath = async (fullPath: string): Promise<ProbeOutcome> => {
     const memoized = entries.get(fullPath);
-    if (!memoized) {
-      return null;
-    }
     try {
       const currentStat = await stat(fullPath);
-      if (currentStat.mtimeMs === memoized.mtimeMs && currentStat.size === memoized.size) {
-        return ok(memoized.source);
+      if (
+        memoized !== undefined &&
+        currentStat.mtimeMs === memoized.mtimeMs &&
+        currentStat.size === memoized.size
+      ) {
+        return { kind: 'answer', answer: ok(memoized.source) };
       }
-    } catch {
-      entries.delete(fullPath);
-      return null;
+      if (memoized !== undefined) {
+        entries.delete(fullPath);
+      }
+      // WHY: the file exists here but no unchanged entry is keyed at this path —
+      // fall through to full resolution rather than serving a lower-precedence hit.
+      return { kind: 'answer', answer: null };
+    } catch (statErr) {
+      if (!isEnoent(statErr)) {
+        // WHY: non-ENOENT failures defer to the full verification pass, which
+        // re-runs the same stat and surfaces a catalogued TemplateError.
+        return { kind: 'answer', answer: null };
+      }
+      if (memoized !== undefined) {
+        entries.delete(fullPath);
+      }
+      return { kind: 'next' };
     }
-    entries.delete(fullPath);
-    return null;
   };
 
   return {
+    // WHY: probe search paths in order, mirroring findFileInSearchPaths — the first
+    // path holding an EXISTING file wins, not the first holding a memo entry. Keying
+    // off memo entries alone would let a file created later at a higher-precedence
+    // path never displace an older, lower-precedence hit, freezing stale content.
     consult: async (searchPaths, name) => {
-      const memoPath = searchPaths.find((searchPath) =>
-        entries.has(path.resolve(searchPath, name))
-      );
-      return memoPath !== undefined ? revalidate(path.resolve(memoPath, name)) : null;
-    },
-    remember: async (fullPath, source) => {
-      try {
-        const fileStat = await stat(fullPath);
-        entries.set(fullPath, { source, mtimeMs: fileStat.mtimeMs, size: fileStat.size });
-      } catch {
-        // WHY: memo population is best-effort — a stat race right after read falls
-        // back to the always-correct uncached path on the next call.
+      for (const searchPath of searchPaths) {
+        const outcome = await probeSearchPath(path.resolve(searchPath, name));
+        if (outcome.kind === 'next') {
+          continue;
+        }
+        return outcome.answer;
       }
+      return null;
+    },
+    remember: async (fullPath, source, stats) => {
+      // WHY: stats come from the pre-read validation pass — stat'ing again after
+      // the read would race a concurrent write into memoizing NEW (mtimeMs, size)
+      // with OLD content, serving stale source until the next write.
+      entries.set(fullPath, { source, mtimeMs: stats.mtimeMs, size: stats.size });
     },
   };
 };

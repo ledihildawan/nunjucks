@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { containsNullByte, isWithinBase } from './path-security.ts';
 
 describe('containsNullByte', () => {
