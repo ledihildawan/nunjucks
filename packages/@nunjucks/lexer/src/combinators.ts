@@ -7,15 +7,11 @@ import type { Tokenizer } from './types.ts';
 export const firstMatch =
   (...tokenizers: Tokenizer[]): Tokenizer =>
   (state) => {
-    const tryAt = (index: number): ReturnType<Tokenizer> => {
-      if (index >= tokenizers.length) {
-        return null;
-      }
-      const result = tokenizers[index]?.(state) ?? null;
+    for (const tokenize of tokenizers) {
+      const result = tokenize(state);
       if (result) {
         return result;
       }
-      return tryAt(index + 1);
-    };
-    return tryAt(0);
+    }
+    return null;
   };

@@ -43,4 +43,15 @@ describe('parseScope', () => {
     const body = (node as { body: Node }).body;
     expect(getNodeTypeName(body)).toBe('nodeList');
   });
+
+  test('rejects a non-symbol assignment key', () => {
+    // WHY: regression — the first assignment used parsePrimary, so postfix chains like
+    // `a.b` parsed and keyed the pair with a stringified lookup node.
+    expect(() => parseFirst('{% scope a.b = 1 %}b{% endscope %}')).toThrow(
+      /expected = after variable name/
+    );
+    expect(() => parseFirst('{% scope x = 1, y.z = 2 %}b{% endscope %}')).toThrow(
+      /expected = after variable name/
+    );
+  });
 });

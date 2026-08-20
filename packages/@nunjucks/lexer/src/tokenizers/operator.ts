@@ -1,4 +1,4 @@
-import { DELIM_CHAR_SET, isComplexOperator } from '../constants.ts';
+import { DELIM_CHAR_SET, isComplexOperator } from '../delimiters.ts';
 import { advance, getChar, getPeek } from '../state.ts';
 import {
   TOKEN_COLON,
@@ -40,12 +40,14 @@ const OPERATOR_TOKEN_TYPES: Record<string, TokenType> = {
  */
 export const tokenizeOperator: Tokenizer = (state) => {
   const char = getChar(state);
-  if (!DELIM_CHAR_SET.has(char ?? '')) {
+  if (!DELIM_CHAR_SET.has(char)) {
     return null;
   }
 
   const twoChar = char + getPeek(state);
-  const threeChar = twoChar + getChar(advance(state, 2));
+  // WHY: pure source peek — advance() would run full line/col tracking for a
+  // character the tokenizer never consumes positionally.
+  const threeChar = twoChar + (state.source[state.index + 2] ?? '');
 
   const opLen = isComplexOperator(threeChar)
     ? MAX_OPERATOR_CHARS

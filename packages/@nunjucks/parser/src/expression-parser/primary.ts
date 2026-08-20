@@ -19,7 +19,7 @@ import { type Loc, loc } from '@nunjucks/shared';
 import { find } from 'remeda';
 import type { ParserContext } from '../cursor.ts';
 import { fail, nextToken, peekToken, pushToken, skipValue } from '../cursor.ts';
-import { EXPECTED_COLON_AFTER_DICT_KEY } from '../error.ts';
+import { EXPECTED_COLON_AFTER_DICT_KEY, readSentinel } from '../error.ts';
 import { parseAggregate } from '../node-parser/aggregate/index.ts';
 import { tryParsePattern } from '../node-parser/pattern.ts';
 import { parseTemplateLiteral } from '../node-parser/template-literal.ts';
@@ -114,7 +114,7 @@ const parseAggregateOrPattern = (
   if (isOk(aggR)) {
     return aggR;
   }
-  if ((aggR.error as { sentinel?: unknown }).sentinel === EXPECTED_COLON_AFTER_DICT_KEY) {
+  if (readSentinel(aggR.error) === EXPECTED_COLON_AFTER_DICT_KEY) {
     const patternR = tryParsePattern(parserContext);
     if (isOk(patternR) && patternR.value !== null) {
       return patternR;

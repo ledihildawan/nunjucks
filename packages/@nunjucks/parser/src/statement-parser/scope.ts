@@ -7,7 +7,7 @@ import { pair, scopeNode } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
 import { advanceAfterBlockEnd, fail, nextToken, peekToken, skip, skipSymbol } from '../cursor.ts';
-import { parseExpression, parsePrimary } from '../expression-parser/index.ts';
+import { parseExpression } from '../expression-parser/index.ts';
 import { parseUntilBlocks } from '../parse-root.ts';
 
 const isBlockEnd = (tok: Token | null | undefined): boolean => tok?.type === TOKEN_BLOCK_END;
@@ -16,11 +16,25 @@ const parseScopeAssignment = (
   parserContext: ParserContext,
   tag: Token
 ): Result<Node, TemplateError> => {
-  const nameSymbolR = parsePrimary(parserContext);
-  if (isErr(nameSymbolR)) {
-    return nameSymbolR;
+  const nameTokR = peekToken(parserContext);
+  if (isErr(nameTokR)) {
+    return nameTokR;
   }
-  const nameSymbol = nameSymbolR.value;
+  const nameTok = nameTokR.value;
+  // WHY: a bare symbol is the only legal assignment key — the previous parsePrimary also
+  // accepted postfix chains (`{% scope a.b = 1 %}`), stringifying a lookup node into the
+  // pair key instead of a real variable name.
+  if (nameTok.type !== TOKEN_SYMBOL) {
+    return fail(parserContext, {
+      message: 'parseScope: expected variable name',
+      lineno: nameTok.lineno,
+      colno: nameTok.colno,
+    });
+  }
+  const nameConsumedR = nextToken(parserContext);
+  if (isErr(nameConsumedR)) {
+    return nameConsumedR;
+  }
   const eqTokR = peekToken(parserContext);
   if (isErr(eqTokR)) {
     return eqTokR;
@@ -44,7 +58,7 @@ const parseScopeAssignment = (
     return valueR;
   }
 
-  return ok(pair(loc(nameSymbol), { key: String(nameSymbol.value), val: valueR.value }));
+  return ok(pair(loc(nameTok), { key: nameTok.value, val: valueR.value }));
 };
 
 const parseScopeAssignments = (
@@ -60,20 +74,8 @@ const parseScopeAssignments = (
 
   // WHY: iterative loop (parser loop exemption) — the recursive collect recursed once
   // per comma-separated assignment, so long `{% scope a = 1, b = 2, ... %}` lists
-  // overflowed the stack.
+  // overflowed the stack. parseScopeAssignment itself enforces the symbol-key rule.
   while (skip(parserContext, TOKEN_COMMA)) {
-    const nextNameTokR = peekToken(parserContext);
-    if (isErr(nextNameTokR)) {
-      return nextNameTokR;
-    }
-    if (nextNameTokR.value?.type !== TOKEN_SYMBOL) {
-      return fail(parserContext, {
-        message: 'parseScope: expected variable name after comma',
-        lineno: tag.lineno,
-        colno: tag.colno,
-      });
-    }
-
     const nextR = parseScopeAssignment(parserContext, tag);
     if (isErr(nextR)) {
       return nextR;

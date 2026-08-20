@@ -4,7 +4,6 @@ import { tokenizeTemplateLiteral } from './template-literal.ts';
 
 interface TemplateValue {
   quasis: Array<{ type: string; value: string }>;
-  expressions: unknown[];
 }
 
 const run = (src: string) => tokenizeTemplateLiteral({ ...createState(src), inCode: true });
@@ -33,14 +32,6 @@ describe('tokenizeTemplateLiteral', () => {
     expect(q).toHaveLength(3);
     expect(q[1]?.type).toBe('expression');
     expect(q[1]?.value).toBe('x');
-  });
-
-  test('expressions field is always empty array', () => {
-    const r = run('`x`');
-    if (!r) {
-      throw new Error('null');
-    }
-    expect((r.token.value as TemplateValue).expressions).toEqual([]);
   });
 
   test('nested braces in interpolation', () => {

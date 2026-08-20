@@ -203,9 +203,8 @@ const isInToken = (tok: Token): boolean => tok?.type === TOKEN_SYMBOL && tok?.va
 const isNotInversion = (tok: Token): boolean => tok?.type === TOKEN_SYMBOL && tok?.value === 'not';
 
 /**
- * Resolves the `in` token following an operand: a bare `in` passes through,
- * `not` pulls the following `in`, and anything else is pushed back (chain
- * over, `null`).
+ * Resolves the `in` token following an operand: a bare `in` passes through, `not`
+ * pulls the following `in`, and anything else is pushed back (chain over, `null`).
  */
 const resolveInToken = (
   parserContext: ParserContext,
@@ -223,7 +222,10 @@ const resolveInToken = (
     return inTokR;
   }
   if (!isInToken(inTokR.value)) {
-    pushToken(parserContext, inTokR.value);
+    // WHY: a dangling `not` goes back on the stream — mirroring the original parser —
+    // so the downstream error points at the `not` itself instead of silently swallowing
+    // it and blaming (or even accepting, e.g. `{{ (a not) }}`) the token after it.
+    pushToken(parserContext, tok);
     return ok(null);
   }
   return ok(inTokR.value);

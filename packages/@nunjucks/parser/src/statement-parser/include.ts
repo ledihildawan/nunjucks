@@ -8,8 +8,9 @@ import { advanceAfterBlockEnd, fail, peekToken, skipSymbol } from '../cursor.ts'
 import { parseExpression } from '../expression-parser/index.ts';
 
 /**
- * Parses `{% include template only %}`, `... with contextExpr`, and the
- * `ignore missing` modifier in any order after the template expression.
+ * Parses `{% include templateExpr %}` followed by at most one of `only` or
+ * `with contextExpr`, then the optional `ignore missing` modifier — in that
+ * fixed order.
  */
 export const parseInclude = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagName = 'include';

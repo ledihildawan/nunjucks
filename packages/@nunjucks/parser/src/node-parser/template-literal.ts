@@ -14,16 +14,8 @@ import { fail, nextToken } from '../cursor.ts';
 // far from the documented parse-time error.
 const SIMPLE_IDENTIFIER_PATTERN = /^[A-Za-z_$][\w$]*$/u;
 
-const isSafeTemplateExpression = (expr: string): boolean => {
-  if (!expr) {
-    return true;
-  }
-  const trimmed = expr.trim();
-  if (!trimmed) {
-    return true;
-  }
-  return SIMPLE_IDENTIFIER_PATTERN.test(trimmed);
-};
+const isSafeTemplateExpression = (expr: string): boolean =>
+  SIMPLE_IDENTIFIER_PATTERN.test(expr.trim());
 
 /**
  * Parses a backtick template literal token into quasi parts, rejecting
@@ -46,8 +38,7 @@ export const parseTemplateLiteral = (
 
   const unsafe = find(
     quasis,
-    (quasi) =>
-      quasi.type === 'expression' && Boolean(quasi.value) && !isSafeTemplateExpression(quasi.value)
+    (quasi) => quasi.type === 'expression' && !isSafeTemplateExpression(quasi.value)
   );
   if (unsafe) {
     return fail(parserContext, {
@@ -63,7 +54,7 @@ export const parseTemplateLiteral = (
   }
 
   const processedQuasis = map(quasis, (quasi) =>
-    quasi.type === 'expression' && quasi.value
+    quasi.type === 'expression'
       ? { type: 'expression' as const, node: symbol(loc(tok), quasi.value) }
       : { type: 'template' as const, value: quasi.value }
   );

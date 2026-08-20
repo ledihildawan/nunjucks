@@ -67,7 +67,17 @@ const handleSwitchEnd = (parserContext: ParserContext): Result<Node | undefined,
       if (isErr(advanceResult)) {
         return advanceResult;
       }
-      return parseUntilBlocks(parserContext, SWITCH_TOKENS.switchEnd);
+      const bodyR = parseUntilBlocks(parserContext, SWITCH_TOKENS.switchEnd);
+      if (isErr(bodyR)) {
+        return bodyR;
+      }
+      // WHY: the terminating `{% endswitch %}` is consumed here, making this switch the
+      // single owner of endswitch consumption for both default and no-default endings.
+      const endResult = advanceAfterBlockEnd(parserContext);
+      if (isErr(endResult)) {
+        return endResult;
+      }
+      return bodyR;
     }
     case SWITCH_TOKENS.switchEnd: {
       const advanceResult = advanceAfterBlockEnd(parserContext);
@@ -81,31 +91,6 @@ const handleSwitchEnd = (parserContext: ParserContext): Result<Node | undefined,
         message: 'parseSwitch: expected "case," "default" or "endswitch," got EOF.',
       });
   }
-};
-
-const parseSwitchDefault = (
-  parserContext: ParserContext
-): Result<Node | undefined, TemplateError> => {
-  const peekEndR = peekToken(parserContext);
-  if (isErr(peekEndR)) {
-    return peekEndR;
-  }
-  if (peekEndR.value.value !== SWITCH_TOKENS.caseDefault) {
-    const resultR = handleSwitchEnd(parserContext);
-    if (isErr(resultR)) {
-      return resultR;
-    }
-    return ok(undefined);
-  }
-  const resultR = handleSwitchEnd(parserContext);
-  if (isErr(resultR)) {
-    return resultR;
-  }
-  const advanceResult = advanceAfterBlockEnd(parserContext);
-  if (isErr(advanceResult)) {
-    return advanceResult;
-  }
-  return ok(resultR.value);
 };
 
 /**
@@ -158,7 +143,7 @@ export const parseSwitch = (parserContext: ParserContext): Result<Node, Template
     return casesR;
   }
 
-  const defaultCaseR = parseSwitchDefault(parserContext);
+  const defaultCaseR = handleSwitchEnd(parserContext);
   if (isErr(defaultCaseR)) {
     return defaultCaseR;
   }

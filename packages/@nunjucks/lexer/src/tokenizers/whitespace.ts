@@ -1,4 +1,4 @@
-import { WHITESPACE_CHAR_SET } from '../constants.ts';
+import { WHITESPACE_CHAR_SET } from '../delimiters.ts';
 import { extractWhile } from '../extract.ts';
 import { advance } from '../state.ts';
 import { TOKEN_WHITESPACE } from '../token-types.ts';

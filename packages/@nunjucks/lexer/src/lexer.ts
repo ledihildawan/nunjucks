@@ -1,7 +1,6 @@
 import { createLog } from '@nunjucks/error-formatter';
 import { MATCH_ANY_RE } from '@nunjucks/lib';
-import { WHITESPACE_CHAR_SET } from './constants.ts';
-import { createDelimiters } from './delimiters.ts';
+import { createDelimiters, WHITESPACE_CHAR_SET } from './delimiters.ts';
 import { advance, createState, getChar } from './state.ts';
 import type { Token } from './token-types.ts';
 import { tokenize } from './tokenizers/index.ts';
@@ -36,8 +35,7 @@ const handleUnexpectedChar = (state: LexerState): never => {
   });
 };
 
-const isWhitespace = (char: string | null): boolean =>
-  char !== null && WHITESPACE_CHAR_SET.has(char);
+const isWhitespace = (char: string): boolean => WHITESPACE_CHAR_SET.has(char);
 
 // WHY: single lazily-yielding generator (low memory footprint on large template sources)
 // driven by an internal while loop — the previous per-token `yield*` self-delegation built

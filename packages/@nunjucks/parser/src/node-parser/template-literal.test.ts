@@ -57,6 +57,12 @@ describe('parseTemplateLiteral', () => {
     expect(() => parseLit('`x$' + '{1a}y`')).toThrow(/simple identifiers only/);
   });
 
+  test('throws for an empty interpolation', () => {
+    // WHY: regression — `` `x${}y` `` previously collapsed the empty expression into
+    // template text and parsed silently.
+    expect(() => parseLit('`x$' + '{}y`')).toThrow(/simple identifiers only/);
+  });
+
   test('accepts dollar and underscore identifiers', () => {
     const node = parseLit('`x$' + '{_v1}y`') as TemplateLiteralNode;
     expect(getNodeTypeName(node)).toBe('templateLiteral');

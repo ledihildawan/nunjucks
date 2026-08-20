@@ -38,7 +38,7 @@ const regexToken = createToken({
 });
 const templateLiteralToken = createToken({
   type: TOKEN_TEMPLATE_LITERAL,
-  value: { quasis: [] as TemplateQuasi[], expressions: [] },
+  value: { quasis: [] as TemplateQuasi[] },
   lineno: 15,
   colno: 16,
 });

@@ -245,6 +245,51 @@ const consumeComma = (parserContext: ParserContext): Result<boolean, TemplateErr
   return ok(true);
 };
 
+interface ArrayIterationResult {
+  sawRest: boolean;
+  skipCommaNext: boolean;
+  done: boolean;
+}
+
+// WHY: `...rest` must be the final element — only a trailing comma then `]` may follow,
+// so post-rest junk like `[a, ...r b]` fails here instead of parsing as another element
+// (comma validation is otherwise skipped entirely after rest).
+const parsePostRestClose = (
+  parserContext: ParserContext,
+  tok: Token
+): Result<ArrayIterationResult, TemplateError> => {
+  if (skip(parserContext, TOKEN_COMMA)) {
+    const closeR = nextToken(parserContext);
+    if (isErr(closeR)) {
+      return closeR;
+    }
+    if (closeR.value.type !== TOKEN_RIGHT_BRACKET) {
+      return fail(parserContext, {
+        message: 'parseArrayPattern: rest must be the last element',
+        lineno: closeR.value.lineno,
+        colno: closeR.value.colno,
+      });
+    }
+    return ok({ sawRest: true, skipCommaNext: false, done: true });
+  }
+  return fail(parserContext, {
+    message: 'parseArrayPattern: rest must be the last element',
+    lineno: tok.lineno,
+    colno: tok.colno,
+  });
+};
+
+const closeArrayPattern = (
+  parserContext: ParserContext,
+  sawRest: boolean
+): Result<ArrayIterationResult, TemplateError> => {
+  const consumedR = nextToken(parserContext);
+  if (isErr(consumedR)) {
+    return consumedR;
+  }
+  return ok({ sawRest, skipCommaNext: false, done: true });
+};
+
 const parseArrayIteration = ({
   parserContext,
   children,
@@ -255,21 +300,21 @@ const parseArrayIteration = ({
   children: Node[];
   sawRest: boolean;
   skipTrailingCommaCheck: boolean;
-}): Result<{ sawRest: boolean; skipCommaNext: boolean; done: boolean }, TemplateError> => {
+}): Result<ArrayIterationResult, TemplateError> => {
   const tokR = peekToken(parserContext);
   if (isErr(tokR)) {
     return tokR;
   }
   const tok = tokR.value;
   if (tok.type === TOKEN_RIGHT_BRACKET) {
-    const consumedR = nextToken(parserContext);
-    if (isErr(consumedR)) {
-      return consumedR;
-    }
-    return ok({ sawRest: initialSawRest, skipCommaNext: false, done: true });
+    return closeArrayPattern(parserContext, initialSawRest);
   }
 
-  let sawRest = initialSawRest;
+  if (initialSawRest) {
+    return parsePostRestClose(parserContext, tok);
+  }
+
+  let sawRest: boolean = initialSawRest;
   // WHY: right after a consumed separator, another comma is an ELIDED element (hole),
   // mirroring the aggregate list parser's `prepareAfterComma` — `{% for [a, , b] in x %}`
   // and `{% when [a, , b] %}` previously failed with "expected symbol in pattern".

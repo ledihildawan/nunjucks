@@ -21,7 +21,6 @@ import {
   TOKEN_RIGHT_PAREN,
   TOKEN_STRING,
   TOKEN_SYMBOL,
-  TOKEN_TILDE,
   TOKEN_VARIABLE_END,
   TOKEN_VARIABLE_START,
   TOKEN_WHITESPACE,
@@ -75,6 +74,10 @@ export const parseStatement = (
     (e) => (e.tags ?? []).includes(tagName) && Boolean(e.parse)
   );
   if (ext?.parse) {
+    // WHY: this object is the extension `lexer` contract — the bundled tokenizer emits
+    // every token type below through its own scanners EXCEPT TOKEN_REGEX, which is an
+    // extension-producer contract: the bundled lexer never emits a regex token.
+    // TOKEN_TILDE is deliberately absent — `~` lexes as TOKEN_OPERATOR here.
     const parsedNode = ext.parse(parserContext, nodes, {
       TOKEN_SYMBOL,
       TOKEN_BLOCK_END,
@@ -91,7 +94,6 @@ export const parseStatement = (
       TOKEN_OPERATOR,
       TOKEN_COMMA,
       TOKEN_COLON,
-      TOKEN_TILDE,
       TOKEN_PIPEFORWARD,
       TOKEN_INT,
       TOKEN_FLOAT,

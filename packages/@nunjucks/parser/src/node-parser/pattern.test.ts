@@ -85,6 +85,18 @@ describe('parsePattern: array destructuring', () => {
     expect(trailing.children).toHaveLength(2);
     expect(isHole(trailing.children[1]!)).toBe(true);
   });
+  test('rejects an element after rest [a, ...r b]', () => {
+    // WHY: regression — post-rest comma validation was skipped entirely, so junk after
+    // `...r` parsed as another element instead of failing.
+    expect(() => unwrap(parsePattern(ctxFor('[a, ...r b]')))).toThrow(/last element/);
+  });
+  test('rejects an element after a post-rest comma [a, ...r, b]', () => {
+    expect(() => unwrap(parsePattern(ctxFor('[a, ...r, b]')))).toThrow(/last element/);
+  });
+  test('accepts a trailing comma after rest [a, ...r,]', () => {
+    const node = unwrap(parsePattern(ctxFor('[a, ...r,]')));
+    expect(getNodeTypeName(node!)).toBe('arrayPattern');
+  });
 });
 
 describe('parsePattern: object destructuring', () => {

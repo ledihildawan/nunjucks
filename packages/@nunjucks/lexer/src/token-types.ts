@@ -110,7 +110,7 @@ export type TokenValueByType = {
   [TOKEN_NONE]: string;
   [TOKEN_SYMBOL]: string;
   [TOKEN_REGEX]: { body: string; flags: string };
-  [TOKEN_TEMPLATE_LITERAL]: { quasis: TemplateQuasi[]; expressions: [] };
+  [TOKEN_TEMPLATE_LITERAL]: { quasis: TemplateQuasi[] };
 };
 
 /**

@@ -5,6 +5,7 @@ import {
   TOKEN_LEFT_BRACKET,
   TOKEN_LEFT_PAREN,
   type TOKEN_OPERATOR,
+  TOKEN_RIGHT_BRACKET,
   TOKEN_RIGHT_PAREN,
   TOKEN_SYMBOL,
 } from '@nunjucks/lexer';
@@ -129,7 +130,7 @@ const parseOptionalBracket = (
   if (isErr(rightBracketR)) {
     return rightBracketR;
   }
-  if (rightBracketR.value.type !== 'right-bracket') {
+  if (rightBracketR.value.type !== TOKEN_RIGHT_BRACKET) {
     return fail(parserContext, {
       message: 'expected right bracket',
       lineno: rightBracketR.value.lineno,

@@ -128,7 +128,7 @@ export const tokenizeTemplateLiteral: Tokenizer = (state) => {
   return {
     token: createToken({
       type: TOKEN_TEMPLATE_LITERAL,
-      value: { quasis, expressions: [] },
+      value: { quasis },
       lineno: state.lineno,
       colno: state.colno,
     }),

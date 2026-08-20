@@ -33,15 +33,10 @@ import { nextToken, peekToken } from '../cursor.ts';
 import { errorAt } from '../error.ts';
 import { parseOr } from './logical.ts';
 
+// WHY: array aggregates never contain pair children (pairs are dict-only), so the
+// array mapper only converts spread elements — the pair-shorthand branch lives in the
+// object twin below.
 const mapArrayPatternChild = (c: Node): Node => {
-  if (
-    isPair(c) &&
-    isSymbol(c.value) &&
-    typeof c.key !== 'string' &&
-    c.key.value === c.value.value
-  ) {
-    return c.value;
-  }
   if (isSpread(c)) {
     return restPattern(loc(c), c.argument);
   }

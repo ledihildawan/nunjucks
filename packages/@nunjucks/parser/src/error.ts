@@ -81,6 +81,17 @@ const inferFix = (message: string): string => {
 export const EXPECTED_COLON_AFTER_DICT_KEY = 'EXPECTED_COLON_AFTER_DICT_KEY';
 
 /**
+ * Parser-internal error channel: a `TemplateError` optionally carrying a `sentinel`
+ * tag for control-flow retries higher in the parser. Not part of the public
+ * `TemplateError` shape — only `error`/`fail` write it and `readSentinel` reads it.
+ */
+export type ParserError = TemplateError & { sentinel?: string };
+
+/** Reads the parser-internal sentinel tag; `undefined` on untagged errors. */
+export const readSentinel = (candidate: TemplateError): string | undefined =>
+  (candidate as ParserError).sentinel;
+
+/**
  * Options for building a parser error: location fields default to the
  * peeked token's position when omitted, and `sentinel` tags the error for
  * control-flow retries higher in the parser.
@@ -100,7 +111,7 @@ export interface ParserErrorOptions {
 export const error = (
   parserContext: ParserContext,
   { message, lineno, colno, sentinel }: ParserErrorOptions
-): TemplateError => {
+): ParserError => {
   const needsResolve = lineno === undefined || colno === undefined;
   const peekedResult = needsResolve ? peekToken(parserContext) : undefined;
   const peeked = peekedResult && isOk(peekedResult) ? peekedResult.value : undefined;
@@ -120,7 +131,8 @@ export const error = (
     context: { lineno: resolvedLineno, colno: resolvedColno, phase: 'parse', lineBase: 'zero' },
   });
   if (sentinel) {
-    Object.assign(errObj, { sentinel });
+    // WHY: Object.assign's intersection return type carries the sentinel without a cast
+    return Object.assign(errObj, { sentinel });
   }
   return errObj;
 };

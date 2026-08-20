@@ -1,4 +1,4 @@
-import { isBooleanString, isNullString, SYMBOL_TERMINATOR_SET } from '../constants.ts';
+import { isBooleanString, isNullString, SYMBOL_TERMINATOR_SET } from '../delimiters.ts';
 import { extractUntil } from '../extract.ts';
 import { advance } from '../state.ts';
 import { TOKEN_BOOLEAN, TOKEN_NONE, TOKEN_SYMBOL } from '../token-types.ts';

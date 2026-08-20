@@ -1,4 +1,4 @@
-import { isDigit } from '../constants.ts';
+import { isDigit } from '@nunjucks/lib';
 import { advance } from '../state.ts';
 import { createNumberToken } from '../tokens.ts';
 import type { LexerState, Tokenizer } from '../types.ts';

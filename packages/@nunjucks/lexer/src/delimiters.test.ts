@@ -10,8 +10,9 @@ import {
   DEFAULT_VARIABLE_END,
   DEFAULT_VARIABLE_START,
   DELIM_CHARS,
-  INT_CHARS,
-  REGEX_FLAGS,
+  isBooleanString,
+  isComplexOperator,
+  isNullString,
   STRIP_BLOCK_END,
   STRIP_BLOCK_START,
   STRIP_VARIABLE_END,
@@ -27,11 +28,6 @@ describe('character-class constants', () => {
 
   test('DELIM_CHARS contains the expected delimiter set', () => {
     expect(DELIM_CHARS).toBe('()[]{}%*-+~/#,:|&.<>=!?`');
-  });
-
-  test('INT_CHARS contains the digits 0-9 in order', () => {
-    expect(INT_CHARS).toBe('0123456789');
-    expect(INT_CHARS).toHaveLength(10);
   });
 });
 
@@ -138,13 +134,6 @@ describe('COMPOUND_ASSIGNMENT_OPS', () => {
   });
 });
 
-describe('REGEX_FLAGS', () => {
-  test('is the expected readonly tuple', () => {
-    expect(REGEX_FLAGS).toEqual(['g', 'i', 'm', 'y']);
-    expect(REGEX_FLAGS).toHaveLength(4);
-  });
-});
-
 describe('createDelimiters', () => {
   test('returns the default tags when no argument is given', () => {
     const delimiters = createDelimiters();
@@ -214,9 +203,18 @@ describe('createDelimiters', () => {
     expect(delimiters.commentEnd).toBe(DEFAULT_COMMENT_END);
   });
 
-  test('treats empty-string overrides as present (not undefined)', () => {
-    const delimiters = createDelimiters({ blockStart: '' });
-    expect(delimiters.blockStart).toBe('');
+  test('rejects empty-string overrides for every tag (matches("") hazard)', () => {
+    const emptyOverrides = [
+      { blockStart: '' },
+      { blockEnd: '' },
+      { variableStart: '' },
+      { variableEnd: '' },
+      { commentStart: '' },
+      { commentEnd: '' },
+    ] as const;
+    emptyOverrides.forEach((override) => {
+      expect(() => createDelimiters(override)).toThrow(/non-empty/);
+    });
   });
 
   test('keeps strip tags fixed regardless of overrides', () => {
@@ -239,5 +237,102 @@ describe('createDelimiters', () => {
     const second = createDelimiters();
     expect(first).not.toBe(second);
     expect(first).toEqual(second);
+  });
+});
+
+describe('isComplexOperator', () => {
+  test('returns true for every entry in COMPLEX_OPERATORS', () => {
+    COMPLEX_OPERATORS.forEach((operator) => {
+      expect(isComplexOperator(operator)).toBe(true);
+    });
+  });
+
+  test('returns false for single-character operators and non-operators', () => {
+    const nonOperators = [
+      '+',
+      '-',
+      '=',
+      '<',
+      '>',
+      '.',
+      '|',
+      '&',
+      '?',
+      ':',
+      '!',
+      '/',
+      '*',
+      '%',
+      '~',
+      '#',
+      ',',
+      '`',
+      'foo',
+      '',
+      '==!',
+      '<=>',
+      ' ',
+    ];
+    nonOperators.forEach((token) => {
+      expect(isComplexOperator(token)).toBe(false);
+    });
+  });
+});
+
+describe('isBooleanString', () => {
+  test('returns true for lowercase boolean literals', () => {
+    ['true', 'false'].forEach((literal) => {
+      expect(isBooleanString(literal)).toBe(true);
+    });
+  });
+
+  test('returns false for non-boolean strings', () => {
+    const nonBooleans = [
+      'True',
+      'False',
+      'TRUE',
+      'FALSE',
+      '',
+      '0',
+      '1',
+      'yes',
+      'no',
+      'truthy',
+      'falsy',
+      'null',
+      'none',
+      ' true',
+      'true ',
+    ];
+    nonBooleans.forEach((token) => {
+      expect(isBooleanString(token)).toBe(false);
+    });
+  });
+});
+
+describe('isNullString', () => {
+  test('returns true for nunjucks null literals', () => {
+    ['none', 'null'].forEach((literal) => {
+      expect(isNullString(literal)).toBe(true);
+    });
+  });
+
+  test('returns false for non-null strings', () => {
+    const nonNulls = [
+      'None',
+      'NULL',
+      'Null',
+      '',
+      'nil',
+      'undefined',
+      'true',
+      'false',
+      'none ',
+      ' null',
+      'nonenull',
+    ];
+    nonNulls.forEach((token) => {
+      expect(isNullString(token)).toBe(false);
+    });
   });
 });
