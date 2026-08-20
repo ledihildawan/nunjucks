@@ -199,15 +199,18 @@ const compileAggregate = (
   const children: readonly Node[] = Array.isArray(node)
     ? node
     : ((node as ChildrenNode).children ?? []);
-  // WHY: imperative index loop — comma placement between emitted fragments is
-  // index-sensitive; a map().join() cannot interleave into the shared emit buffer.
+  // WHY: imperative loop — comma placement between emitted fragments is
+  // order-sensitive; a map().join() cannot interleave into the shared emit buffer.
   // Compiler emission exemption.
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i];
+  // WHY: commas separate emitted children, not indices — a null child mid-list must
+  // be skipped without emitting a stray comma (an array hole `[a,,b]`); nulls are
+  // unreachable via the parser but this stays correct for hand-built nodes.
+  let emittedAny = false;
+  for (const child of children) {
     if (!child) {
       continue;
     }
-    if (i > 0) {
+    if (emittedAny) {
       compiler.emit(',');
     }
     if (isSpread(child)) {
@@ -216,6 +219,7 @@ const compileAggregate = (
     } else {
       compiler.compile(child, frame);
     }
+    emittedAny = true;
   }
 
   if (endChar) {

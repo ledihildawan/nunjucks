@@ -25,23 +25,35 @@ const extractComponentArgs = (
   return { args, kwargs };
 };
 
-const pairKey = (pair: Node): string => {
-  if (!isPair(pair)) {
-    return '';
+const pairKey = (compiler: Compiler, pair: Node): string => {
+  // WHY: returning '' for malformed keys would leak an empty kwarg name into
+  // kwargNames and the emitted frame bindings — fail loudly like from-import.
+  if (isPair(pair)) {
+    const key = pair.key;
+    if (typeof key === 'string') {
+      return key;
+    }
+    if (typeof key.value === 'string') {
+      return key.value;
+    }
   }
-  const key = pair.key;
-  if (typeof key === 'string') {
-    return key;
-  }
-  return typeof key.value === 'string' ? key.value : '';
+  compiler.fail({
+    message: 'component: keyword arguments must be name=value pairs with string names',
+    lineno: pair.lineno,
+    colno: pair.colno,
+  });
+  return '';
 };
 
 const buildComponentArgNames = (
+  compiler: Compiler,
   args: readonly Node[],
   kwargs: ChildrenNode | null
 ): { argNames: string[]; kwargNames: string[]; realNames: string[] } => {
   const argNames = args.map((arg) => JSON.stringify(String(arg.value)));
-  const kwargNames = (kwargs?.children ?? []).map((pair) => JSON.stringify(pairKey(pair)));
+  const kwargNames = (kwargs?.children ?? []).map((pair) =>
+    JSON.stringify(pairKey(compiler, pair))
+  );
   const realNames = [...args.map((arg) => `l_${String(arg.value)}`), 'kwargs'];
   return { argNames, kwargNames, realNames };
 };
@@ -69,7 +81,7 @@ const emitComponentArgBindings = (
       if (!isPair(pair)) {
         return;
       }
-      const name = pairKey(pair);
+      const name = pairKey(compiler, pair);
       const isPositional = positionalNames.has(name);
       compiler.emit(`frame = frame.set({ name: ${JSON.stringify(name)}, value: `);
       compiler.emit(`Object.hasOwn(kwargs, ${JSON.stringify(name)})`);
@@ -127,7 +139,7 @@ const emitComponentContext = (
 const compileComponent = (compiler: Compiler, node: ComponentNode): string => {
   const { args, kwargs } = extractComponentArgs(compiler, node);
   const funcId = `component_${compiler.nextCompilerId()}`;
-  const { argNames, kwargNames, realNames } = buildComponentArgNames(args, kwargs);
+  const { argNames, kwargNames, realNames } = buildComponentArgNames(compiler, args, kwargs);
 
   const currFrame = createFrame();
 

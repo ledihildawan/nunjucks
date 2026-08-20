@@ -27,8 +27,10 @@ export const compileIf = (compiler: Compiler, { node, frame }: CompileNodeInput<
   }
 
   compiler.withScopedSyntax(() => {
+    // WHY: compile-time frame mirrors the emitted push/pop per the create-compiler contract.
+    const bodyFrame = frame.push(true);
     compiler.emitLine('frame = frame.push(true);');
-    compiler.compile(node.body, frame);
+    compiler.compile(node.body, bodyFrame);
     compiler.emitLine('frame = frame.pop();');
   });
 
@@ -37,8 +39,9 @@ export const compileIf = (compiler: Compiler, { node, frame }: CompileNodeInput<
     compiler.emitLine('}\nelse {');
 
     compiler.withScopedSyntax(() => {
+      const elseFrame = frame.push(true);
       compiler.emitLine('frame = frame.push(true);');
-      compiler.compile(elseNode, frame);
+      compiler.compile(elseNode, elseFrame);
       compiler.emitLine('frame = frame.pop();');
     });
   }

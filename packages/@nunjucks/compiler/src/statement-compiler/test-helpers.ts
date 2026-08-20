@@ -3,6 +3,7 @@
 // Empty-bodied members (e.g. popBuffer) deliberately return undefined: the doubles must
 // stay behavior-identical while remaining lint-clean as a non-test source file.
 import { createLog } from '@nunjucks/error-formatter';
+import type { Frame } from '@nunjucks/runtime';
 import type { FailFields } from '../codegen.ts';
 import { makeRecordingCore } from '../test-helpers.ts';
 
@@ -191,6 +192,25 @@ export const makeCaptureCompiler = () => {
     compile: (node: { marker?: string }) => {
       bufferAtCompile.push(buffer);
       core.emitted.push(node.marker ?? 'BODY');
+    },
+    withScopedSyntax: (fn: () => void) => fn(),
+  };
+};
+
+/** Recording double tracking the compile-time frame each compile call observed. */
+export const makeFrameTrackingCompiler = () => {
+  const core = makeRecordingCore();
+  const frames: Frame[] = [];
+  return {
+    ...core,
+    frames,
+    compile: (node: { marker?: string }, frame: Frame) => {
+      frames.push(frame);
+      core.emitted.push(node.marker ?? 'X');
+    },
+    compileExpression: (node: { marker?: string }, frame: Frame) => {
+      frames.push(frame);
+      core.emitted.push(node.marker ?? 'VAL');
     },
     withScopedSyntax: (fn: () => void) => fn(),
   };

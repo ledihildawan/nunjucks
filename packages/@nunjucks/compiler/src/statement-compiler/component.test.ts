@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { getNodeTypeName, symbol } from '@nunjucks/nodes';
+import { dict, getNodeTypeName, literal, pair, symbol } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
 import { compileComponentPublic } from './component.ts';
 
@@ -45,6 +45,9 @@ const makeCtx = () => {
         throw new Error(`assertType: invalid type: ${getNodeTypeName(node) as string}`);
       }
     },
+    fail: (options: { message: string }) => {
+      throw new Error(options.message);
+    },
   };
 };
 
@@ -73,5 +76,26 @@ describe('compileComponentPublic', () => {
     expect(() =>
       compileComponentPublic(ctx as never, { node: node as never, frame: frame as never })
     ).toThrow("Invalid identifier 'a\";evil()'");
+  });
+
+  test('fails loudly when a kwarg key is not a string name', () => {
+    // WHY: regression — pairKey used to return '' for non-string keys, leaking
+    // an empty kwarg name into kwargNames; it must surface as a compile error.
+    const ctx = makeCtx();
+    const kwargs = dict(loc({ lineno: 1, colno: 1 }), [
+      pair(loc({ lineno: 1, colno: 1 }), {
+        key: literal(loc({ lineno: 1, colno: 1 }), 5),
+        val: literal(loc({ lineno: 1, colno: 1 }), 1),
+      }),
+    ]);
+    const node = {
+      name: symbol(loc({ lineno: 1, colno: 1 }), 'MyComponent'),
+      args: [kwargs],
+      body: { marker: 'body' },
+    };
+    const frame = { parent: null, set: () => {} };
+    expect(() =>
+      compileComponentPublic(ctx as never, { node: node as never, frame: frame as never })
+    ).toThrow('keyword arguments must be name=value pairs with string names');
   });
 });

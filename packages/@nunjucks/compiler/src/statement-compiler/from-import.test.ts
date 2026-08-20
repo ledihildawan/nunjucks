@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { fromImportNode, literal, nodeList, pair, symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { loc } from '@nunjucks/shared';
-import { asCompiler } from '../test-helpers.ts';
+import { asCompiler, makeCodegenCompiler } from '../test-helpers.ts';
 import { compileFromImport } from './from-import.ts';
 import { makeImportCompiler } from './test-helpers.ts';
 
@@ -119,5 +120,27 @@ describe('compileFromImport', () => {
     const joined = c.emitted.join('');
     expect(joined).toContain('frame = frame.set({ name: "foo", value: t_2 });');
     expect(joined).not.toContain('context.setVariable');
+  });
+
+  test('fails loudly when a pair alias value is not a name', () => {
+    // WHY: regression — String() coercion of a malformed pair value used to
+    // bind the alias "undefined" silently; it must surface as a catalogued
+    // compile error instead.
+    const compiler = makeCodegenCompiler();
+    const node = buildFromImportNode(
+      nodeList(templateLoc, [
+        pair(templateLoc, { key: symbol(templateLoc, 'foo'), val: literal(templateLoc, 3) }),
+      ])
+    );
+    let caught: unknown;
+    try {
+      compileFromImport(asCompiler(compiler), { node, frame: createFrame() });
+    } catch (error: unknown) {
+      caught = error;
+    }
+    expect(caught).toBeDefined();
+    const templateError = caught as TemplateError;
+    expect(templateError.code).toBe('WALK_UNKNOWN_TYPE');
+    expect(String(templateError.message)).toContain('alias must be a name');
   });
 });

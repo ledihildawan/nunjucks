@@ -12,7 +12,8 @@ interface BinOpEmitterOptions {
   operator: string;
 }
 
-const binOpEmitter = ({ compiler, node, frame, operator }: BinOpEmitterOptions): void => {
+/** Emits a location-guarded `(left op right)` pair shared by every plain binary operator. */
+export const binOpEmitter = ({ compiler, node, frame, operator }: BinOpEmitterOptions): void => {
   emitLocationGuard(compiler, node.lineno, node.colno);
   compiler.compile(node.left, frame);
   compiler.emit(operator);
@@ -95,17 +96,11 @@ export const compileMod = (
   { node, frame }: CompileNodeInput<BinaryOpNode>
 ): void => binOpEmitter({ compiler, node, frame, operator: ' % ' });
 
-/** Compiles `??` as a location-guarded left/right pair. */
+/** Compiles `??` as a location-guarded left/right pair via `binOpEmitter`. */
 export const compileNullishCoalesce = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>
-): void => {
-  emitLocationGuard(compiler, node.lineno, node.colno);
-  compiler.compile(node.left, frame);
-  compiler.emit(' ?? ');
-  compiler.compile(node.right, frame);
-  compiler.emit(')');
-};
+): void => binOpEmitter({ compiler, node, frame, operator: ' ?? ' });
 
 /** Compiles `in` to a `runtime.inOperator({ key, value, lineno, colno })` call. */
 export const compileIn = (

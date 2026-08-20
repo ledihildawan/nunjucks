@@ -4,7 +4,7 @@
 // These are SANCTIONED engine test seams, not policy violations: they are hand-rolled
 // recording sinks over the local `Compiler` shape (no mocking framework, no infrastructure
 // doubles — the rule bans mocking I/O in core tests, not data fixtures of an engine type).
-import { createCompiler, type Compiler } from './create-compiler.ts';
+import { type Compiler, createCompiler } from './create-compiler.ts';
 
 /** Casts an externally built compiler object to `Compiler` for test wiring. */
 export const asCompiler = (compiler: unknown): Compiler => compiler as Compiler;

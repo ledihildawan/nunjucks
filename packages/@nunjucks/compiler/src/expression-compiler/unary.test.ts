@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import { createFrame } from '@nunjucks/runtime';
 import { asCompiler } from '../test-helpers.ts';
-import { compileNeg, compileNot, compilePos } from './unary.ts';
 import { makeMarkerCompiler } from './test-helpers.ts';
+import { compileNeg, compileNot, compilePos } from './unary.ts';
 
 const makeUnary = (marker: string) => ({
   lineno: 5,

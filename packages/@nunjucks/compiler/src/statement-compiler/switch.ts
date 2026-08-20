@@ -19,8 +19,10 @@ export const compileSwitch = (
     compiler.compile(c.cond, frame);
     compiler.emitLine(':');
     compiler.withScopedSyntax(() => {
+      // WHY: compile-time frame mirrors the emitted push/pop per the create-compiler contract.
+      const caseFrame = frame.push(true);
       compiler.emitLine('frame = frame.push(true);');
-      compiler.compile(c.body, frame);
+      compiler.compile(c.body, caseFrame);
       compiler.emitLine('frame = frame.pop();');
     });
     if ((c.body.children?.length ?? 0) > 0) {
@@ -31,8 +33,9 @@ export const compileSwitch = (
   if (defaultNode) {
     compiler.emitLine('default:');
     compiler.withScopedSyntax(() => {
+      const defaultFrame = frame.push(true);
       compiler.emitLine('frame = frame.push(true);');
-      compiler.compile(defaultNode, frame);
+      compiler.compile(defaultNode, defaultFrame);
       compiler.emitLine('frame = frame.pop();');
     });
   }

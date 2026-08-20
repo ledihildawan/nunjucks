@@ -135,4 +135,24 @@ describe('aggregate containers', () => {
     compileDict(asCompiler(c), { node: { children: [{ marker: 'a' }] } as never, frame });
     expect(c.emitted.join('')).toBe('{a}');
   });
+
+  test('null first child emits no leading comma (no array hole)', () => {
+    // WHY: latent edge unreachable via the parser — index arithmetic emitted a
+    // leading comma for a null first child, creating `[,a]` (a holed array).
+    const c = makeContainerCompiler();
+    compileArray(asCompiler(c), {
+      node: { children: [null, { marker: 'a' }] } as never,
+      frame,
+    });
+    expect(c.emitted.join('')).toBe('[a]');
+  });
+
+  test('null child mid-list is skipped without a stray comma', () => {
+    const c = makeContainerCompiler();
+    compileArray(asCompiler(c), {
+      node: { children: [{ marker: 'a' }, null, { marker: 'b' }] } as never,
+      frame,
+    });
+    expect(c.emitted.join('')).toBe('[a,b]');
+  });
 });

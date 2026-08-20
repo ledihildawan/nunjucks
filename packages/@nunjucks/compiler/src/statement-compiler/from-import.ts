@@ -8,11 +8,24 @@ import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileGetTemplate } from './template-lookup.ts';
 
-const extractNameAlias = (nameNode: Node): { name: string; alias: string } => {
+const extractNameAlias = (compiler: Compiler, nameNode: Node): { name: string; alias: string } => {
   if (isPair(nameNode)) {
     const key = nameNode.key;
     const name = typeof key === 'string' ? key : String(key.value);
-    return { name, alias: String(nameNode.value.value) };
+    // WHY: String() coercion of a malformed pair value would silently bind the
+    // alias "undefined"; fail loudly with a catalogued compile error instead.
+    const aliasValue = nameNode.value.value;
+    if (typeof aliasValue !== 'string') {
+      // WHY: String() coercion of a malformed pair value would silently bind the
+      // alias "undefined"; fail loudly with a catalogued compile error instead.
+      compiler.fail({
+        message: 'from-import: alias must be a name',
+        lineno: nameNode.lineno,
+        colno: nameNode.colno,
+      });
+      return { name, alias: name };
+    }
+    return { name, alias: aliasValue };
   }
   const name = String(nameNode.value);
   return { name, alias: name };
@@ -31,7 +44,7 @@ const compileImportedName = ({
   importedId,
   frame,
 }: CompileImportedNameOptions): void => {
-  const { name, alias } = extractNameAlias(nameNode);
+  const { name, alias } = extractNameAlias(compiler, nameNode);
   assertSafeIdentifier(name, { compiler });
   assertSafeIdentifier(alias, { compiler });
   const id = compiler.nextCompilerId();

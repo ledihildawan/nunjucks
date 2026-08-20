@@ -12,6 +12,8 @@ export const compileScope = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<ScopeNode>
 ): void => {
+  // WHY: compile-time frame mirrors the emitted push/pop per the create-compiler contract.
+  const bodyFrame = frame.push(true);
   compiler.emitLine('frame = frame.push(true);');
 
   if (node.assignments?.length > 0) {
@@ -20,7 +22,7 @@ export const compileScope = (
       assertSafeIdentifier(name, { compiler });
       const valueId = compiler.nextCompilerId();
       compiler.emitLine(`let ${valueId} = `);
-      compiler.compileExpression(pair.value, frame);
+      compiler.compileExpression(pair.value, bodyFrame);
       compiler.emitLine(';');
       compiler.emitLine(
         `frame = frame.set({ name: ${JSON.stringify(name)}, value: ${valueId}, resolveUp: true });`
@@ -29,7 +31,7 @@ export const compileScope = (
   }
 
   compiler.withScopedSyntax(() => {
-    compiler.compile(node.body, frame);
+    compiler.compile(node.body, bodyFrame);
   });
 
   compiler.emitLine('frame = frame.pop();');

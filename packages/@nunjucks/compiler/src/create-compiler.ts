@@ -1,9 +1,9 @@
+import { createHtmlContextTracker, type HtmlContext } from '@nunjucks/lib';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
-import { createHtmlContextTracker, type HtmlContext } from '@nunjucks/lib';
 import { DEFAULT_UNDEFINED_MODE, type UndefinedMode } from '@nunjucks/shared';
 import { forEach } from 'remeda';
-import { fail, getTemplateName, nextCompilerId, pushBuffer, type FailFields } from './codegen.ts';
+import { type FailFields, fail, getTemplateName, nextCompilerId, pushBuffer } from './codegen.ts';
 import {
   assertNodeType,
   compileNodeChildren,
