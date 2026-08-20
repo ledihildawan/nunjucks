@@ -26,7 +26,7 @@ const resolveEntrypoints = (manifest) => {
 
 let failed = false;
 
-for (const manifestPath of packageManifests) {
+const buildPackage = async (manifestPath) => {
   const packageDir = `packages/@nunjucks/${manifestPath.replace('/package.json', '')}`;
   const manifest = await Bun.file(`${packageDir}/package.json`).json();
   const entrypoints = resolveEntrypoints(manifest).map(
@@ -34,8 +34,7 @@ for (const manifestPath of packageManifests) {
   );
 
   if (entrypoints.length === 0) {
-    console.warn(`skip ${manifest.name} — no public entrypoint declared`);
-    continue;
+    return { status: 'skip', name: manifest.name };
   }
 
   const result = await Bun.build({
@@ -49,16 +48,36 @@ for (const manifestPath of packageManifests) {
   });
 
   if (!result.success) {
-    failed = true;
-    for (const log of result.logs) {
-      console.error(log);
-    }
-    continue;
+    return { status: 'fail', name: manifest.name, logs: result.logs };
   }
 
-  console.log(
-    `bundled ${manifest.name} (${entrypoints.length} entr${entrypoints.length === 1 ? 'y' : 'ies'})`
-  );
+  return { status: 'bundled', name: manifest.name, entries: entrypoints.length };
+};
+
+// WHY: each build targets a disjoint outdir and shares no state, so packages build
+// concurrently; results are reported in sorted manifest order so output stays
+// deterministic regardless of completion order.
+const outcomes = await Promise.allSettled(packageManifests.map(buildPackage));
+
+for (const outcome of outcomes) {
+  if (outcome.status === 'rejected') {
+    failed = true;
+    console.error(outcome.reason);
+    continue;
+  }
+  const build = outcome.value;
+  if (build.status === 'skip') {
+    console.warn(`skip ${build.name} — no public entrypoint declared`);
+  } else if (build.status === 'fail') {
+    failed = true;
+    for (const log of build.logs) {
+      console.error(log);
+    }
+  } else {
+    console.log(
+      `bundled ${build.name} (${build.entries} entr${build.entries === 1 ? 'y' : 'ies'})`
+    );
+  }
 }
 
 if (failed) {

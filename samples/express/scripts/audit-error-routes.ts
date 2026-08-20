@@ -217,6 +217,9 @@ const pad = (value: string | null | undefined, width: number): string =>
 
 const run = async (base: string): Promise<number> => {
   const routes = await discoverRoutes(base);
+  // WHY: order Map — indexOf inside the comparator would rescan `routes` per
+  // comparison (O(n²)); the Map keeps the sort O(n log n).
+  const routeOrder = new Map(routes.map((route, index) => [route, index] as const));
   const rows: RouteRow[] = (
     await Promise.all(
       routes.map(async (route): Promise<RouteRow> => {
@@ -255,7 +258,7 @@ const run = async (base: string): Promise<number> => {
         }
       })
     )
-  ).toSorted((a, b) => routes.indexOf(a.route) - routes.indexOf(b.route));
+  ).toSorted((a, b) => (routeOrder.get(a.route) ?? 0) - (routeOrder.get(b.route) ?? 0));
 
   console.log(`${pad('ROUTE', 26) + pad('STATUS', 11) + pad('LOCATION', 46)}CODE`);
   console.log('-'.repeat(120));
