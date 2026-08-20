@@ -261,4 +261,38 @@ describe('watch', () => {
     expect((emitted[0] as { name: string }).name).toBe('Template render error');
     expect((emitted[0] as { message: string }).message).toContain('watch failed');
   });
+
+  test('a real disk change emits update and the next getSource reads fresh content', async () => {
+    const dir = await makeDir();
+    const file = join(dir, 'live.njk');
+    await writeFile(file, 'before');
+    const loader = createFileSystemLoader(dir, { watch: true });
+
+    const first = await loader.getSource('live.njk');
+    expect(first !== null && isOk(first) && first.value.src === 'before').toBe(true);
+    // getSource auto-attached the watcher for the resolved path
+    expect(loader.watchedFiles.has(file)).toBe(true);
+
+    const updateArrived = new Promise<string>((resolve) => {
+      loader.on('update', (name) => resolve(String(name)));
+    });
+    // WHY: backdate + rewrite guarantees a strictly-greater mtime on every filesystem,
+    // so the memo consult must bust even where timestamp granularity is coarse.
+    const staleTime = new Date(Date.now() - 60_000);
+    await utimes(file, staleTime, staleTime);
+    await writeFile(file, 'after');
+
+    const timeoutSentinel = '_timeout_';
+    const eventName = await Promise.race([
+      updateArrived,
+      new Promise<string>((resolve) => setTimeout(() => resolve(timeoutSentinel), 3000)),
+    ]);
+    expect(eventName).not.toBe(timeoutSentinel);
+    expect(eventName).toContain('live.njk');
+
+    const second = await loader.getSource('live.njk');
+    expect(second !== null && isOk(second) && second.value.src === 'after').toBe(true);
+
+    loader.unwatchAll();
+  });
 });
