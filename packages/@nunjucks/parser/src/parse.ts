@@ -8,9 +8,10 @@ import { root } from '@nunjucks/nodes';
 import { ZERO_LOC } from '@nunjucks/shared';
 import type { ExpressionSecurityConfig } from '@nunjucks/validators';
 import { validateExpression } from '@nunjucks/validators';
-import type { ParserContext, ParserExtension, TokenStream } from './cursor.ts';
-import { fail } from './cursor.ts';
-import { parseNodes } from './parse-root.ts';
+import { fail } from './error.ts';
+import { parseExpression, parsePrimary } from './expression-parser/index.ts';
+import { parseNodes, parseUntilBlocks } from './parse-root.ts';
+import type { ParserContext, ParserExtension, TokenStream } from './parser-context.ts';
 
 /**
  * Parser entry options: lexer delimiters plus optional expression-security
@@ -24,12 +25,20 @@ export interface ParseOptions extends LexerOptions {
 
 /** Creates a fresh `ParserContext` over a token stream with no peeked token. */
 export const createParser = (tokens: TokenStream): ParserContext => {
-  return {
+  // WHY: the parse* members are the late-bound recursion seam assigned once here —
+  // recursive-descent tiers (statement ↔ node loop ↔ expression) call each other
+  // through the context so the module graph stays acyclic (see parser-context.ts).
+  const parserContext: ParserContext = {
     tokens,
     peeked: null,
     dropLeadingWhitespace: false,
     extensions: [],
+    parseNodes: (breakOn) => parseNodes(parserContext, breakOn),
+    parseUntilBlocks: (...blockNames) => parseUntilBlocks(parserContext, ...blockNames),
+    parseExpression: () => parseExpression(parserContext),
+    parsePrimary: () => parsePrimary(parserContext),
   };
+  return parserContext;
 };
 
 /**
@@ -48,7 +57,7 @@ export const parse = (
   if (extensions !== undefined) {
     parser.extensions = [...extensions];
   }
-  let nodesR: ReturnType<typeof parseNodes>;
+  let nodesR: Result<Node[], TemplateError>;
   try {
     nodesR = parseNodes(parser);
   } catch (thrownError: unknown) {

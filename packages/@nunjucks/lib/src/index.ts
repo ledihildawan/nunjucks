@@ -24,6 +24,7 @@ export { replace, slice } from './pipe-helpers.ts';
 export { readErrorCode } from './read-error-code.ts';
 export type { Err, Ok, Result } from './result.ts';
 export { err, getOrElse, isErr, isOk, ok } from './result.ts';
+export { isSafeIdentifier, SAFE_IDENTIFIER_RE } from './safe-identifier.ts';
 export {
   copySafeness,
   createSafeString,

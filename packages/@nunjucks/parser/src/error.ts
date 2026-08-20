@@ -1,9 +1,13 @@
 import type { ErrorDefinitionEntry, RawLogData, TemplateError } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
-import { err, isOk, MATCH_ANY_RE, type Result } from '@nunjucks/lib';
+import type { Token } from '@nunjucks/lexer';
+import { err, MATCH_ANY_RE, type Result } from '@nunjucks/lib';
 import { find, mapValues } from 'remeda';
-import type { ParserContext } from './cursor.ts';
-import { peekToken } from './cursor.ts';
+// WHY: imported from the leaf context module, not cursor.ts — error.ts sits BELOW
+// the cursor helpers in the module graph, and importing cursor.ts recreated a
+// cursor ↔ error import cycle.
+import type { ParserContext } from './parser-context.ts';
+import { nextTokenOrNull } from './parser-context.ts';
 
 const CAUSE_PATTERNS: Array<{ check: (lower: string) => boolean; causes: string[] }> = [
   {
@@ -113,8 +117,15 @@ export const error = (
   { message, lineno, colno, sentinel }: ParserErrorOptions
 ): ParserError => {
   const needsResolve = lineno === undefined || colno === undefined;
-  const peekedResult = needsResolve ? peekToken(parserContext) : undefined;
-  const peeked = peekedResult && isOk(peekedResult) ? peekedResult.value : undefined;
+  let peeked: Token | undefined;
+  if (needsResolve) {
+    // WHY: fills the same one-slot peek cache peekToken uses, without importing
+    // cursor.ts — a missing peek at end of input resolves to the zero location.
+    if (parserContext.peeked === null) {
+      parserContext.peeked = nextTokenOrNull(parserContext);
+    }
+    peeked = parserContext.peeked ?? undefined;
+  }
   const resolvedLineno = needsResolve ? (peeked?.lineno ?? 0) : lineno;
   const resolvedColno = needsResolve ? (peeked?.colno ?? 0) : colno;
   const errObj = createLog('error', {

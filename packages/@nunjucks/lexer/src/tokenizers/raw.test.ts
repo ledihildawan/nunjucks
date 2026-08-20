@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { createState } from '../state.ts';
 import { tokenizeRaw } from './raw.ts';
 
-const run = (src: string, offset = 0) => tokenizeRaw(createState(src.slice(offset)));
+const run = (src: string) => tokenizeRaw(createState(src));
 
 describe('tokenizeRaw', () => {
   test('returns null for non-block-start', () => {

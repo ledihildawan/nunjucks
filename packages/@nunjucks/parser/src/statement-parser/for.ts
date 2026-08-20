@@ -8,7 +8,6 @@ import type { ParserContext } from '../cursor.ts';
 import { advanceAfterBlockEnd, fail, peekToken, skip, skipSymbol } from '../cursor.ts';
 import { parseExpression, parsePrimary } from '../expression-parser/index.ts';
 import { tryParsePattern } from '../node-parser/pattern.ts';
-import { parseUntilBlocks } from '../parse-root.ts';
 
 const parseForTarget = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const patternNodeR = tryParsePattern(parserContext);
@@ -97,7 +96,7 @@ export const parseFor = (parserContext: ParserContext): Result<Node, TemplateErr
     return blockEndR;
   }
 
-  const bodyR = parseUntilBlocks(parserContext, endBlock, 'else');
+  const bodyR = parserContext.parseUntilBlocks(endBlock, 'else');
   if (isErr(bodyR)) {
     return bodyR;
   }
@@ -108,7 +107,7 @@ export const parseFor = (parserContext: ParserContext): Result<Node, TemplateErr
     if (isErr(advanceResult)) {
       return advanceResult;
     }
-    const altBodyR = parseUntilBlocks(parserContext, endBlock);
+    const altBodyR = parserContext.parseUntilBlocks(endBlock);
     if (isErr(altBodyR)) {
       return altBodyR;
     }

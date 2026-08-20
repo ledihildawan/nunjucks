@@ -1,89 +1,24 @@
 import { createInternalInvariantError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import type { Delimiters, Token } from '@nunjucks/lexer';
+import type { Token } from '@nunjucks/lexer';
 import {
   isBlockEndToken,
   isSymbolToken,
   isVariableEndToken,
   TOKEN_OPERATOR,
   TOKEN_SYMBOL,
-  TOKEN_WHITESPACE,
 } from '@nunjucks/lexer';
 import { isErr, ok, type Result } from '@nunjucks/lib';
-import type { Node } from '@nunjucks/nodes';
 import { fail } from './error.ts';
+import type { ParserContext } from './parser-context.ts';
+import { nextTokenOrNull } from './parser-context.ts';
 
-/**
- * Pull-based token source: `nextToken` yields the next token or `null` at
- * end of input, and `tags` exposes the active delimiter strings.
- */
-export interface TokenStream {
-  nextToken: () => Token | null;
-  tags: Delimiters;
-}
-
-/**
- * Custom tag hook: `tags` lists the tag names the extension owns, and `parse`
- * receives the parser context, node builders, and lexer token constants.
- */
-export interface ParserExtension {
-  tags?: string[];
-  parse?: (parserContext: ParserContext, nodes: unknown, lexer: unknown) => Node | null;
-  [key: string]: unknown;
-}
-
-/**
- * Mutable parser state threaded through every parse function: the token
- * stream, a single-slot peek/pushback buffer, the whitespace-drop flag, and
- * the registered extensions.
- */
-export interface ParserContext {
-  tokens: TokenStream;
-  peeked: Token | null;
-  dropLeadingWhitespace: boolean;
-  extensions: ParserExtension[];
-}
+export type { ParserContext, ParserExtension, TokenStream } from './parser-context.ts';
+export { nextTokenOrNull } from './parser-context.ts';
 
 interface NextTokenOptions {
   withWhitespace?: boolean;
 }
-
-/**
- * Consumes and returns the next token, or `null` at end of input. Whitespace
- * tokens are skipped unless `withWhitespace` is set, and a peeked whitespace
- * token is discarded rather than returned.
- */
-export const nextTokenOrNull = (
-  parserContext: ParserContext,
-  options?: NextTokenOptions
-): Token | null => {
-  const withWhitespace = options?.withWhitespace ?? false;
-  let tok: Token | null;
-
-  if (parserContext.peeked) {
-    if (!withWhitespace && parserContext.peeked.type === TOKEN_WHITESPACE) {
-      parserContext.peeked = null;
-    } else {
-      tok = parserContext.peeked;
-      parserContext.peeked = null;
-      return tok;
-    }
-  }
-
-  tok = parserContext.tokens.nextToken();
-
-  if (!withWhitespace) {
-    const skipWhitespace = (currentTok: Token | null): Token | null => {
-      if (currentTok?.type !== TOKEN_WHITESPACE) {
-        return currentTok;
-      }
-      return skipWhitespace(parserContext.tokens.nextToken());
-    };
-    tok = skipWhitespace(tok);
-  }
-
-  return tok;
-};
 
 const EOF_LOCATION = { lineno: 0, colno: 0 } as const;
 
@@ -215,8 +150,16 @@ export const consumeWhitespaceDrop = (parserContext: ParserContext): boolean => 
 };
 
 /** Consumes the next token if it is an operator matching any of `vals`. */
-export const skipOperator = (parserContext: ParserContext, ...vals: string[]): boolean =>
-  vals.some((value) => skipValue(parserContext, TOKEN_OPERATOR, value));
+export const skipOperator = (parserContext: ParserContext, ...vals: string[]): boolean => {
+  // WHY: explicit loop — .some() reads as a pure membership test, but each probe
+  // advances or pushes back the token stream.
+  for (const value of vals) {
+    if (skipValue(parserContext, TOKEN_OPERATOR, value)) {
+      return true;
+    }
+  }
+  return false;
+};
 
 /**
  * Consumes the closing `%}` of the current tag, reading the tag name from

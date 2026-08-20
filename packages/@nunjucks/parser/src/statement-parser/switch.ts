@@ -6,7 +6,6 @@ import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
 import { advanceAfterBlockEnd, fail, peekToken, skipSymbol } from '../cursor.ts';
 import { parseExpression } from '../expression-parser/index.ts';
-import { parseUntilBlocks } from '../parse-root.ts';
 
 const SWITCH_TOKENS = {
   switchStart: 'switch',
@@ -37,8 +36,7 @@ const parseSwitchCases = (
     if (isErr(blockEndR)) {
       return blockEndR;
     }
-    const bodyR = parseUntilBlocks(
-      parserContext,
+    const bodyR = parserContext.parseUntilBlocks(
       SWITCH_TOKENS.caseStart,
       SWITCH_TOKENS.caseDefault,
       SWITCH_TOKENS.switchEnd
@@ -67,7 +65,7 @@ const handleSwitchEnd = (parserContext: ParserContext): Result<Node | undefined,
       if (isErr(advanceResult)) {
         return advanceResult;
       }
-      const bodyR = parseUntilBlocks(parserContext, SWITCH_TOKENS.switchEnd);
+      const bodyR = parserContext.parseUntilBlocks(SWITCH_TOKENS.switchEnd);
       if (isErr(bodyR)) {
         return bodyR;
       }
@@ -127,8 +125,7 @@ export const parseSwitch = (parserContext: ParserContext): Result<Node, Template
   if (isErr(headerEndR)) {
     return headerEndR;
   }
-  const headerBodyR = parseUntilBlocks(
-    parserContext,
+  const headerBodyR = parserContext.parseUntilBlocks(
     SWITCH_TOKENS.caseStart,
     SWITCH_TOKENS.caseDefault,
     SWITCH_TOKENS.switchEnd

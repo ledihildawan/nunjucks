@@ -6,7 +6,6 @@ import { capture } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
 import { advanceAfterBlockEnd, fail, nextTokenOrNull, peekToken, skipSymbol } from '../cursor.ts';
-import { parseUntilBlocks } from '../parse-root.ts';
 
 /** Parses `{% capture var %}...{% endcapture %}`, storing the rendered body in `var`. */
 export const parseCapture = (parserContext: ParserContext): Result<Node, TemplateError> => {
@@ -33,7 +32,7 @@ export const parseCapture = (parserContext: ParserContext): Result<Node, Templat
   if (isErr(blockEndR)) {
     return blockEndR;
   }
-  const bodyR = parseUntilBlocks(parserContext, 'endcapture');
+  const bodyR = parserContext.parseUntilBlocks('endcapture');
   if (isErr(bodyR)) {
     return bodyR;
   }

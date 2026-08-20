@@ -20,7 +20,7 @@ const isUnderscore = (name: Node): boolean => {
 const parseImportName = (
   parserContext: ParserContext,
   names: Node[]
-): Result<boolean | null | undefined, TemplateError> => {
+): Result<boolean | null, TemplateError> => {
   const nameR = parsePrimary(parserContext);
   if (isErr(nameR)) {
     return nameR;
@@ -79,7 +79,7 @@ const parseFromImportIteration = (
   parserContext: ParserContext,
   names: Node[],
   fromTok: Token
-): Result<{ withContext: boolean | null | undefined; done: boolean }, TemplateError> => {
+): Result<{ withContext: boolean | null; done: boolean }, TemplateError> => {
   const nextTokR = peekToken(parserContext);
   if (isErr(nextTokR)) {
     return nextTokR;
@@ -89,7 +89,7 @@ const parseFromImportIteration = (
     if (isErr(endR)) {
       return endR;
     }
-    return ok({ withContext: undefined, done: true });
+    return ok({ withContext: null, done: true });
   }
 
   if (names.length > 0 && !skip(parserContext, TOKEN_COMMA)) {
@@ -140,7 +140,7 @@ export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateEr
   // through the copying appendChild (O(n²)), so `{% from x import a,b,c,... %}`
   // overflowed the stack and crawled on long lists.
   const names: Node[] = [];
-  let withContext: boolean | null | undefined;
+  let withContext: boolean | null = null;
   while (true) {
     const iterR = parseFromImportIteration(parserContext, names, fromTok);
     if (isErr(iterR)) {

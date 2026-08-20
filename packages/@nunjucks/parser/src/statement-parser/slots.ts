@@ -8,12 +8,12 @@ import type { Loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
 import {
   advanceAfterBlockEnd,
+  fail,
   nextToken,
   nextTokenOrNull,
   peekToken,
   skipSymbol,
 } from '../cursor.ts';
-import { parseUntilBlocks } from '../parse-root.ts';
 
 interface ParsedSlot {
   name: string;
@@ -44,21 +44,29 @@ const isTerminatorSymbol = (peeked: Token, endTag: string): boolean =>
 
 const isSlotSymbol = (peeked: Token): boolean => isSymbolToken(peeked) && peeked.value === 'slot';
 
-const parseSlotParams = (parserContext: ParserContext): string[] => {
+const parseSlotParams = (parserContext: ParserContext): Result<string[], TemplateError> => {
   // WHY: iterative loop (parser loop exemption) — the recursive collect recursed once
   // per param/comma token, so pathological slot param lists overflowed the stack.
   const params: string[] = [];
   while (true) {
     const inner = nextTokenOrNull(parserContext);
     if (!inner || inner.type === TOKEN_RIGHT_PAREN) {
-      return params;
+      return ok(params);
     }
     if (inner.type === TOKEN_COMMA) {
       continue;
     }
     if (isSymbolToken(inner)) {
       params.push(inner.value);
+      continue;
     }
+    // WHY: fail loudly — the previous silent skip swallowed typos like
+    // `{% slot x(123) %}` into a slot whose params disagreed with its source.
+    return fail(parserContext, {
+      message: `unexpected token in slot params: ${inner.type}`,
+      lineno: inner.lineno,
+      colno: inner.colno,
+    });
   }
 };
 
@@ -94,14 +102,18 @@ const parseSlotBlock = (parserContext: ParserContext): Result<ParsedSlot, Templa
     if (isErr(consumedR)) {
       return consumedR;
     }
-    params.push(...parseSlotParams(parserContext));
+    const paramsR = parseSlotParams(parserContext);
+    if (isErr(paramsR)) {
+      return paramsR;
+    }
+    params.push(...paramsR.value);
   }
 
   const blockEndR = advanceAfterBlockEnd(parserContext, 'slot');
   if (isErr(blockEndR)) {
     return blockEndR;
   }
-  const bodyR = parseUntilBlocks(parserContext, 'endslot');
+  const bodyR = parserContext.parseUntilBlocks('endslot');
   if (isErr(bodyR)) {
     return bodyR;
   }
@@ -153,7 +165,7 @@ export const parseSlottedBody = (
       categorizeSlot(slotR.value, namedSlots, implicitSlots);
       continue;
     }
-    const chunkR = parseUntilBlocks(parserContext, 'slot', endTag);
+    const chunkR = parserContext.parseUntilBlocks('slot', endTag);
     if (isErr(chunkR)) {
       return chunkR;
     }

@@ -13,7 +13,6 @@ import { appendChild, isAssignmentPattern, keywordArgs, nodeList, pair } from '@
 import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
 import { fail, nextToken, peekToken, peekTokenOrNull, skip, skipValue } from '../cursor.ts';
-import { parseExpression } from '../expression-parser/index.ts';
 
 interface SignatureArgState {
   args: Node[];
@@ -52,7 +51,7 @@ const parseSignatureArg = ({
     });
   }
 
-  const argumentR = parseExpression(parserContext);
+  const argumentR = parserContext.parseExpression();
   if (isErr(argumentR)) {
     return argumentR;
   }
@@ -63,7 +62,7 @@ const parseSignatureArg = ({
     if (isErr(consumedR)) {
       return consumedR;
     }
-    const valueR = parseExpression(parserContext);
+    const valueR = parserContext.parseExpression();
     if (isErr(valueR)) {
       return valueR;
     }
@@ -71,7 +70,7 @@ const parseSignatureArg = ({
     return ok({ args, kwargs, checkComma: true });
   }
   if (skipValue(parserContext, TOKEN_OPERATOR, '=')) {
-    const valueR = parseExpression(parserContext);
+    const valueR = parserContext.parseExpression();
     if (isErr(valueR)) {
       return valueR;
     }

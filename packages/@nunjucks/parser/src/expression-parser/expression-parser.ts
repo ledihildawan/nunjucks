@@ -45,5 +45,4 @@ const parseTernaryExpression = (parserContext: ParserContext): Result<Node, Temp
 const parseExpression = (parserContext: ParserContext): Result<Node, TemplateError> =>
   parseTernaryExpression(parserContext);
 
-export { parsePrimary } from './primary.ts';
 export { parseExpression };

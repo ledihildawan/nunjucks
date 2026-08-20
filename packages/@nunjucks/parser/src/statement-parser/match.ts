@@ -9,7 +9,6 @@ import type { ParserContext } from '../cursor.ts';
 import { advanceAfterBlockEnd, fail, peekToken, skipSymbol } from '../cursor.ts';
 import { parseExpression, parsePrimary } from '../expression-parser/index.ts';
 import { tryParsePattern } from '../node-parser/pattern.ts';
-import { parseUntilBlocks } from '../parse-root.ts';
 
 const parseWhenDefault = (parserContext: ParserContext): Result<Node, TemplateError> => {
   skipSymbol(parserContext, '_');
@@ -17,7 +16,7 @@ const parseWhenDefault = (parserContext: ParserContext): Result<Node, TemplateEr
   if (isErr(advanceResult)) {
     return advanceResult;
   }
-  return parseUntilBlocks(parserContext, 'endmatch');
+  return parserContext.parseUntilBlocks('endmatch');
 };
 
 const parseWhenPattern = (parserContext: ParserContext): Result<Node, TemplateError> => {
@@ -60,7 +59,7 @@ const parseWhenBranch = (
   if (isErr(whenEndR)) {
     return whenEndR;
   }
-  const bodyR = parseUntilBlocks(parserContext, 'when', 'endmatch');
+  const bodyR = parserContext.parseUntilBlocks('when', 'endmatch');
   if (isErr(bodyR)) {
     return bodyR;
   }
@@ -147,7 +146,7 @@ export const parseMatch = (parserContext: ParserContext): Result<Node, TemplateE
     return headerEndR;
   }
 
-  const headerBodyR = parseUntilBlocks(parserContext, 'when', 'endmatch');
+  const headerBodyR = parserContext.parseUntilBlocks('when', 'endmatch');
   if (isErr(headerBodyR)) {
     return headerBodyR;
   }

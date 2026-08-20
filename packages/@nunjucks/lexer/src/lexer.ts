@@ -16,11 +16,6 @@ const updateCodeState = (tokenType: string, state: LexerState): LexerState => {
   return state;
 };
 
-const processTokenizerResult = (result: { token: Token; state: LexerState }): LexerState => {
-  const state = result.state;
-  return updateCodeState(result.token.type, state);
-};
-
 const handleUnexpectedChar = (state: LexerState): never => {
   const char = getChar(state);
   throw createLog('error', {
@@ -48,7 +43,7 @@ const lexGenerator = function* (state: LexerState): Generator<Token, void, unkno
     const result = tokenize(current);
     if (result) {
       yield result.token;
-      current = processTokenizerResult(result);
+      current = updateCodeState(result.token.type, result.state);
       continue;
     }
     const char = getChar(current);

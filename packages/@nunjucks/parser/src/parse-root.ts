@@ -7,7 +7,7 @@ import {
   TOKEN_RAW,
   TOKEN_VARIABLE_START,
 } from '@nunjucks/lexer';
-import { isErr, ok, type Result } from '@nunjucks/lib';
+import { escapeRegex, isErr, ok, type Result } from '@nunjucks/lib';
 import type { Node } from '@nunjucks/nodes';
 import { nodeList, output, templateData } from '@nunjucks/nodes';
 import { loc, ZERO_LOC } from '@nunjucks/shared';
@@ -41,8 +41,6 @@ const parseUntilBlocks = (
 const LEADING_WHITESPACE_RE = /^\s*/;
 const TRAILING_WHITESPACE_RE = /\s*$/;
 
-const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
 interface RawTagRegexes {
   open: RegExp;
   close: RegExp;
@@ -52,8 +50,8 @@ interface RawTagRegexes {
 // included) with the fixed dash strip forms as alternatives, so `{% raw -%}` and
 // `{%- endraw %}` are recognized instead of leaking into the output.
 const buildRawTagRegexes = (tags: Delimiters): RawTagRegexes => {
-  const openStart = `(?:${escapeRegExp(tags.stripBlockStart)}|${escapeRegExp(tags.blockStart)})`;
-  const closeEnd = `(?:${escapeRegExp(tags.stripBlockEnd)}|${escapeRegExp(tags.blockEnd)})`;
+  const openStart = `(?:${escapeRegex(tags.stripBlockStart)}|${escapeRegex(tags.blockStart)})`;
+  const closeEnd = `(?:${escapeRegex(tags.stripBlockEnd)}|${escapeRegex(tags.blockEnd)})`;
   return {
     open: new RegExp(`^${openStart}\\s*(?:raw|verbatim)\\s*${closeEnd}`),
     close: new RegExp(`${openStart}\\s*(?:endraw|endverbatim)\\s*${closeEnd}$`),

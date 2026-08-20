@@ -28,7 +28,6 @@ import {
 import { type Loc, loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
 import { fail, nextToken, peekToken, peekTokenOrNull, skip } from '../cursor.ts';
-import { parseExpression } from '../expression-parser/index.ts';
 
 const isDestructuringStart = (parserContext: ParserContext): boolean => {
   const tok = peekTokenOrNull(parserContext);
@@ -77,7 +76,7 @@ const parseAssignmentDefault = (
     if (isErr(consumedR)) {
       return consumedR;
     }
-    const defaultExprR = parseExpression(parserContext);
+    const defaultExprR = parserContext.parseExpression();
     if (isErr(defaultExprR)) {
       return defaultExprR;
     }

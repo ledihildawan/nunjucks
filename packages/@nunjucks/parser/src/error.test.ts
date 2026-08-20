@@ -4,16 +4,9 @@ import { isErr } from '@nunjucks/lib';
 import type { ParserContext } from './cursor.ts';
 import { peekTokenOrNull } from './cursor.ts';
 import { error, errorAt, fail } from './error.ts';
+import { createParser } from './parse.ts';
 
-const makeCtx = (src: string): ParserContext => {
-  const tk = createTokenizer(src);
-  return {
-    tokens: tk,
-    peeked: null,
-    dropLeadingWhitespace: false,
-    extensions: [],
-  };
-};
+const makeCtx = (src: string): ParserContext => createParser(createTokenizer(src));
 
 describe('error: cause inference', () => {
   test('expected-expression messages map to the missing-expression causes', () => {

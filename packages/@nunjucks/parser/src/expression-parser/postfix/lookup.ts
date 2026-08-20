@@ -7,7 +7,6 @@ import { BracketNotation, lookupVal, slice } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../../cursor.ts';
 import { expect, peekToken, skip } from '../../cursor.ts';
-import { parseExpression } from '../index.ts';
 
 type LeftBracketToken = Token & { type: typeof TOKEN_LEFT_BRACKET };
 
@@ -26,7 +25,7 @@ const buildSlice = (
   }
   let stop: Node | null = null;
   if (peekedStopR.value.type !== TOKEN_RIGHT_BRACKET && peekedStopR.value.type !== TOKEN_COLON) {
-    const stopR = parseExpression(parserContext);
+    const stopR = parserContext.parseExpression();
     if (isErr(stopR)) {
       return stopR;
     }
@@ -41,7 +40,7 @@ const buildSlice = (
       return peekedStepR;
     }
     if (peekedStepR.value.type !== TOKEN_RIGHT_BRACKET) {
-      const stepR = parseExpression(parserContext);
+      const stepR = parserContext.parseExpression();
       if (isErr(stepR)) {
         return stepR;
       }
@@ -77,7 +76,7 @@ const parseBracketAccess = (
     return ok(node);
   }
 
-  const startR = parseExpression(parserContext);
+  const startR = parserContext.parseExpression();
   if (isErr(startR)) {
     return startR;
   }

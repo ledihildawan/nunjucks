@@ -6,7 +6,6 @@ import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
 import { advanceAfterBlockEnd, fail, peekToken, skipSymbol } from '../cursor.ts';
 import { parseFilterCallArgs, parseFilterCallName } from '../expression-parser/postfix/index.ts';
-import { parseUntilBlocks } from '../parse-root.ts';
 
 /**
  * Parses `{% filter name(args) %}...{% endfilter %}` by capturing the body
@@ -35,7 +34,7 @@ export const parseFilterStatement = (parserContext: ParserContext): Result<Node,
   if (isErr(blockEndR)) {
     return blockEndR;
   }
-  const capturedBodyR = parseUntilBlocks(parserContext, 'endfilter');
+  const capturedBodyR = parserContext.parseUntilBlocks('endfilter');
   if (isErr(capturedBodyR)) {
     return capturedBodyR;
   }

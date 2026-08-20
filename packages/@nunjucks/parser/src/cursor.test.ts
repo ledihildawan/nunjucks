@@ -14,15 +14,7 @@ import {
 } from './cursor.ts';
 import { createParser } from './index.ts';
 
-const makeCtx = (src: string): ParserContext => {
-  const tk = createTokenizer(src);
-  return {
-    tokens: tk,
-    peeked: null,
-    dropLeadingWhitespace: false,
-    extensions: [],
-  };
-};
+const makeCtx = (src: string): ParserContext => createParser(createTokenizer(src));
 
 describe('cursor: token navigation', () => {
   test('nextTokenOrNull returns tokens then null at EOF', () => {

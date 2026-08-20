@@ -13,7 +13,6 @@ import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../../cursor.ts';
 import { fail, nextToken, peekToken, skip, skipValue } from '../../cursor.ts';
 import { EXPECTED_COLON_AFTER_DICT_KEY } from '../../error.ts';
-import { parseExpression, parsePrimary } from '../../expression-parser/index.ts';
 
 const parseSpread = (
   parserContext: ParserContext,
@@ -23,7 +22,7 @@ const parseSpread = (
   if (isErr(consumedR)) {
     return consumedR;
   }
-  const argumentR = parseExpression(parserContext);
+  const argumentR = parserContext.parseExpression();
   if (isErr(argumentR)) {
     return argumentR;
   }
@@ -38,7 +37,7 @@ const parseDictDefaultAssignment = (
   if (isErr(consumedR)) {
     return consumedR;
   }
-  const defaultValueR = parseExpression(parserContext);
+  const defaultValueR = parserContext.parseExpression();
   if (isErr(defaultValueR)) {
     return defaultValueR;
   }
@@ -61,13 +60,13 @@ const parseDictItem = (
   if (peekR.value.type === TOKEN_SPREAD) {
     return parseSpread(parserContext, origin);
   }
-  const keyR = parsePrimary(parserContext);
+  const keyR = parserContext.parsePrimary();
   if (isErr(keyR)) {
     return keyR;
   }
   const key = keyR.value;
   if (skip(parserContext, TOKEN_COLON)) {
-    const valueR = parseExpression(parserContext);
+    const valueR = parserContext.parseExpression();
     if (isErr(valueR)) {
       return valueR;
     }
@@ -120,13 +119,13 @@ export const parseAggregateExpression = (
     return parseSpread(parserContext, origin);
   }
 
-  const expressionR = parseExpression(parserContext);
+  const expressionR = parserContext.parseExpression();
   if (isErr(expressionR)) {
     return expressionR;
   }
   const expression = expressionR.value;
   if (skipValue(parserContext, TOKEN_OPERATOR, '=')) {
-    const defaultValueR = parseExpression(parserContext);
+    const defaultValueR = parserContext.parseExpression();
     if (isErr(defaultValueR)) {
       return defaultValueR;
     }

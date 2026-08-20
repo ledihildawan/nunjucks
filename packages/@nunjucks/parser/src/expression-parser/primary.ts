@@ -233,7 +233,9 @@ const parseUnaryWithoutPipes = (parserContext: ParserContext): Result<Node, Temp
     }
   }
   return ok(node);
-}; /**
+};
+
+/**
  * Parses a unary expression: optional prefix operators (`-`, `+`, `~`,
  * `++`, `--`) applied to a primary, followed by `|>` pipe-forward calls.
  */

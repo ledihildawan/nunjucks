@@ -8,7 +8,6 @@ import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
 import { advanceAfterBlockEnd, fail, nextToken, peekToken, skip, skipSymbol } from '../cursor.ts';
 import { parseExpression } from '../expression-parser/index.ts';
-import { parseUntilBlocks } from '../parse-root.ts';
 
 const isBlockEnd = (tok: Token | null | undefined): boolean => tok?.type === TOKEN_BLOCK_END;
 
@@ -133,7 +132,7 @@ export const parseScope = (parserContext: ParserContext): Result<Node, TemplateE
     });
   }
 
-  const bodyR = parseUntilBlocks(parserContext, 'endscope');
+  const bodyR = parserContext.parseUntilBlocks('endscope');
   if (isErr(bodyR)) {
     return bodyR;
   }

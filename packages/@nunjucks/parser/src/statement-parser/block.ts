@@ -6,7 +6,6 @@ import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
 import { advanceAfterBlockEnd, fail, peekToken, skipSymbol } from '../cursor.ts';
 import { parsePrimary } from '../expression-parser/index.ts';
-import { parseUntilBlocks } from '../parse-root.ts';
 
 /** Parses `{% block name %}...{% endblock %}`, tolerating a repeated name after `endblock`. */
 export const parseBlock = (parserContext: ParserContext): Result<Node, TemplateError> => {
@@ -41,7 +40,7 @@ export const parseBlock = (parserContext: ParserContext): Result<Node, TemplateE
     return blockEndR;
   }
 
-  const bodyR = parseUntilBlocks(parserContext, 'endblock');
+  const bodyR = parserContext.parseUntilBlocks('endblock');
   if (isErr(bodyR)) {
     return bodyR;
   }

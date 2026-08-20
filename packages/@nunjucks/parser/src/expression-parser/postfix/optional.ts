@@ -15,7 +15,6 @@ import { literal, nodeList, optionalCall, optionalChain } from '@nunjucks/nodes'
 import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../../cursor.ts';
 import { fail, nextToken, peekToken } from '../../cursor.ts';
-import { parseExpression } from '../index.ts';
 import { markAsBracket, markAsDot } from './lookup.ts';
 
 type OptionalChainOperatorToken = Token & { type: typeof TOKEN_OPERATOR };
@@ -87,7 +86,7 @@ const parseOptionalCallArgs = (
       return commaR;
     }
 
-    const argumentR = parseExpression(parserContext);
+    const argumentR = parserContext.parseExpression();
     if (isErr(argumentR)) {
       return argumentR;
     }
@@ -121,7 +120,7 @@ const parseOptionalBracket = (
   if (isErr(consumedBracketR)) {
     return consumedBracketR;
   }
-  const startR = parseExpression(parserContext);
+  const startR = parserContext.parseExpression();
   if (isErr(startR)) {
     return startR;
   }

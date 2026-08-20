@@ -1,3 +1,4 @@
+import { createInternalInvariantError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Token } from '@nunjucks/lexer';
 import { isErr, ok, type Result } from '@nunjucks/lib';
@@ -7,7 +8,6 @@ import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
 import { advanceAfterBlockEnd, fail, peekToken, skipSymbol } from '../cursor.ts';
 import { parseExpression } from '../expression-parser/index.ts';
-import { parseUntilBlocks } from '../parse-root.ts';
 
 interface IfBranch {
   tag: Token;
@@ -20,7 +20,7 @@ const parseIfElseAlternate = (parserContext: ParserContext): Result<Node, Templa
   if (isErr(elseEndR)) {
     return elseEndR;
   }
-  const altBodyR = parseUntilBlocks(parserContext, 'endif');
+  const altBodyR = parserContext.parseUntilBlocks('endif');
   if (isErr(altBodyR)) {
     return altBodyR;
   }
@@ -63,7 +63,7 @@ const parseIfBranch = (
     return blockEndR;
   }
 
-  const bodyR = parseUntilBlocks(parserContext, 'elif', 'elseif', 'else', 'endif');
+  const bodyR = parserContext.parseUntilBlocks('elif', 'elseif', 'else', 'endif');
   if (isErr(bodyR)) {
     return bodyR;
   }
@@ -103,15 +103,31 @@ const parseIfTerminator = (
   }
 };
 
-const foldIfBranches = (branches: readonly IfBranch[], alternate: Node | null): Node => {
-  let node: Node | null = alternate;
-  for (let i = branches.length - 1; i >= 0; i--) {
-    const branch = branches[i];
-    if (branch) {
-      node = ifNode(loc(branch.tag), { cond: branch.cond, body: branch.body, alternate: node });
-    }
+// WHY: destructured head pins the non-empty precondition parseIf guarantees —
+// the first branch is the outermost `if`, later branches nest inward around
+// `alternate`, and no cast is needed to satisfy the `Node` return type.
+const foldIfBranches = (
+  [firstBranch, ...restBranches]: readonly IfBranch[],
+  alternate: Node | null
+): Node => {
+  if (!firstBranch) {
+    // WHY: programmer bug, not a template error — parseIf fails on zero branches
+    // before folding, so the invariant brand propagates instead of mapping to Result.
+    throw createInternalInvariantError('foldIfBranches requires at least one branch');
   }
-  return node as Node;
+  return ifNode(loc(firstBranch.tag), {
+    cond: firstBranch.cond,
+    body: firstBranch.body,
+    alternate: restBranches.reduceRight(
+      (alternateNode, branch) =>
+        ifNode(loc(branch.tag), {
+          cond: branch.cond,
+          body: branch.body,
+          alternate: alternateNode,
+        }),
+      alternate
+    ),
+  });
 };
 
 /**
