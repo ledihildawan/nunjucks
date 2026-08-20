@@ -54,17 +54,17 @@ export const createNumberToken = ({
 };
 
 /** Narrows a token to one whose `value` is a string. */
-export const isStringToken = (tok: Token): tok is Token & { value: string } =>
-  typeof tok.value === 'string';
+export const isStringToken = (token: Token): token is Token & { value: string } =>
+  typeof token.value === 'string';
 
 /** Narrows a token to a `symbol` token carrying a string value. */
-export const isSymbolToken = (tok: Token): tok is Token & { type: 'symbol' } =>
-  tok.type === TOKEN_SYMBOL && isStringToken(tok);
+export const isSymbolToken = (token: Token): token is Token & { type: 'symbol' } =>
+  token.type === TOKEN_SYMBOL && isStringToken(token);
 
 /** Narrows a token to a `block-end` token carrying a string value. */
-export const isBlockEndToken = (tok: Token): tok is Token & { type: 'block-end' } =>
-  tok.type === TOKEN_BLOCK_END && isStringToken(tok);
+export const isBlockEndToken = (token: Token): token is Token & { type: 'block-end' } =>
+  token.type === TOKEN_BLOCK_END && isStringToken(token);
 
 /** Narrows a token to a `variable-end` token carrying a string value. */
-export const isVariableEndToken = (tok: Token): tok is Token & { type: 'variable-end' } =>
-  tok.type === TOKEN_VARIABLE_END && isStringToken(tok);
+export const isVariableEndToken = (token: Token): token is Token & { type: 'variable-end' } =>
+  token.type === TOKEN_VARIABLE_END && isStringToken(token);

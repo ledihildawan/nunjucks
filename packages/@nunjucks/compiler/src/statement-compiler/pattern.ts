@@ -25,22 +25,20 @@ import {
   safeMemberLookup,
 } from './pattern-emitters.ts';
 
-/** Compiler, target frame, and whether bound names also register in the compiler frame. */
+/** Compiler and target frame for a destructuring operation. */
 interface DestructuringContext {
   compiler: Compiler;
   frame: Frame;
-  registerFrame: boolean;
 }
 
 const compileAssignToFrame = (
-  { compiler, frame, registerFrame }: DestructuringContext,
+  { compiler }: DestructuringContext,
   name: string,
   source: string
 ): void => {
   // WHY: single validation funnel for destructuring target names before they are
   // emitted into generated source (the codegen boundary's primary injection defense).
   assertSafeIdentifier(name, { compiler });
-  const existingId = registerFrame ? frame.lookup(name) : null;
   compiler.emitLine(
     `frame = frame.set({ name: ${JSON.stringify(name)}, value: ${source}, resolveUp: true });`
   );
@@ -48,16 +46,6 @@ const compileAssignToFrame = (
     compiler.emitLine('if(frame.topLevel) {');
     compiler.emitLine(`context = context.addExport(${JSON.stringify(name)});`);
     compiler.emitLine('}');
-  }
-  if (!registerFrame) {
-    return;
-  }
-  if (existingId !== null && existingId !== undefined) {
-    compiler.emitLine(`let ${existingId} = ${source};`);
-  } else {
-    const id = compiler.nextCompilerId();
-    frame.set({ name, value: id });
-    compiler.emitLine(`let ${id} = ${source};`);
   }
 };
 

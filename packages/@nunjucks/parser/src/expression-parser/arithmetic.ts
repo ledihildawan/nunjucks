@@ -5,23 +5,23 @@ import type { Node } from '@nunjucks/nodes';
 import { add, concat, div, floorDiv, mod, mul, pow, range, sub } from '@nunjucks/nodes';
 import type { ParserContext } from '../cursor.ts';
 import { skipValue } from '../cursor.ts';
-import { binaryOp, op } from './binary-helpers.ts';
+import { binaryOp, matchOperator } from './binary-helpers.ts';
 import { parseUnary } from './primary.ts';
 
 const parseAdd = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, { create: add, consume: op('+'), next: parseSub });
+  binaryOp(parserContext, { create: add, consume: matchOperator('+'), next: parseSub });
 const parseSub = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, { create: sub, consume: op('-'), next: parseMul });
+  binaryOp(parserContext, { create: sub, consume: matchOperator('-'), next: parseMul });
 const parseMul = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, { create: mul, consume: op('*'), next: parseDiv });
+  binaryOp(parserContext, { create: mul, consume: matchOperator('*'), next: parseDiv });
 const parseDiv = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, { create: div, consume: op('/'), next: parseFloorDiv });
+  binaryOp(parserContext, { create: div, consume: matchOperator('/'), next: parseFloorDiv });
 const parseFloorDiv = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, { create: floorDiv, consume: op('//'), next: parseMod });
+  binaryOp(parserContext, { create: floorDiv, consume: matchOperator('//'), next: parseMod });
 const parseMod = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, { create: mod, consume: op('%'), next: parsePow });
+  binaryOp(parserContext, { create: mod, consume: matchOperator('%'), next: parsePow });
 const parsePow = (parserContext: ParserContext): Result<Node, TemplateError> =>
-  binaryOp(parserContext, { create: pow, consume: op('**'), next: parseUnary });
+  binaryOp(parserContext, { create: pow, consume: matchOperator('**'), next: parseUnary });
 
 /**
  * Parses `~` string concatenation, the loosest arithmetic level and the

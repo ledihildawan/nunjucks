@@ -73,6 +73,11 @@ export interface Compiler extends Emitter, ScopeManager {
   compileChildren: (node: Node, frame: Frame) => void;
   compileExpression: (node: Node, frame: Frame) => void;
   assertType: (node: Node, ...types: NodeTypeMatcher[]) => void;
+  // WHY: compile-time frames mirror the emitted scope structure (push/pop/parent) only —
+  // variable binding and resolution happen on runtime frames through the emitted
+  // `frame = frame.set(...)` lines. Frame.set is copy-on-write, so a compile-time
+  // `frame.set(...)` whose return is discarded records nothing: such statements are
+  // ghosts and must not be reintroduced (compileSymbol reads pre-seeded frames only).
   compile: (node: Node, frame: Frame) => void;
   getHtmlContext: (lineno: number, colno: number) => HtmlContext;
 }

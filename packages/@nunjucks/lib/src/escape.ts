@@ -76,4 +76,4 @@ const escapeUnquotedAttribute = (str: string): string => {
     .replaceAll('\r', '%0D');
 };
 
-export { escapeHtml, escapeAttribute, escapeScriptString, escapeStyle, escapeUnquotedAttribute };
+export { escapeAttribute, escapeHtml, escapeScriptString, escapeStyle, escapeUnquotedAttribute };

@@ -119,7 +119,6 @@ const compileFlatArrayBinding = ({
       compiler.emitLine(
         `frame = frame.set({ name: ${JSON.stringify(childValue)}, value: ${elementId} });`
       );
-      frame.set({ name: childValue, value: elementId });
     });
   }
   emitLoopBody({ compiler, node, frame, index, length });
@@ -146,8 +145,6 @@ const compileFlatObjectBinding = ({
   assertSafeIdentifier(valueName, { compiler });
   const keyId = compiler.nextCompilerId();
   const valueId = compiler.nextCompilerId();
-  frame.set({ name: keyName, value: keyId });
-  frame.set({ name: valueName, value: valueId });
 
   compiler.emitLine(`${index} = -1;`);
   compiler.emitLine(`${length} = runtime.keys(${iterableId}).length;`);
@@ -179,7 +176,7 @@ const compileDestructuredObjectBinding = ({
   compiler.emitLine(`${index}++;`);
   const entryId = compiler.nextCompilerId();
   compiler.emitLine(`let ${entryId} = ${iterableId}[${keyId}];`);
-  compileDestructuring({ compiler, frame, registerFrame: true }, nameNode, entryId);
+  compileDestructuring({ compiler, frame }, nameNode, entryId);
 
   emitLoopBody({ compiler, node, frame, index, length });
   compiler.emitLine('}');
@@ -204,7 +201,7 @@ const compileArrayBindingCase = ({
   } else {
     const itemId = compiler.nextCompilerId();
     compiler.emitLine(`let ${itemId} = ${iterableId}[${index}];`);
-    compileDestructuring({ compiler, frame, registerFrame: true }, nameNode, itemId);
+    compileDestructuring({ compiler, frame }, nameNode, itemId);
     emitLoopBody({ compiler, node, frame, index, length });
   }
   compiler.emitLine('}');
@@ -238,7 +235,6 @@ const compileSimpleBinding = ({
   const valueId = compiler.nextCompilerId();
   const nameValue = String(nameNode.value);
   assertSafeIdentifier(nameValue, { compiler });
-  frame.set({ name: nameValue, value: valueId });
 
   compiler.emitLine(`${length} = ${iterableId}.length;`);
   compiler.emitLine(`for(let ${index}=0; ${index} < ${iterableId}.length; ${index}++) {`);

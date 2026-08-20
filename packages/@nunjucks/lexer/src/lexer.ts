@@ -4,7 +4,7 @@ import { WHITESPACE_CHAR_SET } from './constants.ts';
 import { createDelimiters } from './delimiters.ts';
 import { advance, createState, getChar } from './state.ts';
 import type { Token } from './token-types.ts';
-import { tokenizers } from './tokenizers/index.ts';
+import { tokenize } from './tokenizers/index.ts';
 import type { LexerOptions, LexerState } from './types.ts';
 
 const updateCodeState = (tokenType: string, state: LexerState): LexerState => {
@@ -47,7 +47,7 @@ const isWhitespace = (char: string | null): boolean =>
 const lexGenerator = function* (state: LexerState): Generator<Token, void, unknown> {
   let current = state;
   while (current.index < current.source.length) {
-    const result = tokenizers(current);
+    const result = tokenize(current);
     if (result) {
       yield result.token;
       current = processTokenizerResult(result);

@@ -3,12 +3,12 @@ import { literal, symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { loc, ZERO_LOC } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
+import { makeVariableCompiler } from './test-helpers.ts';
 import {
   compileCompoundAssignment,
   compileVariableAssignment,
   compileVariableDeclaration,
 } from './variable.ts';
-import { makeVariableCompiler } from './test-helpers.ts';
 
 const frame = createFrame();
 

@@ -47,8 +47,6 @@ const compileImportedName = ({
   );
   compiler.emitLine('}');
 
-  frame.set({ name: alias, value: id });
-
   if (frame.parent) {
     compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(alias)}, value: ${id} });`);
   } else {

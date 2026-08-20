@@ -46,7 +46,6 @@ const compileSlotFunction = ({
     compiler.emitLine(
       `  frame = frame.set({ name: ${JSON.stringify(param)}, value: l_${param} });`
     );
-    slotFrame.set({ name: param, value: `l_${param}` });
   });
 
   const buf = compiler.pushBuffer();

@@ -7,7 +7,7 @@ import type { ParserContext } from '../cursor.ts';
 import { nextTokenOrNull, peekToken } from '../cursor.ts';
 import { createParser } from '../index.ts';
 import { unwrap } from '../test-helpers.ts';
-import { binaryOp, op } from './binary-helpers.ts';
+import { binaryOp, matchOperator } from './binary-helpers.ts';
 import { parseUnary } from './primary.ts';
 
 const makeContext = (source: string): ParserContext => {
@@ -19,27 +19,31 @@ const makeContext = (source: string): ParserContext => {
 const leftOf = (node: Node): Node => (node as { left: Node }).left;
 const rightOf = (node: Node): Node => (node as { right: Node }).right;
 
-describe('op: operator predicate', () => {
+describe('matchOperator: operator predicate', () => {
   test('matches and consumes the named operator', () => {
     const ctx = makeContext('+');
-    expect(op('+')(ctx)).toBe(true);
+    expect(matchOperator('+')(ctx)).toBe(true);
   });
 
   test('does not match a different operator and leaves it unconsumed', () => {
     const ctx = makeContext('-');
-    expect(op('+')(ctx)).toBe(false);
+    expect(matchOperator('+')(ctx)).toBe(false);
     expect(unwrap(peekToken(ctx)).value).toBe('-');
   });
 
   test('returns false when the next token is not the operator', () => {
     const ctx = makeContext('1');
-    expect(op('*')(ctx)).toBe(false);
+    expect(matchOperator('*')(ctx)).toBe(false);
   });
 });
 
 describe('binaryOp: single operand', () => {
   test('returns the only operand unchanged when no operator follows', () => {
-    const result = binaryOp(makeContext('42'), { create: add, consume: op('+'), next: parseUnary });
+    const result = binaryOp(makeContext('42'), {
+      create: add,
+      consume: matchOperator('+'),
+      next: parseUnary,
+    });
     const node = unwrap(result);
     expect(getNodeTypeName(node)).toBe('literal');
   });
@@ -49,7 +53,7 @@ describe('binaryOp: folding', () => {
   test('two operands build a binary node using the supplied factory', () => {
     const result = binaryOp(makeContext('1 + 2'), {
       create: add,
-      consume: op('+'),
+      consume: matchOperator('+'),
       next: parseUnary,
     });
     const addNode = unwrap(result);
@@ -62,7 +66,7 @@ describe('binaryOp: folding', () => {
   test('folds left-associatively across three operands', () => {
     const result = binaryOp(makeContext('1 + 2 + 3'), {
       create: add,
-      consume: op('+'),
+      consume: matchOperator('+'),
       next: parseUnary,
     });
     const outer = unwrap(result);
@@ -74,7 +78,7 @@ describe('binaryOp: folding', () => {
   test('is generic over the node factory', () => {
     const result = binaryOp(makeContext('2 * 3'), {
       create: mul,
-      consume: op('*'),
+      consume: matchOperator('*'),
       next: parseUnary,
     });
     expect(getNodeTypeName(unwrap(result))).toBe('mul');
@@ -83,7 +87,7 @@ describe('binaryOp: folding', () => {
   test('carries a location taken from the operator token', () => {
     const result = binaryOp(makeContext('1 + 2'), {
       create: add,
-      consume: op('+'),
+      consume: matchOperator('+'),
       next: parseUnary,
     });
     const addNode = unwrap(result) as { lineno: number; colno: number };
@@ -96,7 +100,7 @@ describe('binaryOp: error propagation', () => {
   test('a missing right operand surfaces an error result', () => {
     const result = binaryOp(makeContext('1 +'), {
       create: add,
-      consume: op('+'),
+      consume: matchOperator('+'),
       next: parseUnary,
     });
     expect(isErr(result)).toBe(true);

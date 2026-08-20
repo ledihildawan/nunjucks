@@ -15,10 +15,10 @@ import { asCompiler } from '../test-helpers.ts';
 import { compileDestructuring } from './pattern.ts';
 import { makeFailingStatementCompiler } from './test-helpers.ts';
 
-const destructure = (pattern: Node, source: string, registerFrame = true) => {
+const destructure = (pattern: Node, source: string) => {
   const compiler = makeFailingStatementCompiler();
   const frame = createFrame();
-  compileDestructuring({ compiler: asCompiler(compiler), frame, registerFrame }, pattern, source);
+  compileDestructuring({ compiler: asCompiler(compiler), frame }, pattern, source);
   return compiler.emitted.join('');
 };
 
@@ -26,7 +26,12 @@ describe('compileDestructuring', () => {
   test('symbol pattern emits a frame binding', () => {
     const out = destructure(symbol(ZERO_LOC, 'a'), 'src');
     expect(out).toContain('frame.set({ name: "a"');
-    expect(out).toContain('let t_1 = src;');
+  });
+
+  test('symbol binding emits no discarded value temporary (ghost purge)', () => {
+    const out = destructure(symbol(ZERO_LOC, 'a'), 'src');
+    expect(out).toContain('frame = frame.set({ name: "a", value: src, resolveUp: true });');
+    expect(out).not.toMatch(/let t_\d+ = /);
   });
 
   test('array pattern emits indexed array lookups per element', () => {

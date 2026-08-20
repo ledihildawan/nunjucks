@@ -43,7 +43,12 @@ const codeTokenizers = firstMatch(
   tokenizeOperator
 );
 
-export const tokenizers = (state: LexerState): TokenStep | null => {
+/**
+ * Tokenizes the next step from `state`: delegates to the first accepting
+ * code-mode tokenizer while inside `{{ }}`/`{% %}` and to the first accepting
+ * template-mode tokenizer in raw text; returns `null` when none applies.
+ */
+export const tokenize = (state: LexerState): TokenStep | null => {
   if (state.inCode) {
     return codeTokenizers(state);
   }

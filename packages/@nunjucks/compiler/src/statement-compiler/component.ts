@@ -61,7 +61,6 @@ const emitComponentArgBindings = (
     compiler.emitLine(
       `frame = frame.set({ name: ${JSON.stringify(argValue)}, value: l_${argValue} });`
     );
-    frame.set({ name: argValue, value: `l_${argValue}` });
   });
 
   if (kwargs) {
@@ -145,10 +144,7 @@ const compileComponent = (compiler: Compiler, node: ComponentNode): string => {
   emitComponentArgBindings(compiler, { args, kwargs, frame: currFrame });
 
   const fallbackEntries = emitFallbackEntries(compiler, node.fallbackSlots ?? [], currFrame);
-  const componentContextId = emitComponentContext(compiler, args, fallbackEntries);
-
-  currFrame.set({ name: 'slot', value: `${componentContextId}.slots` });
-  currFrame.set({ name: 'children', value: `${componentContextId}.slots("default")` });
+  emitComponentContext(compiler, args, fallbackEntries);
 
   const bufferId = compiler.pushBuffer();
 
@@ -177,7 +173,6 @@ export const compileComponentPublic = (
   const funcId = compileComponent(compiler, node);
 
   const name = node.name;
-  frame.set({ name, value: funcId });
 
   if (frame.parent) {
     compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(name)}, value: ${funcId} });`);

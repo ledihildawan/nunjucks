@@ -49,10 +49,10 @@ const binaryOp = (
 };
 
 /** Builds a `consume` callback matching a single operator literal, e.g. `+`. */
-const op =
+const matchOperator =
   (operator: string) =>
   (parserContext: ParserContext): boolean =>
     skipValue(parserContext, TOKEN_OPERATOR, operator);
 
 export type { BinNodeFn };
-export { binaryOp, op };
+export { binaryOp, matchOperator };

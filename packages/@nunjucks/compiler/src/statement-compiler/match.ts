@@ -48,11 +48,10 @@ export const compileMatch = (
         compiler.emitLine(
           `frame = frame.set({ name: ${JSON.stringify(name)}, value: ${targetVar} });`
         );
-        frame.set({ name, value: targetVar });
       }
     } else if (isArray(pattern) || isDict(pattern)) {
       condParts.push(`${targetVar} != null`);
-      compileDestructuring({ compiler, frame, registerFrame: true }, pattern, targetVar);
+      compileDestructuring({ compiler, frame }, pattern, targetVar);
     } else {
       const exprId = compiler.nextCompilerId();
       compiler.emitLine(`let ${exprId} = `);

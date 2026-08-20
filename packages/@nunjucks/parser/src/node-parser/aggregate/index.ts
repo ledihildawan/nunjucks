@@ -22,6 +22,11 @@ const createAggregateNode = (type: string, origin: Loc): ChildrenNode | null => 
   }
 };
 
+/**
+ * Parses aggregate expressions — `(...)` groups, `[...]` arrays, and `{...}`
+ * dicts — by dispatching on the opening delimiter; a non-aggregate token
+ * yields `ok(null)` so the caller can treat it as a plain operand.
+ */
 export const parseAggregate = (
   parserContext: ParserContext
 ): Result<Node | null, TemplateError> => {

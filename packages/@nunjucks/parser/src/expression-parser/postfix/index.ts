@@ -84,6 +84,11 @@ const applyPostfixStep = (
   return ok({ node: current, stop: true });
 };
 
+/**
+ * Applies postfix suffixes — member/bracket lookups, calls, filters,
+ * pipe-forward, and increments — left-to-right around an already-parsed
+ * primary expression, looping until no further postfix step applies.
+ */
 export const parsePostfix = (
   parserContext: ParserContext,
   node: Node

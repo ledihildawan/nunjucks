@@ -38,7 +38,7 @@ const compileVariableDeclaration = (
     compiler.emitLine(';');
 
     forEach(node.targets, (pattern) => {
-      compileDestructuring({ compiler, frame, registerFrame: true }, pattern, valueId);
+      compileDestructuring({ compiler, frame }, pattern, valueId);
     });
   } else {
     const targets = node.targets;
@@ -73,7 +73,7 @@ const compileVariableAssignment = (
     compiler.emitLine(';');
 
     forEach(node.targets, (pattern) => {
-      compileDestructuring({ compiler, frame, registerFrame: true }, pattern, valueId);
+      compileDestructuring({ compiler, frame }, pattern, valueId);
     });
   } else {
     const targets = node.targets;
@@ -134,10 +134,6 @@ interface CompoundAssignEmitInput {
   valueId: string;
 }
 
-interface FilterAssignInput extends CompoundAssignEmitInput {
-  key: string;
-}
-
 const emitFloorDivAssignment = ({
   compiler,
   node,
@@ -156,7 +152,7 @@ const emitFilterAssignment = ({
   frame,
   currentId,
   valueId,
-}: FilterAssignInput): void => {
+}: CompoundAssignEmitInput): void => {
   const valueNode = node.value;
   const filterName = valueNode.type === 'symbol' ? String(valueNode.value) : null;
   if (filterName) {
@@ -222,7 +218,7 @@ const compileCompoundAssignment = (
   if (node.operator === '//=') {
     emitFloorDivAssignment({ compiler, node, frame, currentId, valueId });
   } else if (node.operator === '|>=') {
-    emitFilterAssignment({ compiler, node, frame, currentId, valueId, key });
+    emitFilterAssignment({ compiler, node, frame, currentId, valueId });
   } else {
     emitGenericCompoundAssignment({ compiler, node, frame, currentId, valueId });
   }
