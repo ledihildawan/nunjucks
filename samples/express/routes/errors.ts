@@ -17,7 +17,7 @@ const router: Router = express.Router();
 
 // WHY: imperative route registration — each error route mounts a GET handler under its own
 // path. Loop exemption: static route list; no dynamic fan-out, no GC pressure.
-errorRoutes.forEach(({ path: routePath, template, context }) => {
+for (const { path: routePath, template, context } of errorRoutes) {
   router.get(`/${routePath}`, async (_req: Request, res: Response, next: NextFunction) => {
     sendTemplateResult({
       res,
@@ -25,7 +25,7 @@ errorRoutes.forEach(({ path: routePath, template, context }) => {
       result: await renderTemplate(template, { context, config: strictErrorRouteConfig }),
     });
   });
-});
+}
 
 // WHY: filter-error lives here instead of error-route-data.ts because it needs a THROWING
 // filter — the shell owns the throwing filters; the domain only owns the template + context
@@ -582,19 +582,18 @@ router.get(
   }
 );
 
-// WHY: the render boundary itself validates template sources — these routes feed a
+// WHY: the render boundary itself validates template sources — this route feeds a
 // non-string through the string-typed parameter on purpose to surface the engine's
 // real TEMPLATE_MUST_BE_STRING catalog error with a stack-true location, instead of
-// a hand-fabricated Error pointing at route plumbing. The unsafe widening cast is
+// a hand-fabricated Error pointing at route plumbing. The unsafe widening is
 // confined to this single named, greppable boundary probe.
-const asInvalidTemplateSource = (invalidSource: number | null): string =>
-  invalidSource as unknown as string;
+const toInvalidTemplateSource = (source: unknown): string => source as string;
 
 router.get('/template-must-be-string', async (_req: Request, res: Response, next: NextFunction) => {
   sendTemplateResult({
     res,
     next,
-    result: await renderTemplate(asInvalidTemplateSource(123), {
+    result: await renderTemplate(toInvalidTemplateSource(123), {
       context: {},
       config: { dev: true },
     }),
@@ -605,7 +604,7 @@ router.get('/template-null', async (_req: Request, res: Response, next: NextFunc
   sendTemplateResult({
     res,
     next,
-    result: await renderTemplate(asInvalidTemplateSource(null), {
+    result: await renderTemplate(toInvalidTemplateSource(null), {
       context: {},
       config: { dev: true },
     }),

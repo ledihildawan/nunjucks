@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import type { ZodType } from 'zod';
+import type { ZodType, ZodError } from 'zod';
 
 interface ReadValidatedQueryOptions<T> {
   schema: ZodType<T>;
@@ -14,7 +14,7 @@ interface ReadValidatedQueryOptions<T> {
  */
 type ReadValidatedQueryResult<T> =
   | { ok: true; data: T }
-  | { ok: false; responseSent: true };
+  | { ok: false; responseSent: true; errors: ZodError['issues'] };
 
 /**
  * Validates the request's untrusted query string against a zod schema — the single
@@ -34,7 +34,7 @@ const readValidatedQuery = <T>({
   const parsed = schema.safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({ ok: false, errors: parsed.error.issues });
-    return { ok: false, responseSent: true };
+    return { ok: false, responseSent: true, errors: parsed.error.issues };
   }
   return { ok: true, data: parsed.data };
 };

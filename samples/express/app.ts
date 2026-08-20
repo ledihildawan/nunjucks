@@ -122,11 +122,14 @@ const createApp = (): Express => {
     return Object.create(Object.getPrototypeOf(error), propertyDescriptors);
   };
 
-  app.use((err: Error, _req: Request, res: Response, next: NextFunction) => {
+  app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
     // WHY: an error forwarded after headers are committed (mid-stream failure) cannot start
     // a new response — res.status().send() would throw ERR_HTTP_HEADERS_SENT; delegate to
     // Express's default handler instead, which terminates the socket safely.
     if (res.headersSent) {
+      return next(err);
+    }
+    if (!(err instanceof Error)) {
       return next(err);
     }
     const sourceFileReader: SourceFileReader = readProjectSource;

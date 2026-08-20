@@ -121,7 +121,15 @@ const statusLabel = (row: SandboxTestResult, suite: SandboxSuite): string =>
   classifyStatus(row, suite).label;
 
 export type { SandboxSuite, SandboxTestResult };
-export { classifyStatus, createSandboxSuites, outcomeError, outcomeOutput, runTests, statusClass, statusLabel };
+export {
+  classifyStatus,
+  createSandboxSuites,
+  outcomeError,
+  outcomeOutput,
+  runTests,
+  statusClass,
+  statusLabel,
+};
 
 /**
  * Builds the four demo suites (sandbox, normal, allowlist, code-execution); dangerous
