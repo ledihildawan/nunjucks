@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import { scrubDangerousReferences, visitAndScrub } from './scrubber.ts';
+import { scrubDangerousReferences } from './scrubber.ts';
 
+// WHY: all tests go through the public scrubDangerousReferences entry — the
+// internal visitAndScrub recursion used to be exported only for these tests.
 describe('scrubber', () => {
   describe('scrubDangerousReferences', () => {
     test('returns primitive values unchanged', () => {
@@ -52,49 +54,21 @@ describe('scrubber', () => {
       const context = { pid: process.pid };
       expect(scrubDangerousReferences(context)).toEqual(context);
     });
-  });
-
-  describe('visitAndScrub', () => {
-    const visit = (value: unknown): unknown =>
-      visitAndScrub({ value, seen: new WeakSet(), depth: 0 });
-
-    test('returns non-objects unchanged', () => {
-      expect(visit(42)).toBe(42);
-      expect(visit('test')).toBe('test');
-      expect(visit(null)).toBeNull();
-    });
 
     test('passes exotic objects through untouched (prototype carries behavior)', () => {
       const createdAt = new Date(0);
       const registry = new Map([['k', 1]]);
-      const result = visit({ createdAt, registry }) as Record<string, unknown>;
+      const result = scrubDangerousReferences({ createdAt, registry }) as Record<string, unknown>;
       expect(result.createdAt).toBe(createdAt);
       expect((result.createdAt as Date).getFullYear()).toBe(1970);
       expect(result.registry).toBe(registry);
       expect((result.registry as Map<string, number>).get('k')).toBe(1);
     });
 
-    test('removes top-level dangerous references', () => {
-      const result = visit({ a: 1, dangerous: globalThis }) as Record<string, unknown>;
-      expect(Object.hasOwn(result, 'dangerous')).toBe(false);
-      expect(result.a).toBe(1);
-    });
-
-    test('preserves nested objects', () => {
-      const nested = { x: 10 };
-      const result = visit({ nested }) as Record<string, unknown>;
-      expect(result.nested).toEqual(nested);
-    });
-
-    test('handles arrays by scrubbing elements', () => {
-      const result = visit([1, 2, 3]);
-      expect(result).toEqual([1, 2, 3]);
-    });
-
     test('cycles become placeholders — no dangerous reference survives through a cycle', () => {
       const obj: Record<string, unknown> = { a: 1, dangerous: globalThis };
       obj.self = obj;
-      const result = visit(obj) as Record<string, unknown>;
+      const result = scrubDangerousReferences(obj) as Record<string, unknown>;
       expect(result.a).toBe(1);
       expect(result.self).toBe('[Circular]');
       const reachable = (result.self as { dangerous?: unknown }).dangerous;
@@ -106,7 +80,7 @@ describe('scrubber', () => {
       for (let i = 0; i < 50_000; i += 1) {
         deep = { nested: deep };
       }
-      const result = visit({ deep }) as Record<string, unknown>;
+      const result = scrubDangerousReferences({ deep }) as Record<string, unknown>;
       expect(Object.hasOwn(result as object, 'deep')).toBe(true);
     });
   });

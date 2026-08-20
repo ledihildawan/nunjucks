@@ -9,9 +9,9 @@ interface Csp {
   nonce?: string;
 }
 
-/** Inputs for resolving a human-facing title from a classified category and plain message. */
+/** Inputs for resolving a human-facing title from a classified code name and plain message. */
 interface HumanTitleInput {
-  category: string;
+  name: string | null;
   undefinedName: string | null;
   plain: string;
   fallback: string;

@@ -39,6 +39,31 @@ describe('scanTemplateForDangerousCode', () => {
     expect(violations[0]!.col).toBeGreaterThan(0);
   });
 
+  test('columns are 1-based', () => {
+    const violations = scanTemplateForDangerousCode('{{ eval("x") }}');
+    expect(violations[0]!.col).toBe(4);
+  });
+
+  // WHY: regression pin — the scrubber used to shrink string literals/comments, so
+  // any earlier literal shifted a later violation's reported position left in the
+  // ORIGINAL template. Masking must be length-preserving.
+  test('reports original positions when a string literal precedes the violation', () => {
+    const template = '{{ "eval(zzz)" }} {{ eval("x") }}';
+    const violations = scanTemplateForDangerousCode(template);
+    expect(violations.length).toBe(1);
+    expect(violations[0]!.line).toBe(1);
+    expect(violations[0]!.col).toBe(22);
+  });
+
+  test('reports original positions when an HTML comment precedes the violation', () => {
+    const template = '<!-- eval("masked") -->\nnext {{ require("fs") }}';
+    const violations = scanTemplateForDangerousCode(template);
+    expect(violations.length).toBe(1);
+    expect(violations[0]!.line).toBe(2);
+    expect(violations[0]!.col).toBe(9);
+    expect(violations[0]!.name).toBe('require');
+  });
+
   test('detects multiple violations', () => {
     const template = '{{ eval("x") }} and {{ Function("y") }}';
     const violations = scanTemplateForDangerousCode(template);

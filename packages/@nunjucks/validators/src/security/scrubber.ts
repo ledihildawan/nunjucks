@@ -1,6 +1,6 @@
 import { isPlainObject } from '@nunjucks/lib';
-import { keys } from 'remeda';
 import { isDangerousReference } from '@nunjucks/security';
+import { keys } from 'remeda';
 
 // WHY: recursion bound — the scrubber walks untrusted context shapes before render;
 // a hostile deeply-nested object must not turn the security pass itself into a
@@ -70,5 +70,3 @@ export const scrubDangerousReferences = (context: unknown): unknown => {
   const seen = new WeakSet<object>();
   return visitAndScrub({ value: context, seen, depth: 0 });
 };
-
-export { visitAndScrub };

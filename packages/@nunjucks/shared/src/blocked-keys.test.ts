@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
+  BLOCKED_KEY_CATEGORIES,
   BLOCKED_KEYS_LIST,
   CODE_EXECUTION_KEYS,
   DANGEROUS_GLOBALS_LIST,
@@ -7,6 +8,17 @@ import {
   ENVIRONMENTS,
   OBJECT_INTRINSICS,
 } from './blocked-keys.ts';
+
+// WHY: regression pin — the category map used to freeze only its outer object,
+// leaving the inner arrays mutable despite the "frozen" claim.
+describe('BLOCKED_KEY_CATEGORIES freezing', () => {
+  test('the category map and every inner list are frozen', () => {
+    expect(Object.isFrozen(BLOCKED_KEY_CATEGORIES)).toBe(true);
+    for (const list of Object.values(BLOCKED_KEY_CATEGORIES)) {
+      expect(Object.isFrozen(list)).toBe(true);
+    }
+  });
+});
 
 describe('blocked-keys', () => {
   describe('exported lists', () => {

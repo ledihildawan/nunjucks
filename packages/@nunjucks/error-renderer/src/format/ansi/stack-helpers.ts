@@ -5,6 +5,7 @@ import { shortenPath } from '../presentation/source-trace/path-shortener.ts';
 import { parseStackFrame } from '../presentation/source-trace/stack-parse.ts';
 import { stripInlineMarkdown } from '../strip-inline-markdown.ts';
 import { createHyperlink } from './hyperlink.ts';
+import { sanitizeTerminalText } from './sanitize-helpers.ts';
 
 export { createHyperlink } from './hyperlink.ts';
 export {
@@ -46,13 +47,15 @@ const getExtrasPart = (causeHint: string, docHint: string): string => {
 const formatStackLine = (line: string, ide: string): string => {
   const frame = parseStackFrame(line);
   if (!(frame.path && frame.line !== null)) {
-    return `  ${frame.raw}`;
+    return `  ${sanitizeTerminalText(frame.raw)}`;
   }
 
   const lineNum = frame.line;
   const colNum = frame.col ?? 1;
-  const shortPath = shortenPath(frame.path, '');
-  const fn = frame.fn;
+  // WHY: frame paths/functions come from the raw error stack (template-authored
+  // names can leak in) — sanitized before display; createHyperlink strips the URL.
+  const shortPath = shortenPath(sanitizeTerminalText(frame.path), '');
+  const fn = sanitizeTerminalText(frame.fn);
   const location = `${shortPath}:${lineNum}:${colNum}`;
 
   if (isFilePath(frame.path)) {
@@ -85,11 +88,17 @@ const formatLocationString = ({ path, location, ide }: FormatLocationStringInput
   if (!path) {
     return '';
   }
-  const shortPath = shortenPath(path, '');
-  if (isFilePath(path)) {
+  // WHY: the template path/name is user-controlled — strip controls before it is
+  // displayed or wrapped in a hyperlink (the URL is stripped inside createHyperlink).
+  const safePath = sanitizeTerminalText(path);
+  if (!safePath) {
+    return '';
+  }
+  const shortPath = shortenPath(safePath, '');
+  if (isFilePath(safePath)) {
     const url = createHyperlink(
       `${shortPath}:${location.line}:${location.col}`,
-      resolveIdeLink(ide, { path, line: location.line, col: location.col })
+      resolveIdeLink(ide, { path: safePath, line: location.line, col: location.col })
     );
     return ` at ${url}`;
   }

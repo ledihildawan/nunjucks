@@ -1,13 +1,13 @@
 import { ERROR_CODES } from '@nunjucks/error-catalog';
 import { err, isErr, ok, type Result } from '@nunjucks/lib';
+import type { Environment } from '@nunjucks/shared';
 import {
+  type BaseValidationError,
   CONTENT_TYPES,
   ENVIRONMENT_VALUES,
-  type BaseValidationError,
   SANDBOX_MODES,
   UNDEFINED_MODES,
 } from '@nunjucks/shared';
-import type { Environment } from '@nunjucks/shared';
 import { flatMap, keys, pipe } from 'remeda';
 import { isNonEmpty } from './is-non-empty.ts';
 import { validateFilterName, validateGlobalName } from './reserved.ts';

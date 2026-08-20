@@ -11,5 +11,8 @@ export const basename = (path: string | null | undefined): string => {
   }
   const normalized = path.replaceAll('\\', '/');
   const parts = pipe(normalized, split('/'));
-  return parts.at(-1) ?? 'unknown';
+  // WHY: a trailing separator yields an empty final segment — the doc promises
+  // 'unknown' there, same as for empty input.
+  const last = parts.at(-1);
+  return last ? last : 'unknown';
 };

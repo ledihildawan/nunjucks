@@ -40,6 +40,7 @@ function getError(name: string): ErrorDefinition | undefined {
 }
 
 interface Rule {
+  name: string;
   pattern: RegExp;
   category: string;
   subjectFrom: SubjectExtractor | null;
@@ -57,6 +58,7 @@ interface Rule {
  * `subjectFrom` to `firstCapture` when absent while honoring an explicit `null`.
  */
 const toRule = (def: ErrorDefinition): Rule => ({
+  name: def.name,
   pattern: def.pattern,
   category: def.category,
   // WHY: `!== undefined` distinguishes an explicit `subjectFrom: null` (definitively
@@ -80,6 +82,7 @@ const RULES: Rule[] = pipe(ERROR_DEFINITIONS, values(), map(toRule));
  * input — generic guidance under category `'unknown'` and severity `'error'`.
  */
 const DEFAULT_CLASSIFICATION: Classification = {
+  name: null,
   category: 'unknown',
   undefinedName: null,
   causes: [

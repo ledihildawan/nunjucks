@@ -1,6 +1,6 @@
 import { isKeyedObject } from '@nunjucks/lib';
-import { isFunction, keys } from 'remeda';
 import { getBlockedKeyCategory, isDangerousGlobal, isDangerousReference } from '@nunjucks/security';
+import { isFunction, keys } from 'remeda';
 import { JS_BUILTIN_CONSTRUCTORS } from '../js-builtins.ts';
 
 const isBlockedNestedContextKey = (key: string): boolean =>

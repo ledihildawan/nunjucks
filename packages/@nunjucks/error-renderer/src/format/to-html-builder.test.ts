@@ -119,6 +119,44 @@ describe('buildErrorBodyContent', () => {
     expect(html).toContain('Suggested Fix');
     expect(html).toContain('syntax-comment');
   });
+
+  describe('documentationUrl scheme validation', () => {
+    const baseClassified: ClassifiedError = {
+      category: 'ERR',
+      undefinedName: null,
+      title: 'T',
+      causes: [],
+      fixCode: 'x = 1',
+      fixComment: '',
+      documentationUrl: null,
+      severity: 'error',
+    };
+
+    test('renders an anchor for an https documentation URL', () => {
+      const html = buildErrorBodyContent({
+        verbosity: 'full',
+        error: {} as ErrorLike,
+        classified: { ...baseClassified, documentationUrl: 'https://docs.dev/x' },
+        sourceTrace: null,
+        renderContext: undefined,
+        ide: 'vscode',
+      });
+      expect(html).toContain('<a href="https://docs.dev/x"');
+    });
+
+    test('renders a javascript: documentation URL as plain text without an anchor', () => {
+      const html = buildErrorBodyContent({
+        verbosity: 'full',
+        error: {} as ErrorLike,
+        classified: { ...baseClassified, documentationUrl: 'javascript:alert(1)' },
+        sourceTrace: null,
+        renderContext: undefined,
+        ide: 'vscode',
+      });
+      expect(html).not.toContain('<a href');
+      expect(html).toContain('Learn more: javascript:alert(1)');
+    });
+  });
 });
 
 describe('buildHtmlWrapper', () => {

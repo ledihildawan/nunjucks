@@ -4,8 +4,18 @@
  * and validators can derive from one source without inverting the package DAG, while
  * this module stays a pure constants tier (types, constants, snapshots — no logic).
  */
-/** Frozen category lists — the single source of truth for the sandbox security tiers. The policy PREDICATES that consume them live in `@nunjucks/security` so both runtime and validators can derive from one source without inverting the package DAG, while this module stays a pure constants tier (types, constants, snapshots — no logic). */
-export const BLOCKED_KEY_CATEGORIES = Object.freeze({
+// WHY: deep freeze — freezing only the outer object left the inner arrays mutable,
+// so the "frozen" claim above was not actually enforced.
+const deepFreezeCategories = <T extends Record<string, readonly string[]>>(
+  categories: T
+): Readonly<T> => {
+  for (const list of Object.values(categories)) {
+    Object.freeze(list);
+  }
+  return Object.freeze(categories);
+};
+
+export const BLOCKED_KEY_CATEGORIES = deepFreezeCategories({
   OBJECT_INTRINSICS: [
     '__proto__',
     'constructor',
@@ -94,7 +104,6 @@ export const BLOCKED_KEY_CATEGORIES = Object.freeze({
     'WebAssembly',
   ] as readonly string[],
 });
-
 const toSet = (...lists: readonly (readonly string[] | Set<string>)[]): Set<string> =>
   new Set<string>(lists.flatMap((list) => [...list]));
 

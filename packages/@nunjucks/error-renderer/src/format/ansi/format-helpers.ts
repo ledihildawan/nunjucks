@@ -7,6 +7,7 @@ import { mergeErrorParts } from '../presentation/error/error-parts.ts';
 import { toDisplayLocation } from '../presentation/source-trace/location.ts';
 import type { SourceTrace } from '../presentation/source-trace/source-trace.ts';
 import { renderContextAnsi } from './context-helpers';
+import { sanitizeTerminalText } from './sanitize-helpers.ts';
 import { formatSourceTrace } from './source-helpers';
 import {
   formatLocationString,
@@ -26,7 +27,7 @@ const formatCausesAnsi = (causes: readonly string[]): string => {
   }
   const items = pipe(
     causes,
-    map((c) => `  ${BULLET}${stripInlineMarkdown(c)}`),
+    map((c) => `  ${BULLET}${stripInlineMarkdown(sanitizeTerminalText(c))}`),
     join('\n')
   );
   return `\n${picocolors.bold('Possible Causes:')}\n${items}\n`;
@@ -45,9 +46,13 @@ const formatFixAnsi = ({ fixCode, fixComment, documentationUrl }: FormatFixAnsiI
 
   const parts: string[] = [
     `${picocolors.bold('Suggested Fix:')}`,
-    ...(fixComment ? [picocolors.dim(`// ${stripInlineMarkdown(fixComment)}`)] : []),
-    picocolors.green(fixCode),
-    ...(documentationUrl ? [`\n${picocolors.dim(`Learn more: ${documentationUrl}`)}`] : []),
+    ...(fixComment
+      ? [picocolors.dim(`// ${stripInlineMarkdown(sanitizeTerminalText(fixComment))}`)]
+      : []),
+    picocolors.green(sanitizeTerminalText(fixCode)),
+    ...(documentationUrl
+      ? [`\n${picocolors.dim(`Learn more: ${sanitizeTerminalText(documentationUrl)}`)}`]
+      : []),
   ];
 
   return parts.join('\n');
@@ -66,8 +71,9 @@ interface MediumAnsiInput {
 /** Formats a one-line ANSI summary: message, location, and the first cause/docs hint. */
 const formatMediumAnsi = (message: string, input: MediumAnsiInput): string => {
   const [firstCause] = input.causes;
-  const causeHint = firstCause ? stripInlineMarkdown(firstCause) : '';
-  const extrasPart = getExtrasPart(causeHint, input.documentationUrl ?? '');
+  const causeHint = firstCause ? stripInlineMarkdown(sanitizeTerminalText(firstCause)) : '';
+  const docHint = input.documentationUrl ? sanitizeTerminalText(input.documentationUrl) : '';
+  const extrasPart = getExtrasPart(causeHint, docHint);
   const locationPart = input.path
     ? formatLocationString({ path: input.path, location: input.location, ide: input.ide }).replace(
         LEADING_AT_RE,

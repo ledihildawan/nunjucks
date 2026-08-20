@@ -48,6 +48,11 @@ const replacePlaceholders = ({
   );
 };
 
+// WHY: exported for classify-title.ts — catalog titles must substitute the SAME
+// subject-placeholder aliases as the classifier so `{path}`-style templates
+// (FILE_NOT_FOUND) interpolate identically from both call sites.
+export { replacePlaceholders };
+
 interface MapCausesOptions {
   causes: readonly string[];
   undefinedName: string | null;
@@ -87,6 +92,7 @@ const buildClassification = ({
     : null;
 
   return {
+    name: rule.name,
     category: rule.category,
     undefinedName: effectiveSubject,
     title,
@@ -167,6 +173,7 @@ interface ErrorWithExtras {
 export const classifyFromError = (error: ErrorWithExtras | null): Classification => {
   if (!error) {
     return {
+      name: null,
       category: 'unknown',
       undefinedName: null,
       causes: ['Unknown error occurred'],

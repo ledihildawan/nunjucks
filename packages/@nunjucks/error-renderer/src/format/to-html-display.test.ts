@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { resolveHumanTitle } from '@nunjucks/error-catalog';
+import { classifyAndBuildTitle } from '@nunjucks/error-catalog';
 import { renderBadge } from './to-html-display.ts';
 
 describe('renderBadge', () => {
@@ -22,37 +22,24 @@ describe('renderBadge', () => {
   });
 });
 
-describe('resolveHumanTitle', () => {
+// WHY: go through the REAL pipeline (classifyAndBuildTitle) — hand-feeding
+// uppercase categories to resolveHumanTitle masked the dead-switch bug where
+// category is always the lowercase def category.
+describe('classifyAndBuildTitle', () => {
   test('undefined variable with name', () => {
     expect(
-      resolveHumanTitle({
-        category: 'UNDEFINED_VARIABLE',
-        undefinedName: 'foo',
-        plain: '',
-        fallback: 'Error',
+      classifyAndBuildTitle({
+        code: 'UNDEFINED_VARIABLE',
+        message: "Variable 'foo' is not defined",
       })
     ).toContain('foo');
   });
 
   test('undefined function', () => {
-    expect(
-      resolveHumanTitle({
-        category: 'UNDEFINED_FUNCTION',
-        undefinedName: 'bar',
-        plain: '',
-        fallback: 'Error',
-      })
-    ).toContain('bar');
+    expect(classifyAndBuildTitle({ message: "Function 'bar' is not defined" })).toContain('bar');
   });
 
-  test('fallback for unknown category', () => {
-    expect(
-      resolveHumanTitle({
-        category: 'UNKNOWN',
-        undefinedName: null,
-        plain: '',
-        fallback: 'My Error',
-      })
-    ).toBe('My Error');
+  test('fallback for unknown error', () => {
+    expect(classifyAndBuildTitle({ message: 'My Error' })).toBe('My Error');
   });
 });

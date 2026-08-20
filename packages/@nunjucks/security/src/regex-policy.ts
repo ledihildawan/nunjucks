@@ -140,6 +140,17 @@ export const isDangerousRegexPattern = (source: string): boolean => {
       continue;
     }
 
+    if (char === '|') {
+      // WHY: fail-closed — an alternation inside a group makes the group's content
+      // ambiguous (overlapping or differently-lengthed branches), so quantifying the
+      // group yields the classic exponential shapes `(a|a)+` / `(a|aa)+` that carry
+      // no nested quantifier for the structural scan to key on.
+      const frame = stack.at(-1);
+      if (frame !== undefined) {
+        frame.hadVariableLengthAtom = true;
+      }
+    }
+
     // Any other atom (literal, `.`, `^`, `$`, `|`, literal `{`).
     canQuantify = true;
     closedGroupDangerous = false;

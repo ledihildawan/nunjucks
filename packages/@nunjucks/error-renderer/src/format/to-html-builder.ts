@@ -113,6 +113,12 @@ interface FullErrorBodyInput {
   ide: string;
 }
 
+// WHY: documentationUrl comes from the raw error object — an entity-escaped
+// `javascript:` URL is still clickable, so only http(s) URLs earn an anchor;
+// everything else renders as inert plain text.
+const isHttpDocumentationUrl = (url: string): boolean =>
+  url.startsWith('http:') || url.startsWith('https:');
+
 const buildFullErrorBody = ({
   sourceTrace,
   possibleCauses,
@@ -137,7 +143,9 @@ const buildFullErrorBody = ({
     : '';
   const fixCodeBlock = fixCode ? highlightHtml(fixCode) : '// No fix available';
   const docsLink = documentationUrl
-    ? `\n<span class="docs-inline">Learn more: <a href="${escapeAttribute(documentationUrl)}" target="_blank" rel="noopener" class="docs-link">${escapeHtml(documentationUrl)}</a></span>`
+    ? isHttpDocumentationUrl(documentationUrl)
+      ? `\n<span class="docs-inline">Learn more: <a href="${escapeAttribute(documentationUrl)}" target="_blank" rel="noopener" class="docs-link">${escapeHtml(documentationUrl)}</a></span>`
+      : `\n<span class="docs-inline">Learn more: ${escapeHtml(documentationUrl)}</span>`
     : '';
   const renderContextSection = renderContext
     ? renderContextHtml(renderContext, error.blockedKeys)

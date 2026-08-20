@@ -88,3 +88,56 @@ describe('toAnsi — full verbosity', () => {
     expect(() => toAnsi(errorWithLoc, customIdeOptions)).not.toThrow();
   });
 });
+
+describe('toAnsi — terminal control sanitization', () => {
+  // WHY: only the control characters are stripped — the inert '[2J' text may remain.
+  test('strips ESC/BEL sequences from the error message at simple verbosity', () => {
+    const malicious: ErrorLike = { message: 'boom\x1b[2J\x07' };
+    expect(toAnsi(malicious, { verbosity: 'simple' })).toBe('boom[2J');
+  });
+
+  test('strips ESC/BEL sequences from the error message at full verbosity', () => {
+    const malicious: ErrorLike = {
+      message: 'boom\x1b[2J\x07',
+      stack: 'Error: boom\n    at foo (bar.njk:1:1)',
+    };
+    const output = toAnsi(malicious);
+    expect(output).toContain('boom');
+    expect(output).not.toContain('\x1b[2J');
+    expect(output).not.toContain('\x07');
+  });
+
+  test('strips ESC from template source-trace lines', () => {
+    const output = toAnsi(
+      { message: 'boom' },
+      {
+        sourceTrace: {
+          lines: [{ number: 1, content: '{{ ev\x1b[2Jal }}', isError: true }],
+          caret: null,
+          displayLine: 1,
+          displayCol: 1,
+          resolvedPath: 'app.njk',
+        },
+      }
+    );
+    expect(output).toContain('Source Trace:');
+    // WHY: the highlighter interleaves its own color codes between characters, so
+    // assert on the absent ESC sequence rather than the plain text.
+    expect(output).not.toContain('\x1b[2J');
+  });
+
+  test('strips ESC from render-context values', () => {
+    const output = toAnsi({ message: 'boom' }, { renderContext: { user: 'ev\x1b[2Jil' } });
+    expect(output).toContain('"ev[2Jil"');
+    expect(output).not.toContain('\x1b[2J');
+  });
+
+  test('strips BEL from the template path in the medium one-liner', () => {
+    const output = toAnsi(
+      { message: 'boom', templateName: 'app\x07.njk' },
+      { verbosity: 'medium', templatePath: 'app\x07.njk' }
+    );
+    expect(output).toContain('app.njk');
+    expect(output).not.toContain('\x07');
+  });
+});

@@ -1,5 +1,17 @@
 import { keys } from 'remeda';
 
+// WHY: ANSI escape injection guard — every user-controlled string reaching the
+// terminal passes through this single strip. All C0 controls except \t\n\r, DEL,
+// and the C1 range (incl. 8-bit CSI \x9b) are removed so raw input cannot
+// reprogram the terminal (clear screens, retitle windows, forge OSC 8 links).
+// The renderer's own structured ANSI is built from constants and never passes
+// through here; the strip is applied to RAW text before it gets wrapped/colored.
+// biome-ignore lint/suspicious/noControlCharactersInRegex: the control-character class IS the sanitizer — matching C0/C1 ranges here is the entire point of this module.
+const TERMINAL_CONTROL_RE = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u0080-\u009f]/gu;
+
+/** Strips terminal-hijacking control characters (ESC, BEL, CSI, other C0/C1) from raw text, preserving \t\n\r. */
+export const sanitizeTerminalText = (text: string): string => text.replace(TERMINAL_CONTROL_RE, '');
+
 /** Renders a primitive for ANSI display, quoting strings and naming functions. */
 export const sanitizePrimitive = (value: unknown): string => {
   if (value === null) {
@@ -12,7 +24,7 @@ export const sanitizePrimitive = (value: unknown): string => {
     return `[Function: ${value.name || 'anonymous'}]`;
   }
   if (typeof value === 'string') {
-    return `"${value}"`;
+    return `"${sanitizeTerminalText(value)}"`;
   }
   return String(value);
 };

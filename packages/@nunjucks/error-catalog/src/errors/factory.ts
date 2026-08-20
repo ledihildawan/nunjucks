@@ -1,6 +1,5 @@
 import { escapeRegex } from '@nunjucks/lib';
-import type { ExtraExtractor } from './types.ts';
-import type { ErrorSeverity } from './types.ts';
+import type { ErrorSeverity, ExtraExtractor } from './types.ts';
 import { firstCapture } from './types.ts';
 
 interface ErrorDefinitionOptions {

@@ -18,34 +18,31 @@ const isWordChar = (char: string | undefined): boolean => WORD_CHAR_RE.test(char
 const isPathLike = (word: string): boolean =>
   PATH_SEPARATOR_RE.test(word) || FILE_EXTENSION_RE.test(word);
 
+// WHY: iterative scans, not per-character recursion — pathological single-line
+// sources overflowed the stack exactly like the highlight scanner did before its
+// loop rewrite (see highlight.ts). Same behavior, constant stack depth.
 const findWordStart = (line: string, wordEnd: number): number => {
-  const scanLeft = (pos: number): number => {
-    if (!(pos > 0 && isWordChar(line[pos - 1]))) {
-      return pos;
-    }
-    return scanLeft(pos - 1);
-  };
-  return scanLeft(wordEnd - 2);
+  let pos = wordEnd - 2;
+  while (pos > 0 && isWordChar(line[pos - 1])) {
+    pos -= 1;
+  }
+  return pos;
 };
 
 const findWordEnd = (line: string, pos: number): number => {
-  const scanRight = (currentPos: number): number => {
-    if (!(currentPos < line.length && isWordChar(line[currentPos]))) {
-      return currentPos;
-    }
-    return scanRight(currentPos + 1);
-  };
-  return scanRight(pos);
+  let currentPos = pos;
+  while (currentPos < line.length && isWordChar(line[currentPos])) {
+    currentPos += 1;
+  }
+  return currentPos;
 };
 
 const findNonWordLeft = (line: string, pos: number): number => {
-  const scanLeft = (searchLeft: number): number => {
-    if (!(searchLeft >= 0 && !isWordChar(line[searchLeft]))) {
-      return searchLeft;
-    }
-    return scanLeft(searchLeft - 1);
-  };
-  return scanLeft(pos - 1);
+  let searchLeft = pos - 1;
+  while (searchLeft >= 0 && !isWordChar(line[searchLeft])) {
+    searchLeft -= 1;
+  }
+  return searchLeft;
 };
 
 const findWordBoundaries = (line: string, pos: number): { wordStart: number; wordEnd: number } => {

@@ -9,9 +9,9 @@ export {
 } from './blocked-keys.ts';
 export * from './compiled-template.ts';
 export { BUILTIN_FILTER_NAMES } from './filter-names.ts';
-export { BUILTIN_TEST_NAMES } from './test-names.ts';
 export type { Loc } from './loc.ts';
 export { loc, ZERO_LOC } from './loc.ts';
+export { BUILTIN_TEST_NAMES } from './test-names.ts';
 export type {
   ContentType,
   DomPurifyConfig,

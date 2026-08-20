@@ -1,5 +1,5 @@
-import type { Classification, ClassifyInput } from './types.ts';
 import { RESERVED_KEYWORD_CONTEXT_TITLE } from './runtime/reference-errors.ts';
+import type { Classification, ClassifyInput } from './types.ts';
 
 const RESERVED_KEYWORD_CONTEXT: Record<
   string,
@@ -39,6 +39,7 @@ export const reservedKeywordClassifier = (input: ClassifyInput): Classification 
   };
 
   return {
+    name: 'RESERVED_KEYWORD_CONTEXT',
     category: 'reserved_keyword_context',
     undefinedName: keyword,
     // WHY: title renders from the SSOT constant in reference-errors.ts — hand-duplicating

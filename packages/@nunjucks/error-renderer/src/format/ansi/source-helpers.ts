@@ -4,6 +4,7 @@ import type {
   SourceTraceLine,
 } from '../presentation/source-trace/source-trace.ts';
 import { highlightAnsi } from '../presentation/syntax-highlight/highlight.ts';
+import { sanitizeTerminalText } from './sanitize-helpers.ts';
 
 export { formatSourceTrace };
 
@@ -42,7 +43,10 @@ const formatCodeLine = ({
 }: FormatCodeLineInput): string => {
   const marker = getMarker(isError);
   const lineNumStr = String(lineNum).padStart(lineNumWidth, ' ');
-  const highlighted = isError ? highlightAnsi(content) : picocolors.dim(highlightAnsi(content));
+  // WHY: source lines are raw template text — strip controls BEFORE highlighting so
+  // the sanitizer never touches the structured ANSI the highlighter produces.
+  const sanitized = sanitizeTerminalText(content);
+  const highlighted = isError ? highlightAnsi(sanitized) : picocolors.dim(highlightAnsi(sanitized));
   return `${marker}${picocolors.dim(lineNumStr)}${picocolors.dim(SEPARATOR)}${highlighted}`;
 };
 

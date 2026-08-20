@@ -22,10 +22,13 @@ const HTML_COMMENT_RE = /<!--[\s\S]*?-->/g;
 
 const IDENTIFIER_PATTERN = /[a-zA-Z_$][\w$]*/u;
 
+// WHY: line/col are documented as 1-based — `slice(0, index).split('\n')` yields a
+// 0-based column (chars before the match on its line), so shift up by one, matching
+// the engine's `'zero'` lineBase → display convention (toDisplayLocation).
 const getLineColFromIndex = (content: string, index: number): { line: number; col: number } => {
   const beforeMatch = content.slice(0, index);
   const lines = beforeMatch.split('\n');
-  return { line: lines.length, col: lines.at(-1)?.length ?? 0 };
+  return { line: lines.length, col: (lines.at(-1)?.length ?? 0) + 1 };
 };
 
 interface ViolationInput {
@@ -47,16 +50,22 @@ const toViolation = ({
   return { message, pattern: pattern.source, line, col, name };
 };
 
-const removeStringLiteralsAndComments = (template: string): string => {
-  return template.replace(STRING_LITERAL_RE, '""').replace(HTML_COMMENT_RE, '');
-};
+// WHY: length-preserving masking — every scrubbed character (including newlines
+// inside literals/comments) becomes a space, so match indices in the scrubbed text
+// map 1:1 onto the ORIGINAL template. Replacing with shorter strings ('""'/'')
+// used to shift every following violation left by the scrubbed length.
+const maskWithSpaces = (match: string): string => ' '.repeat(match.length);
+
+const removeStringLiteralsAndComments = (template: string): string =>
+  template.replace(STRING_LITERAL_RE, maskWithSpaces).replace(HTML_COMMENT_RE, maskWithSpaces);
 
 /**
  * Scans raw template source for code-execution calls (`eval`, `Function`,
- * `require`, dynamic `import`) and returns every match with position info.
- * Regex-based and therefore heuristic — it runs before compilation, not on
- * the parsed AST. String literals and HTML comments are stripped before
- * scanning to avoid false positives from content inside strings.
+ * `require`, dynamic `import`) and returns every match with 1-based position info
+ * relative to the ORIGINAL template. Regex-based and therefore heuristic — it runs
+ * before compilation, not on the parsed AST. String literals and HTML comments are
+ * masked with same-length spaces before scanning to avoid false positives from
+ * content inside strings while keeping scrubbed indices 1:1 with the source.
  */
 const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeViolation[] => {
   const scrubbed = removeStringLiteralsAndComments(templateContent);

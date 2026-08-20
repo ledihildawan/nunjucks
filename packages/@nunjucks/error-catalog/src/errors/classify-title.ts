@@ -1,10 +1,11 @@
 // WHY: relative imports to the defining modules — importing from the package barrel
 // (`@nunjucks/error-catalog`) creates an index.ts ⇄ classify-title.ts module cycle,
 // since the barrel re-exports resolveHumanTitle from this file.
-import { classifyFromError } from './classify.ts';
-import { ERROR_DEFINITIONS } from './registry.ts';
+
 import { getErrorMessage } from '../get-error-message.ts';
 import type { ErrorLike } from '../types.ts';
+import { classifyFromError, replacePlaceholders } from './classify.ts';
+import { ERROR_DEFINITIONS } from './registry.ts';
 import type { HumanTitleInput } from './types.ts';
 
 const UNDEFINED_OUTPUT_RE = /attempted to output '([^']+)'/u;
@@ -15,31 +16,26 @@ const RESERVED_KEYWORD_RE = ERROR_DEFINITIONS.RESERVED_KEYWORD?.pattern;
 
 // WHY: titles render from the catalog's titleTemplate — the single source of truth.
 // A local literal copy could drift from the definition the classifier renders.
+// Placeholder substitution goes through the classifier's own alias-aware helper so
+// `{path}`-style templates interpolate identically here and in classify.ts.
 const catalogTitle = (name: string, subject?: string): string | null => {
   const def = ERROR_DEFINITIONS[name as keyof typeof ERROR_DEFINITIONS];
-  if (!def || !('titleTemplate' in def)) {
-    return null;
-  }
-  const template = (def as { titleTemplate?: string }).titleTemplate;
+  const template = def?.titleTemplate;
   if (template === undefined) {
     return null;
   }
-  return subject === undefined ? template : template.replaceAll('{name}', subject);
+  return replacePlaceholders({ str: template, undefinedName: subject ?? null });
 };
 
 /**
- * Resolves the human-facing title for a classified error, preferring the catalog's
- * `titleTemplate` for known categories; unmatched categories fall back to `fallback`.
+ * Resolves the human-facing title for a classified error by its catalog code NAME
+ * (`'UNDEFINED_VARIABLE'`, …), preferring the catalog's `titleTemplate`; unknown
+ * or unclassified errors fall back to `fallback`.
  */
-const resolveHumanTitle = ({
-  category,
-  undefinedName,
-  plain,
-  fallback,
-}: HumanTitleInput): string => {
+const resolveHumanTitle = ({ name, undefinedName, plain, fallback }: HumanTitleInput): string => {
   const named = undefinedName ?? 'unknown';
 
-  switch (category) {
+  switch (name) {
     case 'UNDEFINED_VARIABLE':
       if (!undefinedName) {
         return fallback;
@@ -52,10 +48,10 @@ const resolveHumanTitle = ({
     case 'IMPORT_ERROR':
       return catalogTitle('IMPORT_ERROR') ?? fallback;
     case 'FILE_NOT_FOUND':
-      return `Template file not found: ${named}`;
+      return catalogTitle('FILE_NOT_FOUND', named) ?? fallback;
     case 'SYNTAX_ERROR':
       return catalogTitle('SYNTAX_ERROR') ?? fallback;
-    case 'VALIDATION_ERROR':
+    case 'TEMPLATE_MUST_BE_STRING':
       return catalogTitle('TEMPLATE_MUST_BE_STRING') ?? fallback;
     case 'RESERVED_KEYWORD_CONTEXT':
       return plain;
@@ -86,12 +82,12 @@ const classifyAndBuildTitle = (error: ErrorLike): string => {
   const plain = getErrorMessage(error);
   const undefinedName = classified.undefinedName ?? plain.match(UNDEFINED_OUTPUT_RE)?.[1] ?? null;
   return resolveHumanTitle({
-    category: classified.category,
+    name: classified.name,
     undefinedName,
     plain,
     fallback: classified.title ?? plain,
   });
 };
 
-export { classifyAndBuildTitle, resolveHumanTitle };
 export type { HumanTitleInput };
+export { classifyAndBuildTitle, resolveHumanTitle };

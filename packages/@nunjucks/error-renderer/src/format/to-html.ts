@@ -1,6 +1,6 @@
+import { escapeAttribute } from '@nunjucks/lib';
 import cssContent from '../../public/error-page.css' with { type: 'text' };
 import scriptContent from '../../public/error-script.js' with { type: 'text' };
-import { escapeAttribute } from '@nunjucks/lib';
 import { escapeHtml } from './presentation/syntax-highlight/highlight.ts';
 import { buildErrorSections } from './to-html-assembly.ts';
 import type { Csp, ErrorLike, ToHtmlOptions } from './to-html-types.ts';

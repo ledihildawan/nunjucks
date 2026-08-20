@@ -31,5 +31,5 @@ const createInternalInvariantError = (message: string): InternalInvariantError =
     [INTERNAL_INVARIANT]: true as const,
   });
 
-export { INTERNAL_INVARIANT, createInternalInvariantError, isInternalInvariantError };
 export type { InternalInvariantError };
+export { createInternalInvariantError, INTERNAL_INVARIANT, isInternalInvariantError };

@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { basename } from './path-basename.ts';
 
 describe('basename', () => {
@@ -28,8 +28,10 @@ describe('basename', () => {
     expect(basename('a/b/name')).toBe('name');
   });
 
-  test('yields an empty final segment after a trailing slash', () => {
-    expect(basename('a/b/')).toBe('');
-    expect(basename('/')).toBe('');
+  test('returns unknown for the empty final segment after a trailing separator', () => {
+    expect(basename('a/b/')).toBe('unknown');
+    expect(basename('foo/')).toBe('unknown');
+    expect(basename('/')).toBe('unknown');
+    expect(basename('dir\\')).toBe('unknown');
   });
 });

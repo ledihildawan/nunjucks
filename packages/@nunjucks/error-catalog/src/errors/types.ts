@@ -9,7 +9,8 @@ type ErrorSeverity = 'error' | 'warning' | 'info';
 
 /** Options for resolving a human-facing title from a classified error. */
 export interface HumanTitleInput {
-  readonly category: string;
+  /** Catalog code name (`'UNDEFINED_VARIABLE'`, …) — `null` for unclassified errors. */
+  readonly name: string | null;
   readonly undefinedName: string | null;
   readonly plain: string;
   readonly fallback: string;
@@ -41,6 +42,8 @@ interface ErrorDefinition {
  * never `undefined`.
  */
 interface Classification {
+  /** Catalog code name this classification was derived from; `null` when unclassified. */
+  readonly name: string | null;
   readonly category: string;
   readonly undefinedName: string | null;
   readonly causes: readonly string[];

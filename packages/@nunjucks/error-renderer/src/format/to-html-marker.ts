@@ -1,5 +1,5 @@
-import { getIdeMeta, isFilePath, resolveIdeLink } from './presentation/ide-links/ide-links.ts';
 import { DEFAULT_IDE } from './presentation/ide-links/defaults.ts';
+import { getIdeMeta, isFilePath, resolveIdeLink } from './presentation/ide-links/ide-links.ts';
 import { shortenPath } from './presentation/source-trace/path-shortener.ts';
 import { escapeAttribute, escapeHtml } from './presentation/syntax-highlight/highlight.ts';
 import { toHtml } from './to-html.ts';
@@ -123,6 +123,10 @@ const toHtmlMarker = (
 
   if (severity === 'inline') {
     const idAttr = escapeAttribute(id);
+    // WHY: resolve THIS marker's button/overlay by its unique id — a plain
+    // '[data-nj-err-open]' querySelector would bind the FIRST marker in the
+    // document and leave every later marker's button dead.
+    const openSel = `[data-nj-err-open="${idAttr}"]`;
     return `<style>${css}</style>
 <span class="nj-err-inline" role="status" aria-live="polite">
   <span class="nj-err-icon" data-nj-err-open="${idAttr}" role="button" tabindex="0" aria-label="${message} — click to view details" title="${message}">${ALERT_ICON}</span>
@@ -130,10 +134,12 @@ const toHtmlMarker = (
 <div class="nj-err-overlay" id="${idAttr}" hidden>
   <button class="nj-err-close" type="button" aria-label="Close error overlay">${CLOSE_ICON}</button>
 </div>
-<script>(function(){const b=document.querySelector('[data-nj-err-open]');const o=document.getElementById(b?.getAttribute('data-nj-err-open')||'');if(!b||!o)return;const c=o.querySelector(".nj-err-close");let loaded=false;const open=function(){if(!loaded){loaded=true;const f=document.createElement('iframe');f.className='nj-err-frame';f.srcdoc=${srcdocLiteral};o.appendChild(f);}o.removeAttribute("hidden");document.body.style.overflow="hidden";};const close=function(){o.setAttribute("hidden","");document.body.style.overflow="";};b.addEventListener("click",open);b.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});c.addEventListener("click",close);o.addEventListener("click",function(e){if(e.target===o){close();}});})()</script>`;
+<script>(function(){const b=document.querySelector('${openSel}');const o=document.getElementById('${idAttr}');if(!b||!o)return;const c=o.querySelector(".nj-err-close");let loaded=false;const open=function(){if(!loaded){loaded=true;const f=document.createElement('iframe');f.className='nj-err-frame';f.srcdoc=${srcdocLiteral};o.appendChild(f);}o.removeAttribute("hidden");document.body.style.overflow="hidden";};const close=function(){o.setAttribute("hidden","");document.body.style.overflow="";};b.addEventListener("click",open);b.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});c.addEventListener("click",close);o.addEventListener("click",function(e){if(e.target===o){close();}});})()</script>`;
   }
 
   const idAttr = escapeAttribute(id);
+  // WHY: same id-scoped resolution as the inline variant — see note above.
+  const openSel = `[data-nj-err-open="${idAttr}"]`;
   return `<style>${css}</style>
 <div class="nj-err-block" role="status" aria-live="polite">
   <div class="nj-err-header">
@@ -145,7 +151,7 @@ const toHtmlMarker = (
 <div class="nj-err-overlay" id="${idAttr}" hidden>
   <button class="nj-err-close" type="button" aria-label="Close error overlay">${CLOSE_ICON}</button>
 </div>
-<script>(function(){const b=document.querySelector('[data-nj-err-open]');const o=document.getElementById(b?.getAttribute('data-nj-err-open')||'');if(!b||!o)return;const m=o.closest('.nj-err-block')?.querySelector('.nj-err-msg[data-nj-err-full]');const checkOverflow=function(){if(!m)return;const full=m.getAttribute('data-nj-err-full');if(m.scrollWidth>m.clientWidth){m.setAttribute('title',full);}else{m.removeAttribute('title');}};checkOverflow();window.addEventListener('resize',checkOverflow);const c=o.querySelector(".nj-err-close");let loaded=false;const open=function(){if(!loaded){loaded=true;const f=document.createElement('iframe');f.className='nj-err-frame';f.srcdoc=${srcdocLiteral};o.appendChild(f);}o.removeAttribute("hidden");document.body.style.overflow="hidden";};const close=function(){o.setAttribute("hidden","");document.body.style.overflow="";};b.addEventListener("click",open);b.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});c.addEventListener("click",close);o.addEventListener("click",function(e){if(e.target===o){close();}});})()</script>`;
+<script>(function(){const b=document.querySelector('${openSel}');const o=document.getElementById('${idAttr}');if(!b||!o)return;const m=o.closest('.nj-err-block')?.querySelector('.nj-err-msg[data-nj-err-full]');const checkOverflow=function(){if(!m)return;const full=m.getAttribute('data-nj-err-full');if(m.scrollWidth>m.clientWidth){m.setAttribute('title',full);}else{m.removeAttribute('title');}};checkOverflow();window.addEventListener('resize',checkOverflow);const c=o.querySelector(".nj-err-close");let loaded=false;const open=function(){if(!loaded){loaded=true;const f=document.createElement('iframe');f.className='nj-err-frame';f.srcdoc=${srcdocLiteral};o.appendChild(f);}o.removeAttribute("hidden");document.body.style.overflow="hidden";};const close=function(){o.setAttribute("hidden","");document.body.style.overflow="";};b.addEventListener("click",open);b.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});c.addEventListener("click",close);o.addEventListener("click",function(e){if(e.target===o){close();}});})()</script>`;
 };
 
 export { toHtmlMarker };

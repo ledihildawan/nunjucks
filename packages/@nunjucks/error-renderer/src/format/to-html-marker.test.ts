@@ -100,3 +100,40 @@ describe('toHtmlMarker — iframe srcdoc escaping', () => {
     expect(markerHtml).toMatch(/srcdoc="[^"]*\\"/);
   });
 });
+
+describe('toHtmlMarker — script binds its own marker', () => {
+  // WHY: regression pin — the script used to querySelector the FIRST
+  // '[data-nj-err-open]' in the document, so with multiple markers every later
+  // button opened the first marker's overlay (or never worked).
+  const scriptOf = (html: string): string =>
+    html.slice(html.indexOf('<script>'), html.indexOf('</script>'));
+  const idOf = (html: string): string | undefined =>
+    /data-nj-err-open="(nj-err-[a-z0-9]+)"/.exec(html)?.[1];
+
+  test('each block marker script resolves its own button and overlay id', () => {
+    const first = toHtmlMarker({ message: 'first error', templateName: 'a.njk' });
+    const second = toHtmlMarker({ message: 'second error', templateName: 'b.njk' });
+    const firstId = idOf(first);
+    const secondId = idOf(second);
+    expect(firstId).toBeDefined();
+    expect(secondId).toBeDefined();
+    expect(firstId).not.toBe(secondId);
+
+    expect(scriptOf(first)).toContain(`[data-nj-err-open="${firstId}"]`);
+    expect(scriptOf(first)).toContain(`getElementById('${firstId}')`);
+    expect(scriptOf(first)).not.toContain(`"${secondId}"`);
+    expect(scriptOf(second)).toContain(`[data-nj-err-open="${secondId}"]`);
+    expect(scriptOf(second)).toContain(`getElementById('${secondId}'`);
+    expect(scriptOf(second)).not.toContain(`"${firstId}"`);
+  });
+
+  test('each inline marker script resolves its own button and overlay id', () => {
+    const first = toHtmlMarker({ message: 'first error' }, { severity: 'inline' });
+    const second = toHtmlMarker({ message: 'second error' }, { severity: 'inline' });
+    const firstId = idOf(first);
+    const secondId = idOf(second);
+    expect(firstId).not.toBe(secondId);
+    expect(scriptOf(first)).not.toContain(`"${secondId}"`);
+    expect(scriptOf(second)).not.toContain(`"${firstId}"`);
+  });
+});

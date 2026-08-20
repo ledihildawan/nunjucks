@@ -78,5 +78,5 @@ const buildErrorDisplay = (
   return { classified, displayLine, displayCol, displayPath };
 };
 
-export { buildErrorDisplay, classifyError, renderBadge };
 export type { HumanTitleInput };
+export { buildErrorDisplay, classifyError, renderBadge };

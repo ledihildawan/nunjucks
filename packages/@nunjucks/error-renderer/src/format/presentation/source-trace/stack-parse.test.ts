@@ -43,14 +43,32 @@ describe('parseStackFrame', () => {
     expect(parsed.col).toBe(25);
   });
 
-  test('falls back when the bare frame has no parenthesised location', () => {
+  test('parses an anonymous bare frame without parentheses', () => {
+    // WHY: regression pin — anonymous frames used to yield path:null because only
+    // the parenthesised form was recognised.
     const bareFrame = '    at file.ts:10:20';
     const parsed = parseStackFrame(bareFrame);
     expect(parsed.raw).toBe('at file.ts:10:20');
-    expect(parsed.fn).toBe('file.ts:10:20');
-    expect(parsed.path).toBeNull();
-    expect(parsed.line).toBeNull();
-    expect(parsed.col).toBeNull();
+    expect(parsed.fn).toBe('');
+    expect(parsed.path).toBe('file.ts');
+    expect(parsed.line).toBe(10);
+    expect(parsed.col).toBe(20);
+  });
+
+  test('parses an anonymous frame with a posix absolute path', () => {
+    const parsed = parseStackFrame('    at /srv/app/dist/index.js:4:19');
+    expect(parsed.fn).toBe('');
+    expect(parsed.path).toBe('/srv/app/dist/index.js');
+    expect(parsed.line).toBe(4);
+    expect(parsed.col).toBe(19);
+  });
+
+  test('parses an anonymous frame with a file:// URL and drive colon', () => {
+    const parsed = parseStackFrame('    at file:///C:/src/app.ts:42:7');
+    expect(parsed.fn).toBe('');
+    expect(parsed.path).toBe('file:///C:/src/app.ts');
+    expect(parsed.line).toBe(42);
+    expect(parsed.col).toBe(7);
   });
 
   test('falls back for an unparseable string with no frame markers', () => {

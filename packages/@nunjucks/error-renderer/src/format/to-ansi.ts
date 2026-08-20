@@ -4,6 +4,7 @@ import {
   formatMediumAnsi,
   getErrorMessage,
 } from './ansi/format-helpers';
+import { sanitizeTerminalText } from './ansi/sanitize-helpers.ts';
 import { DEFAULT_IDE } from './presentation/ide-links/defaults.ts';
 import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
@@ -43,7 +44,10 @@ const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
     ide = DEFAULT_IDE,
     sourceTrace,
   } = options;
-  const message = getErrorMessage(error);
+  // WHY: the message is user-controlled template text — strip terminal controls once
+  // here (the single extraction point) so every verbosity path emits it sanitized
+  // before the renderer wraps it in its own structured ANSI.
+  const message = sanitizeTerminalText(getErrorMessage(error));
 
   if (verbosity === 'simple') {
     return message;

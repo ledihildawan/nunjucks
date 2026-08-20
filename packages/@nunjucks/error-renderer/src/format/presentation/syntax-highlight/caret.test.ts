@@ -26,4 +26,13 @@ describe('calculateCaretPosition', () => {
     expect(r).not.toBeNull();
     expect(r?.carets.length).toBeGreaterThanOrEqual(1);
   });
+
+  // WHY: regression pin — the word scans used to recurse per character and
+  // overflowed the stack on pathological single-line sources.
+  test('survives a pathological single-line word without overflowing the stack', () => {
+    const longWord = 'a'.repeat(100_000);
+    const r = calculateCaretPosition(longWord, 99_999);
+    expect(r?.highlightWord).toBe(longWord);
+    expect(r?.carets).toHaveLength(100_000);
+  });
 });

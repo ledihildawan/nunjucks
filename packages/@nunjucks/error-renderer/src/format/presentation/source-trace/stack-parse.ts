@@ -1,5 +1,8 @@
 const STACK_LOCATION_RE = /\(([^()]+):(\d+):(\d+)\)$/u;
 const STACK_FUNCTION_RE = /^at\s+([^\s]+)/u;
+// WHY: anonymous frames (`at /path/file.js:10:15`, `at file:///...`) carry the
+// location bare, without parentheses — the path is greedy up to the last :line:col.
+const STACK_ANONYMOUS_RE = /^at\s+(.+):(\d+):(\d+)$/u;
 
 interface ParsedStackFrame {
   raw: string;
@@ -26,6 +29,17 @@ export const parseStackFrame = (line: string): ParsedStackFrame => {
       path: pathMatch[1],
       line: Number.parseInt(pathMatch[2], 10),
       col: pathMatch[3] ? Number.parseInt(pathMatch[3], 10) : null,
+    };
+  }
+
+  const anonMatch = trimmed.match(STACK_ANONYMOUS_RE);
+  if (anonMatch?.[1] && anonMatch[2]) {
+    return {
+      raw: trimmed,
+      fn: '',
+      path: anonMatch[1],
+      line: Number.parseInt(anonMatch[2], 10),
+      col: anonMatch[3] ? Number.parseInt(anonMatch[3], 10) : null,
     };
   }
 
