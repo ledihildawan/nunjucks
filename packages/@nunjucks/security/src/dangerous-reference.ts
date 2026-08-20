@@ -31,9 +31,7 @@ const checkDocument = (value: unknown): boolean =>
   HOST_SNAPSHOT.document !== undefined &&
   value === HOST_SNAPSHOT.document;
 const checkSelf = (value: unknown): boolean =>
-  HOST_SNAPSHOT !== undefined &&
-  HOST_SNAPSHOT.self !== undefined &&
-  value === HOST_SNAPSHOT.self;
+  HOST_SNAPSHOT !== undefined && HOST_SNAPSHOT.self !== undefined && value === HOST_SNAPSHOT.self;
 const checkBuffer = (value: unknown): boolean =>
   typeof Buffer !== 'undefined' && value instanceof Buffer;
 
