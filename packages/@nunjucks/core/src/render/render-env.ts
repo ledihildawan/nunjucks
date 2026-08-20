@@ -9,12 +9,22 @@ import { buildCompileCacheKey } from '../template/template-cache.ts';
 import type { CompiledCodeCache } from '../template/template-cache.ts';
 import type { RenderConfig } from './render-types.ts';
 
+// WHY: template-author-controlled names must resolve OWN properties only — a bare
+// `registry[name]` lookup walks the prototype chain, so `{{ x |> constructor }}` would
+// surface Object.prototype.constructor instead of the catalogued UNDEFINED_FILTER.
+// Mirrors the hasOwn discipline enforced by runtime frame/call-wrap lookups.
+const lookupOwnEntry = <T>(
+  registry: Readonly<Record<string, T>> | undefined,
+  name: string
+): T | undefined =>
+  registry !== undefined && Object.hasOwn(registry, name) ? registry[name] : undefined;
+
 /** Builds env lookups that resolve (or catalog-throw) filters, tests, and extensions. */
 const createEnvLookups = (
   config: RenderConfig
 ): Pick<Env, 'getFilter' | 'getTest' | 'getExtension'> => ({
   getFilter: (name: string, lineno: number | null, colno: number | null) => {
-    const filter = config.filters?.[name];
+    const filter = lookupOwnEntry(config.filters, name);
     if (filter) {
       return filter;
     }
@@ -26,7 +36,7 @@ const createEnvLookups = (
     });
   },
   getTest: (name: string, lineno: number | null, colno: number | null) => {
-    const test = config.tests?.[name];
+    const test = lookupOwnEntry(config.tests, name);
     if (test) {
       return test;
     }
@@ -38,7 +48,7 @@ const createEnvLookups = (
     });
   },
   getExtension: (name: string) => {
-    const extension = config.extensions?.[name];
+    const extension = lookupOwnEntry(config.extensions, name);
     if (extension !== undefined) {
       return extension;
     }

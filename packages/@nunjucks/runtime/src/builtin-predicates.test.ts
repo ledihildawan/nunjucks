@@ -142,6 +142,14 @@ describe('builtin tests', () => {
       expect(T('matches', 'a'.repeat(10_001), '^a+$')).toBe(false);
       expect(T('matches', 'a'.repeat(10_000), '^a+$')).toBe(true);
     });
+    test('matches rejects nested-quantifier patterns (ReDoS guard, fails closed)', () => {
+      expect(T('matches', 'hello', '(a+)+')).toBe(false);
+      expect(T('matches', 'hello', /(a+)+/u)).toBe(false);
+      expect(T('matches', 'hello', /^h+(a?)*/u)).toBe(false);
+      // Linear shapes still pass, including via RegExp instances.
+      expect(T('matches', 'abba', '(a|b)+')).toBe(true);
+      expect(T('matches', 'hello', /^h+/u)).toBe(true);
+    });
   });
 
   describe('container', () => {

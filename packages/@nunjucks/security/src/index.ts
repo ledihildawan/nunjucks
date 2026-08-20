@@ -7,3 +7,4 @@ export {
   isPrototypeEscapeKey,
 } from './blocked-key-policy.ts';
 export { isDangerousReference } from './dangerous-reference.ts';
+export { isDangerousRegexPattern } from './regex-policy.ts';

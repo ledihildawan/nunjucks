@@ -107,6 +107,29 @@ describe('error messages - real scenarios', () => {
     expect(text).toContain('register');
   });
 
+  // WHY: regression — env lookups must resolve OWN properties only; a bare dictionary
+  // read walks the prototype chain and used to surface Object.prototype.constructor.
+  test.each(['constructor', 'toString', 'valueOf', 'hasOwnProperty'])(
+    'prototype keys cannot be resolved as filters (%s)',
+    async (key) => {
+      const err = (await renderTemplate(`{{ x |> ${key} }}`, { x: 'test' }).catch(
+        (e) => e
+      )) as TemplateError;
+
+      expect(err.code).toBe('UNDEFINED_FILTER');
+      expect(err.subject).toBe(key);
+    }
+  );
+
+  test('prototype keys cannot be resolved as tests', async () => {
+    const err = (await renderTemplate('{{ x is constructor }}', { x: 'test' }).catch(
+      (e) => e
+    )) as TemplateError;
+
+    expect(err.code).toBe('UNDEFINED_TEST');
+    expect(err.subject).toBe('constructor');
+  });
+
   test('NULL_VALUE has proper causes about null/undefined', async () => {
     const err = (await renderTemplate('{{ obj.name }}', { obj: null }).catch(
       (e) => e

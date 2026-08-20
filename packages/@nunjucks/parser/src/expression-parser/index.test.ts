@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { createTokenizer, TOKEN_REGEX, type Token } from '@nunjucks/lexer';
-import { isErr } from '@nunjucks/lib';
+import { isErr, isOk } from '@nunjucks/lib';
 import { getNodeTypeName } from '@nunjucks/nodes';
 import { nextTokenOrNull, pushToken } from '../cursor.ts';
 import { createParser } from '../index.ts';
@@ -73,6 +73,15 @@ describe('parseExpression: regex literal tokens', () => {
   test('rejects an overly long regex literal token (ReDoS cap)', () => {
     const result = parsePrimary(makeRegexContext('a'.repeat(257)));
     expect(isErr(result)).toBe(true);
+  });
+  test('rejects nested-quantifier regex literals (ReDoS guard)', () => {
+    expect(isErr(parsePrimary(makeRegexContext('(a+)+')))).toBe(true);
+    expect(isErr(parsePrimary(makeRegexContext('^(\\d+\\s*)+$')))).toBe(true);
+    expect(isErr(parsePrimary(makeRegexContext('(a{1,3})+')))).toBe(true);
+  });
+  test('accepts linear quantified regex literals', () => {
+    expect(isOk(parsePrimary(makeRegexContext('(a{2})+')))).toBe(true);
+    expect(isOk(parsePrimary(makeRegexContext('(ab)+c*')))).toBe(true);
   });
 });
 

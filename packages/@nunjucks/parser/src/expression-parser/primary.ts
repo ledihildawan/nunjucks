@@ -14,6 +14,7 @@ import {
 import { isErr, isOk, ok, type Result } from '@nunjucks/lib';
 import type { Node } from '@nunjucks/nodes';
 import { bitwiseNot, decrement, increment, literal, neg, pos, symbol } from '@nunjucks/nodes';
+import { isDangerousRegexPattern } from '@nunjucks/security';
 import { type Loc, loc } from '@nunjucks/shared';
 import { find } from 'remeda';
 import type { ParserContext } from '../cursor.ts';
@@ -67,6 +68,17 @@ const handleLiteralToken = (
       if (body.length > MAX_REGEX_LITERAL_LENGTH) {
         return fail(parserContext, {
           message: `regex literal exceeds ${MAX_REGEX_LITERAL_LENGTH} characters (ReDoS guard)`,
+          lineno: tok.lineno,
+          colno: tok.colno,
+        });
+      }
+      // WHY: length alone cannot neutralize catastrophic backtracking — `(a+)+$` is
+      // 7 characters — so nested-quantifier shapes are rejected at the single choke
+      // point where template-authored regexes are born. This also covers every filter
+      // that later consumes the compiled RegExp instance (e.g. `replace`).
+      if (isDangerousRegexPattern(body)) {
+        return fail(parserContext, {
+          message: 'regex literal contains a nested quantifier such as (a+)+ (ReDoS guard)',
           lineno: tok.lineno,
           colno: tok.colno,
         });

@@ -1,4 +1,5 @@
 import { isKeyedObject, isTypedArray } from '@nunjucks/lib';
+import { isDangerousRegexPattern } from '@nunjucks/security';
 import { isAbsentLookupResult } from './member-access.ts';
 import { isSafeString } from './runtime-contract/safe-string.ts';
 
@@ -17,11 +18,14 @@ const matchesPattern = (target: string, pattern: unknown): boolean => {
   if (target.length > MAX_MATCHES_TARGET_LENGTH) {
     return false;
   }
+  // WHY: nested-quantifier shapes (e.g. `(a+)+`) backtrack catastrophically even well
+  // under the length caps — a host-supplied RegExp instance never passed the parser's
+  // literal guard, so the check is repeated here (fail closed: a miss reads as "no match").
   if (pattern instanceof RegExp) {
-    return pattern.test(target);
+    return !isDangerousRegexPattern(pattern.source) && pattern.test(target);
   }
   const source = String(pattern);
-  if (source.length > MAX_MATCHES_PATTERN_LENGTH) {
+  if (source.length > MAX_MATCHES_PATTERN_LENGTH || isDangerousRegexPattern(source)) {
     return false;
   }
   return new RegExp(source).test(target);

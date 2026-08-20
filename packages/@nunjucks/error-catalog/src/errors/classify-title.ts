@@ -1,5 +1,10 @@
-import { classifyFromError, ERROR_DEFINITIONS, getErrorMessage } from '@nunjucks/error-catalog';
-import type { ErrorLike } from '@nunjucks/error-catalog';
+// WHY: relative imports to the defining modules — importing from the package barrel
+// (`@nunjucks/error-catalog`) creates an index.ts ⇄ classify-title.ts module cycle,
+// since the barrel re-exports resolveHumanTitle from this file.
+import { classifyFromError } from './classify.ts';
+import { ERROR_DEFINITIONS } from './registry.ts';
+import { getErrorMessage } from '../get-error-message.ts';
+import type { ErrorLike } from '../types.ts';
 import type { HumanTitleInput } from './types.ts';
 
 const UNDEFINED_OUTPUT_RE = /attempted to output '([^']+)'/u;
