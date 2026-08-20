@@ -5,6 +5,7 @@ import type { RuntimeContext } from './runtime-context.ts';
 
 export { Template };
 
+/** Branding symbol carried by every `TemplateObject` handle created via `createTemplate`. */
 const Template = Symbol('Template');
 
 /**
@@ -65,12 +66,23 @@ export interface TemplateObject {
   // WHY: warningsCollector is threaded by compiled {% include %} code (render arg 3)
   // so include-emitted warnings land in the ROOT render's collector and surface once
   // per page instead of vanishing in a per-include throwaway runtime.
+  /**
+   * Renders the template; compiles first when still in `source` state.
+   *
+   * @throws TemplateError on load, compile, or render failure — this subpath
+   * throws by design (see the module header); the Result-based pipeline catches.
+   */
   render: (
     ctx: Record<string, unknown>,
     parentFrame?: Frame,
     warningsCollector?: unknown[]
   ) => Promise<string>;
+  /** Compiles eagerly; re-compiles are no-ops once in `compiled` state. @throws TemplateError on compile failure. */
   compile: () => void;
+  /**
+   * Runs the template discarding output, returning its exported macro/blocks.
+   * @throws TemplateError like {@link render}.
+   */
   getExported: (
     ctx?: Record<string, unknown>,
     parentFrame?: Frame

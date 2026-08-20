@@ -4,6 +4,8 @@ import { createLog } from '@nunjucks/error-formatter';
 import { err, ok, type Result } from '@nunjucks/lib';
 
 type FilterFunction = (...args: unknown[]) => unknown;
+
+/** Callable table (`filters`/`globals`) — name to function, built from user config. */
 type FilterMap = Record<string, FilterFunction>;
 
 const isCallableEntry = (
@@ -37,6 +39,10 @@ const createInvalidCallableError = (
     context: { phase: 'render', lineBase: 'zero' },
   });
 
+/**
+ * Validates an unknown config object into a callable map, returning `err` listing
+ * the offending names when any entry is not a function.
+ */
 const buildCallableMap = (source: unknown, configKey: string): Result<FilterMap, TemplateError> => {
   const { callableEntries, invalidNames } = partitionCallableEntries(
     typeof source === 'object' && source !== null ? Object.entries(source) : []

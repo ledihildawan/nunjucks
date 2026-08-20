@@ -45,6 +45,9 @@ interface CreateTemplateOptions {
  * Creates a stateful `TemplateObject` — a `source`→`compiled` state machine
  * wired to its own compiler, renderer, and error handler, with optional
  * eager compile and pre-computed export adoption for include-path reuse.
+ *
+ * @throws TemplateError when `eagerCompile` is set and compilation fails
+ * (prettified with template path and dev-mode internals).
  */
 export const createTemplate = ({
   src,

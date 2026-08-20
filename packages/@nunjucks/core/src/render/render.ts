@@ -216,6 +216,11 @@ const prepareRender = async (
   });
 };
 
+/**
+ * Renders a template to a string: prepares (load → validate → sandbox → compile),
+ * executes the compiled code, and injects dev warnings. Every failure folds into
+ * the returned `err(TemplateError)` — `render` itself never throws.
+ */
 const render = async (
   template: string,
   options: RenderOptions = {}
@@ -252,6 +257,12 @@ const render = async (
   }
   return ok(injectWarningsIfNeeded({ result, warningsCollector, dev: resolvedConfig.dev }));
 };
+/**
+ * Renders a template as a single-consumer async chunk stream: pre-stream failures
+ * (compile/validate/load) arrive as `err(TemplateError)` so an error page is still
+ * renderable, while mid-stream runtime errors surface through the generator's
+ * throw channel (headers already sent).
+ */
 const renderToStream = async (
   template: string,
   options: RenderOptions = {}

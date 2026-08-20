@@ -10,6 +10,7 @@ import { findContextKeyPosition, wrapWithLog } from '../diagnostics/diagnostics.
 import { buildCompileCacheKey } from '../template/template-cache.ts';
 import type { CompileResult, RenderConfig, SandboxOptions } from './render-types.ts';
 
+/** File extensions marking a template name as a loader file reference rather than inline source. */
 const TEMPLATE_FILE_EXTENSION_RE = /\.(njk|js|html|htm|twig|ejs|eta)$/i;
 
 interface ResolveTemplateSourceInput {
@@ -85,6 +86,10 @@ const resolveTemplateSource = async ({
   return ok({ templateSource: template, templatePath: null });
 };
 
+/**
+ * Merges globals into the render context and wraps it in the sandbox proxy when
+ * `sandbox` or `blockedContextKeys` are active; shape-preserving for non-objects.
+ */
 const prepareSandbox = (
   config: RenderConfig,
   context: Record<string, unknown>
@@ -127,6 +132,11 @@ interface CompileTemplateInput {
   templateName: string;
 }
 
+/**
+ * Compiles template source to executable code, consulting the compiled-code cache
+ * for loader-resolved templates (the key includes the source content hash, so a
+ * hit means byte-identical input).
+ */
 const compileTemplate = ({
   templateSource,
   config,
@@ -243,6 +253,11 @@ interface ContextStrictModeOutcome {
   context: Record<string, unknown>;
 }
 
+/**
+ * Applies the context-strict policy: `'error'` mode returns a located `err` for
+ * dangerous context values, scrub mode replaces them and attaches a scrub warning,
+ * and a disabled policy passes the context through untouched.
+ */
 const handleContextStrictMode = async (
   context: Record<string, unknown>,
   config: RenderConfig
