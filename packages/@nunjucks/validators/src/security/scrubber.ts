@@ -17,8 +17,8 @@ interface ScrubVisit {
 /** Recursively rebuilds a value with dangerous entries removed; see inline WHYs. */
 const visitAndScrub = ({ value, seen, depth }: ScrubVisit): unknown => {
   // WHY: only plain objects/arrays are rebuilt — exotic keyed values (Date, Map, Set,
-  // RegExp, class instances) carry behavior in their prototype, and fromEntries would
-  // flatten them to {} (destroying {{ createdAt.getFullYear() }} in dev-warn renders).
+  // RegExp, class instances) carry behavior in their prototype, and rebuilding them
+  // via Object.create(null) would flatten them to {} (destroying createdAt.getFullYear).
   if (!isPlainObject(value) && !Array.isArray(value)) {
     return value;
   }
@@ -37,10 +37,19 @@ const visitAndScrub = ({ value, seen, depth }: ScrubVisit): unknown => {
     return value.map((item) => visitAndScrub({ value: item, seen, depth: nextDepth }));
   }
   const record = value as Record<string, unknown>;
-  return Object.fromEntries(
-    keys(record)
-      .filter((key) => !isDangerousReference(record[key]))
-      .map((key) => [key, visitAndScrub({ value: record[key], seen, depth: nextDepth })])
+  // WHY: rebuilt via fromEntries + Object.assign onto a null-prototype target — both use
+  // CreateDataProperty semantics, so a `__proto__` key lands as an own property (no
+  // prototype walk) and the dangerous-reference filter stays declarative.
+  return Object.assign(
+    Object.create(null),
+    Object.fromEntries(
+      keys(record)
+        .filter((key) => !isDangerousReference(record[key]))
+        .map((key): [string, unknown] => [
+          key,
+          visitAndScrub({ value: record[key], seen, depth: nextDepth }),
+        ])
+    )
   );
 };
 
@@ -49,11 +58,6 @@ const visitAndScrub = ({ value, seen, depth }: ScrubVisit): unknown => {
 // phantom (every caller passed Record<string, unknown>) and asserted more than it proved.
 export const scrubDangerousReferences = (context: unknown): unknown => {
   const seen = new WeakSet<object>();
-  // WHY: visitAndScrub rebuilds objects via Object.fromEntries. The structural invariant it
-  // upholds: for non-dangerous inputs every key is preserved with its (recursively scrubbed)
-  // value, so the result is structurally assignable back to the input's shape. Dangerous keys
-  // are *removed*, making the result a structural subtype — never a supertype — so the cast
-  // is a sound upper bound. TS cannot prove the round-trip, hence the cast.
   return visitAndScrub({ value: context, seen, depth: 0 });
 };
 

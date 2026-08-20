@@ -15,6 +15,13 @@ interface ValidateSetOptions {
   topLevel: boolean;
 }
 
+interface StringKeyWriteScope {
+  key: string;
+  target: Record<string | symbol, unknown>;
+  sandboxOptions: ResolvedSandboxOptions;
+  topLevel: boolean;
+}
+
 /** Shared guard: symbol keys are blocked for write operations. */
 const guardBlockedSymbol = (key: string | symbol, sandboxOptions: ResolvedSandboxOptions): void => {
   if (typeof key === 'symbol' && isBlockedSymbol(key)) {
@@ -23,12 +30,12 @@ const guardBlockedSymbol = (key: string | symbol, sandboxOptions: ResolvedSandbo
 };
 
 /** Shared guard for write operations: throws SANDBOX_SET if the key is blocked at scope. */
-const guardBlockedStringKey = (
-  key: string,
-  target: Record<string | symbol, unknown>,
-  sandboxOptions: ResolvedSandboxOptions,
-  topLevel: boolean
-): void => {
+const guardBlockedStringKey = ({
+  key,
+  target,
+  sandboxOptions,
+  topLevel,
+}: StringKeyWriteScope): void => {
   if (
     isBlockedAtScope({ key, sandboxOptions, topLevel }) &&
     (hasOwn(target, key) || DANGEROUS_OBJECT_INTRINSICS.has(key))
@@ -57,16 +64,12 @@ const guardTopLevelContextMutation = (
 };
 
 /** Validates a string key for a write operation (set/delete/defineProperty). */
-const validateStringKeyForWrite = (
-  key: string,
-  target: Record<string | symbol, unknown>,
-  sandboxOptions: ResolvedSandboxOptions,
-  topLevel: boolean
-): boolean => {
+const validateStringKeyForWrite = (scope: StringKeyWriteScope): boolean => {
+  const { key, sandboxOptions, topLevel } = scope;
   if (topLevel && isInternalKey(key)) {
     return true;
   }
-  guardBlockedStringKey(key, target, sandboxOptions, topLevel);
+  guardBlockedStringKey(scope);
   guardAllowlist(key, sandboxOptions);
   if (topLevel) {
     guardTopLevelContextMutation(key, sandboxOptions);
@@ -80,7 +83,7 @@ const createValidateDeleteProperty = ({ sandboxOptions, topLevel }: ValidateSetO
     guardBlockedSymbol(key, sandboxOptions);
     if (
       typeof key === 'string' &&
-      !validateStringKeyForWrite(key, target, sandboxOptions, topLevel)
+      !validateStringKeyForWrite({ key, target, sandboxOptions, topLevel })
     ) {
       return false;
     }
@@ -97,7 +100,7 @@ const createValidateDefineProperty = ({ sandboxOptions, topLevel }: ValidateSetO
   ): boolean => {
     guardBlockedSymbol(key, sandboxOptions);
     if (typeof key === 'string') {
-      if (!validateStringKeyForWrite(key, target, sandboxOptions, topLevel)) {
+      if (!validateStringKeyForWrite({ key, target, sandboxOptions, topLevel })) {
         return false;
       }
       return Reflect.defineProperty(target, key, descriptor);
@@ -107,4 +110,4 @@ const createValidateDefineProperty = ({ sandboxOptions, topLevel }: ValidateSetO
 };
 
 export { createValidateDeleteProperty, createValidateDefineProperty };
-export type { ValidateSetOptions };
+export type { StringKeyWriteScope, ValidateSetOptions };
