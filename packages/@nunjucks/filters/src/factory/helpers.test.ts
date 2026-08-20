@@ -178,6 +178,32 @@ describe('validateItemsHaveAttr', () => {
       expect(result.error.message).toBe('custom filter failure');
     }
   });
+
+  test('accepts dotted attribute paths with getAttrGetter semantics', () => {
+    // WHY: regression — Object.hasOwn on the literal 'user.age' string made every
+    // dotted attr fail validation even though getAttrGetter resolves them.
+    const items = [{ user: { age: 30 } }, { user: { age: 40 } }];
+    const result = validateItemsHaveAttr({ items, attr: 'user.age', errorDef: undefined });
+    expect(result.ok).toBe(true);
+  });
+
+  test('rejects a dotted attribute path when any segment is missing', () => {
+    const missingTail = [{ user: { age: 30 } }, { user: {} }];
+    const result = validateItemsHaveAttr({
+      items: missingTail,
+      attr: 'user.age',
+      errorDef: undefined,
+    });
+    expect(result.ok).toBe(false);
+
+    const missingHead = [{ user: { age: 30 } }, { profile: { age: 40 } }];
+    const headResult = validateItemsHaveAttr({
+      items: missingHead,
+      attr: 'user.age',
+      errorDef: undefined,
+    });
+    expect(headResult.ok).toBe(false);
+  });
 });
 
 describe('createFilterError', () => {

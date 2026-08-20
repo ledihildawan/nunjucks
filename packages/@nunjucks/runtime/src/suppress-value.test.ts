@@ -1,12 +1,19 @@
 import { describe, expect, test } from 'bun:test';
-import { suppressValue } from './index.ts';
 import { escapeForContext } from './escaping/index.ts';
+import { suppressValue } from './index.ts';
 import { createSafeString } from './runtime-contract/safe-string.ts';
 
 describe('suppressValue', () => {
   test('returns empty string for null and undefined', () => {
     expect(suppressValue(null)).toBe('');
     expect(suppressValue(undefined)).toBe('');
+  });
+
+  test('returns empty string for null and undefined in script context', () => {
+    // WHY: regression — null hit the script JSON guard before nullish normalization
+    // and rendered the literal string "null" (undefined already fell through).
+    expect(suppressValue(null, { autoescape: true, context: 'script' })).toBe('');
+    expect(suppressValue(undefined, { autoescape: true, context: 'script' })).toBe('');
   });
 
   test('SafeStrings pass through html/script contexts but are escaped in attribute contexts', () => {

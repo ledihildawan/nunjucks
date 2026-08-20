@@ -158,4 +158,21 @@ describe('createTemplateErrorHandler', () => {
     });
     expect((result as unknown as { path: string }).path).toBe('test.html');
   });
+
+  test('enrichError preserves a real Error non-enumerable message and stack on the clone', () => {
+    // WHY: regression — the clone spread only own enumerable props, so a genuine
+    // Error's non-enumerable `message`/`stack` were dropped and the enriched error
+    // rendered with an empty message (plain-object error-likes masked this).
+    const getState = () => ({ path: 'test.html', includeChain: null });
+    const handler = createTemplateErrorHandler(getState);
+    const e = Object.assign(new Error('boom'), {
+      code: 'RENDER_FAIL',
+    }) as unknown as ErrorWithLineInfo;
+    const result = handler.enrichError(e);
+    expect(result).not.toBe(e);
+    expect(result.message).toBe('boom');
+    expect(result.stack).toBe(e.stack);
+    expect((result as unknown as { path: string }).path).toBe('test.html');
+    expect((result as unknown as { code: string }).code).toBe('RENDER_FAIL');
+  });
 });

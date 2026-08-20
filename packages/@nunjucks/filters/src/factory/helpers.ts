@@ -1,7 +1,17 @@
 import type { ErrorDefinitionEntry, TemplateError } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
-import { err, escapeHtml, MATCH_ANY_RE, normalize, ok, type Result } from '@nunjucks/lib';
-import { copySafeness, isSafeString, markSafe } from '@nunjucks/lib';
+import {
+  copySafeness,
+  err,
+  escapeHtml,
+  hasOwn,
+  isSafeString,
+  MATCH_ANY_RE,
+  markSafe,
+  normalize,
+  ok,
+  type Result,
+} from '@nunjucks/lib';
 import { getLogContext } from '@nunjucks/runtime';
 import { isNonNullish } from 'remeda';
 import type { FilterContext, SafeString } from './types.ts';
@@ -106,18 +116,34 @@ interface ValidateItemsInput {
   errorDef: ErrorDefinitionEntry | undefined;
 }
 
+// WHY: getAttrGetter (and createSortComparator on top of it) resolve dotted attrs
+// ('user.age') by walking OWN properties segment by segment; validation must mirror
+// that walk — a plain hasOwn on the literal attr string made every dotted attr fail
+// as "attribute does not exist" even though the getters read them fine. hasOwn per
+// segment keeps present-but-undefined values valid, matching single-segment behavior.
+const itemOwnsAttrPath = (item: unknown, attr: string): boolean => {
+  let current: unknown = item;
+  return attr.split('.').every((segment) => {
+    if (current === null || typeof current !== 'object' || !hasOwn(current, segment)) {
+      return false;
+    }
+    current = (current as Record<string, unknown>)[segment];
+    return true;
+  });
+};
+
 /**
- * Validates that every item in `items` owns `attr` (own-property check),
- * narrowing them to records or returning a filter error naming the attribute.
+ * Validates that every item in `items` owns `attr` — dotted paths resolve
+ * segment by segment with the same own-property semantics `getAttrGetter`
+ * uses — narrowing them to records or returning a filter error naming the
+ * attribute.
  */
 const validateItemsHaveAttr = ({
   items,
   attr,
   errorDef,
 }: ValidateItemsInput): Result<Record<string, unknown>[], TemplateError> => {
-  const everyHasAttr = items.every(
-    (item) => item !== null && typeof item === 'object' && Object.hasOwn(item, attr)
-  );
+  const everyHasAttr = items.every((item) => itemOwnsAttrPath(item, attr));
   if (!everyHasAttr) {
     return err(
       createFilterError({

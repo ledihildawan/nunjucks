@@ -118,14 +118,17 @@ export function suppressValue(
     })();
   }
 
-  if (autoescape && context === 'script' && !isSafeString(value)) {
-    const scriptValue = suppressScriptValue(this, value, loc);
+  // WHY: nullish normalization runs BEFORE the script-context guard — String(null)
+  // matches JSON_SCALAR_RE, so null used to render the literal "null" in script
+  // context while every other context rendered '' (undefined already fell through).
+  const normalized: unknown = isNonNullish(value) ? value : '';
+
+  if (autoescape && context === 'script' && !isSafeString(normalized)) {
+    const scriptValue = suppressScriptValue(this, normalized, loc);
     if (scriptValue !== SCRIPT_VALUE_NOT_HANDLED) {
       return scriptValue;
     }
   }
-
-  const normalized: unknown = isNonNullish(value) ? value : '';
 
   if (autoescape && !isSafeString(normalized)) {
     return suppressEscapedValue(this, normalized, { context, ...loc });

@@ -1,6 +1,11 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: the per-policy proxy memo (WeakMap + cached canonical policy keys) must stay co-located with createSandboxedObject and the trap factories it memoizes
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { hasOwn, isFunction, isNonNullish } from '@nunjucks/lib';
 import { isCodeExecutionPattern, isDangerousReference } from '@nunjucks/security';
+import {
+  createValidateDefineProperty,
+  createValidateDeleteProperty,
+} from './sandbox-delete-define.ts';
 import {
   assertAllowed,
   blockedKeysError,
@@ -16,10 +21,6 @@ import {
   isBlockedSymbol,
   isInternalKey,
 } from './sandbox-predicates.ts';
-import {
-  createValidateDeleteProperty,
-  createValidateDefineProperty,
-} from './sandbox-delete-define.ts';
 
 /** Inputs to `wrapFunctionWithBlocking`: the function, its key, scope, and receiver. */
 interface WrapFunctionBlockingInput {
@@ -248,14 +249,39 @@ interface SandboxedValueInput {
   sandboxOptions?: ResolvedSandboxOptions;
 }
 
-/** Memoizes proxy identity so the same target always returns the same proxy. */
-const proxyMemo = new WeakMap<object, unknown>();
+/**
+ * Memoizes proxy identity per (target, policy) so the same target under the same
+ * policy always returns the same proxy.
+ */
+const proxyMemo = new WeakMap<object, Map<string, unknown>>();
+
+// WHY: resolved options are re-created on every render, so keying the inner map by
+// `ResolvedSandboxOptions` object identity would never hit across renders; this
+// canonical serialization makes structurally equal policies share one memo entry.
+const policyKeyMemo = new WeakMap<ResolvedSandboxOptions, string>();
+
+const policyKeyFor = (options: ResolvedSandboxOptions): string => {
+  const cached = policyKeyMemo.get(options);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const key = JSON.stringify([
+    [...options.allowlist].sort(),
+    options.blocklistMode,
+    [...options.blockedContextKeys].sort(),
+    options.environment,
+  ]);
+  policyKeyMemo.set(options, key);
+  return key;
+};
 
 /**
  * Proxies an object (or wraps a function) so every nested access is trapped;
  * accepts pre-resolved options so recursion does not re-resolve the config.
- * Returns a memoized proxy so multiple accesses to the same target yield the
- * same proxy instance, preserving `===` identity for callers that hold references.
+ * Returns a memoized proxy so multiple accesses to the same target under the
+ * SAME policy yield the same proxy instance, preserving `===` identity for
+ * callers that hold references; distinct policies over one shared target each
+ * get their own proxy so every policy stays enforced.
  *
  * @param options - Value to proxy, sandbox toggle, and options.
  * @returns A sandboxed proxy, wrapped function, or the original value.
@@ -283,14 +309,18 @@ const createSandboxedObject = ({
     });
   }
   const target = value as object;
-  if (proxyMemo.has(target)) {
-    return proxyMemo.get(target);
+  const policyKey = policyKeyFor(resolvedOptions);
+  const proxiesByPolicy = proxyMemo.get(target) ?? new Map<string, unknown>();
+  const memoized = proxiesByPolicy.get(policyKey);
+  if (memoized !== undefined) {
+    return memoized;
   }
   const proxy = new Proxy(
     target,
     createSandboxTraps({ sandboxEnabled, sandboxOptions: resolvedOptions, topLevel: false })
   );
-  proxyMemo.set(target, proxy);
+  proxiesByPolicy.set(policyKey, proxy);
+  proxyMemo.set(target, proxiesByPolicy);
   return proxy;
 };
 

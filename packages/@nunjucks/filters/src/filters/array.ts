@@ -1,6 +1,13 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { createSortComparator, err, isSafeString, ok, type Result } from '@nunjucks/lib';
+import {
+  createSortComparator,
+  err,
+  getAttrGetter,
+  isSafeString,
+  ok,
+  type Result,
+} from '@nunjucks/lib';
 import { isPlainObject, keys, range, sum as sumValues } from 'remeda';
 import {
   createFilter,
@@ -177,7 +184,10 @@ const sumWithAttribute = ({
     return err(validatedResult.error);
   }
   const typedItems = validatedResult.value;
-  const values = typedItems.map((item) => item[attr]);
+  // WHY: attr may be a dotted path ('user.age'); getAttrGetter resolves it with the
+  // same own-property walk the validation above performed.
+  const getAttr = getAttrGetter(attr);
+  const values = typedItems.map((item) => getAttr(item));
   if (!values.every((value): value is number => typeof value === 'number')) {
     return err(
       createFilterError({

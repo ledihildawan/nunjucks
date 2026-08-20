@@ -68,5 +68,23 @@ describe('filters/object', () => {
       const result = groupby(items, 'type');
       expect(isErr(result)).toBe(true);
     });
+
+    test('groups items by a dotted attribute path', () => {
+      // WHY: regression — grouping resolved 'user.team' via getAttrGetter but
+      // validation rejected dotted attrs as nonexistent.
+      const items = [
+        { user: { team: 'red' }, name: 'a' },
+        { user: { team: 'blue' }, name: 'b' },
+        { user: { team: 'red' }, name: 'c' },
+      ];
+      const result = groupby(items, 'user.team');
+      expect(isOk(result)).toBe(true);
+      const grouped = getOrElse(result, null) as Record<string, unknown[]>;
+      expect(grouped.red).toEqual([
+        { user: { team: 'red' }, name: 'a' },
+        { user: { team: 'red' }, name: 'c' },
+      ]);
+      expect(grouped.blue).toEqual([{ user: { team: 'blue' }, name: 'b' }]);
+    });
   });
 });

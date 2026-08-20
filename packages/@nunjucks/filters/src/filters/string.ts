@@ -1,6 +1,6 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { err, ok, type Result } from '@nunjucks/lib';
+import { err, getAttrGetter, ok, type Result } from '@nunjucks/lib';
 import { defaultTo, join as joinRemeda, map, pipe, split } from 'remeda';
 import type { SafeString } from '../factory/index.ts';
 import {
@@ -125,7 +125,10 @@ const joinImpl = ({ values, delim, attr }: JoinFilterOptions): Result<string, Te
   if (!validatedResult.ok) {
     return err(validatedResult.error);
   }
-  return ok(validatedResult.value.map((item) => item[attr]).join(resolvedDelimiter));
+  // WHY: attr may be a dotted path ('user.name'); getAttrGetter resolves it with the
+  // same own-property walk the validation above performed.
+  const getAttr = getAttrGetter(attr);
+  return ok(validatedResult.value.map((item) => getAttr(item)).join(resolvedDelimiter));
 };
 
 /** Joins array items — or their `attr` values — with `delim` (default empty). */

@@ -147,6 +147,42 @@ describe('createSandboxedObject', () => {
 
     throw new Error('Expected sandboxed function to throw');
   });
+
+  test('memoizes proxies per policy so two policies over one target are both enforced', () => {
+    // WHY: regression — the memo was keyed by target only, so the second render with a
+    // different allowlist received the first policy's proxy and its policy was bypassed.
+    const obj = { title: 't', secret: 's' };
+    const titleOnly = createSandboxedObject({
+      value: obj,
+      sandboxEnabled: true,
+      options: { allowlist: ['title'], blocklistMode: false },
+    }) as Record<string, unknown>;
+    const secretOnly = createSandboxedObject({
+      value: obj,
+      sandboxEnabled: true,
+      options: { allowlist: ['secret'], blocklistMode: false },
+    }) as Record<string, unknown>;
+
+    expect(titleOnly.title).toBe('t');
+    expect(() => titleOnly.secret).toThrow();
+    expect(secretOnly.secret).toBe('s');
+    expect(() => secretOnly.title).toThrow();
+  });
+
+  test('returns the same memoized proxy when the same policy is applied twice', () => {
+    const obj = { title: 't' };
+    const first = createSandboxedObject({
+      value: obj,
+      sandboxEnabled: true,
+      options: { allowlist: ['title'], blocklistMode: false },
+    });
+    const second = createSandboxedObject({
+      value: obj,
+      sandboxEnabled: true,
+      options: { allowlist: ['title'], blocklistMode: false },
+    });
+    expect(second).toBe(first);
+  });
 });
 
 describe('createSandboxedContext', () => {

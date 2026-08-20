@@ -119,9 +119,12 @@ const createTemplateErrorHandler = (
     // object can carry an own enumerable "__proto__" (e.g. via JSON.parse), and
     // Object.assign's [[Set]] semantics would forward it to the prototype setter and
     // retarget this clone; DefineOwnProperty cannot be intercepted.
+    // WHY: `{ ...e }` copies only own ENUMERABLE props, so a real Error's non-enumerable
+    // `message`/`stack` would be dropped and the clone rendered with an empty message;
+    // re-adding them explicitly preserves plain-object error-likes unchanged.
     return Object.create(
       Object.getPrototypeOf(e) ?? Error.prototype,
-      Object.getOwnPropertyDescriptors({ ...e, path })
+      Object.getOwnPropertyDescriptors({ ...e, message: e.message, stack: e.stack, path })
     ) as ErrorWithLineInfo;
   };
 

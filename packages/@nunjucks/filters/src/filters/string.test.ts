@@ -140,6 +140,13 @@ describe('filters/string', () => {
       expect(getOrElse(joinFilter(items, ' & ', 'name'), null)).toBe('alice & bob');
     });
 
+    test('joins dotted attribute values when attr is a path', () => {
+      // WHY: regression — validation rejected dotted attrs as nonexistent, and the
+      // value read used the literal 'user.name' key instead of the resolved path.
+      const items = [{ user: { name: 'alice' } }, { user: { name: 'bob' } }];
+      expect(getOrElse(joinFilter(items, ' & ', 'user.name'), null)).toBe('alice & bob');
+    });
+
     test('returns error when input is not an array', () => {
       const stringInputResult = joinFilter('not array');
       expect(isErr(stringInputResult)).toBe(true);

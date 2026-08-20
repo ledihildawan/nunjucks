@@ -208,6 +208,15 @@ describe('filters/array', () => {
       expect(getOrElse(result, null)).toBe(6);
     });
 
+    test('sums a dotted attribute path across array items', () => {
+      // WHY: regression — validation rejected dotted attrs as nonexistent, and the
+      // value read used the literal 'user.age' key instead of the resolved path.
+      const items = [{ user: { age: 30 } }, { user: { age: 20 } }];
+      const result = sum(items, 'user.age');
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBe(50);
+    });
+
     test('returns error when input is neither an array nor a plain object', () => {
       const stringInputResult = sum('nope');
       expect(isErr(stringInputResult)).toBe(true);
@@ -253,6 +262,19 @@ describe('filters/array', () => {
       const result = sort(items, false, false, 'age');
       expect(isOk(result)).toBe(true);
       expect(getOrElse(result, null)).toEqual([{ age: 10 }, { age: 20 }, { age: 30 }]);
+    });
+
+    test('sorts by a dotted attribute path', () => {
+      // WHY: regression — the comparator already resolved 'user.age' via
+      // getAttrGetter, but validation rejected dotted attrs as nonexistent.
+      const items = [{ user: { age: 30 } }, { user: { age: 10 } }, { user: { age: 20 } }];
+      const result = sort(items, false, false, 'user.age');
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([
+        { user: { age: 10 } },
+        { user: { age: 20 } },
+        { user: { age: 30 } },
+      ]);
     });
 
     test('does not mutate the input array', () => {
