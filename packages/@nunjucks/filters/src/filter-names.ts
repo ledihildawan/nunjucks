@@ -8,11 +8,12 @@ import * as urlEncodeFilters from './filters/url-encode.ts';
 // WHY: upstream-compat aliases — kept so templates written for nunjucks 3.x keep working.
 // Spread into BUILTIN_FILTERS below so alias names are part of the engine's filter
 // registration (core filter-bundle) and the reserved-name list (shared BUILTIN_FILTER_NAMES).
+// `length` needs no alias entry: the array module exports it under its public name, so the
+// module spread registers it (the old internal-name leak registered `lengthFilter` too).
 const FILTER_ALIASES: Readonly<Record<string, unknown>> = Object.freeze({
   default: stringFilters.fallback,
   d: stringFilters.fallback,
   e: stringFilters.escape,
-  length: arrayFilters.lengthFilter,
 });
 
 /**

@@ -209,8 +209,12 @@ describe('builtin tests', () => {
       expect(T('sameas', o, o)).toBe(true);
       expect(T('sameas', o, {})).toBe(false);
     });
-    test('equalto', () => {
-      expect(T('equalto', { a: 1 }, { a: 1 })).toBe(true);
+    // WHY: upstream parity — equalto is strict === (like sameas); the old deep-compare
+    // pin ({a:1} equalto {a:1} → true) was an audit-flagged silent flip of ported templates.
+    test('equalto is strict === (upstream parity, no deep compare)', () => {
+      expect(T('equalto', 1, 1)).toBe(true);
+      expect(T('equalto', 'a', 'a')).toBe(true);
+      expect(T('equalto', { a: 1 }, { a: 1 })).toBe(false);
       expect(T('equalto', { a: 1 }, { a: 2 })).toBe(false);
     });
   });
@@ -220,9 +224,11 @@ describe('builtin tests', () => {
       expect(T('safe', createSafeString('hi'))).toBe(true);
       expect(T('safe', 'hi')).toBe(false);
     });
-    test('escaped', () => {
-      expect(T('escaped', 'hi')).toBe(true);
-      expect(T('escaped', createSafeString('hi'))).toBe(false);
+    // WHY: upstream parity — escaped is truthy when the value IS a SafeString
+    // (`value instanceof SafeString`); the old inverted pin flipped ported templates.
+    test('escaped is true for SafeStrings (upstream parity)', () => {
+      expect(T('escaped', 'hi')).toBe(false);
+      expect(T('escaped', createSafeString('hi'))).toBe(true);
     });
   });
 

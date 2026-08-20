@@ -1,9 +1,9 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { hasOwn, isFunction, isKeyedObject, isNonNullish } from '@nunjucks/lib';
-import { isPrototypeEscapeKey } from '@nunjucks/security';
 import {
   ACCESS_PATH,
   createPropertyNotFoundCallable,
+  memberLookup,
   NULL_MARKER,
   PARENT_NAME,
 } from '../member-access.ts';
@@ -68,33 +68,6 @@ const validateStringAccess = ({
   assertAllowed(value, sandboxOptions);
 };
 
-interface HandleSandboxDisabledInput {
-  target: unknown;
-  value: string | symbol;
-  parentName: string | null;
-}
-
-const handleSandboxDisabled = ({
-  target,
-  value,
-  parentName,
-}: HandleSandboxDisabledInput): unknown => {
-  if (!isNonNullish(target)) {
-    return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: value };
-  }
-  // WHY: target is guaranteed non-null by the guard above; the index signature models a dynamic
-  // property read on an arbitrary host value (primitives box transparently).
-  const record = target as Record<string | symbol, unknown>;
-  // WHY: defense-in-depth for a currently-unreachable wiring — sandbox-disabled configs use
-  // memberLookup (member-access.ts), which carries this same isPrototypeEscapeKey && !hasOwn
-  // not-found treatment. wrapMemberAccess is a public runtime surface, so if a future wiring
-  // routes sandbox-disabled lookups here, the RCE guard must not be skippable.
-  if (typeof value === 'string' && isPrototypeEscapeKey(value) && !hasOwn(record, value)) {
-    return createPropertyNotFoundCallable(value, parentName);
-  }
-  return record[value];
-};
-
 interface HandleSymbolAccessInput {
   target: unknown;
   value: symbol;
@@ -134,8 +107,8 @@ interface WrapMemberAccessInput {
  * Performs one sandboxed member read for generated code: validates the key
  * (blocked keys throw, allowlist applies), returns typed miss sentinels for
  * null targets and missing own properties, wraps functions with blocking, and
- * recursively proxies object values. Sandboxing-off falls back to plain
- * lookup semantics with the same RCE guard.
+ * recursively proxies object values. Sandboxing-off delegates to
+ * `memberLookup` so both paths share identical lookup semantics.
  *
  * @param options - Target, key, sandbox toggle, options, and parent display name.
  * @returns The accessed value, a miss sentinel, or a sandboxed proxy.
@@ -152,7 +125,11 @@ const wrapMemberAccess = ({
   const topLevel = options.topLevel ?? false;
 
   if (!sandboxEnabled) {
-    return handleSandboxDisabled({ target, value, parentName });
+    // WHY: delegate to memberLookup so the public surface is identical with/without the
+    // sandbox — same not-found sentinels for missing properties, same receiver-bound
+    // function reads, same prototype-escape RCE guard (the old raw `record[value]` fork
+    // leaked inherited functions and bare `undefined` for misses).
+    return memberLookup(target, value, parentName);
   }
   if (typeof value === 'symbol') {
     return handleSymbolAccess({ target, value, sandboxOptions });

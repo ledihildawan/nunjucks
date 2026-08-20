@@ -1,17 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { getOrElse, isErr, isOk } from '@nunjucks/lib';
-import {
-  batch,
-  first,
-  last,
-  lengthFilter,
-  list,
-  random,
-  reverse,
-  slice,
-  sort,
-  sum,
-} from './array.ts';
+import { batch, first, last, length, list, random, reverse, slice, sort, sum } from './array.ts';
 
 describe('filters/array', () => {
   describe('first', () => {
@@ -56,25 +45,25 @@ describe('filters/array', () => {
     });
   });
 
-  describe('lengthFilter', () => {
+  describe('length', () => {
     test('returns the length of an array', () => {
-      expect(getOrElse(lengthFilter([1, 2, 3, 4]), null)).toBe(4);
-      expect(getOrElse(lengthFilter([]), null)).toBe(0);
+      expect(getOrElse(length([1, 2, 3, 4]), null)).toBe(4);
+      expect(getOrElse(length([]), null)).toBe(0);
     });
 
     test('returns the length of a string', () => {
-      expect(getOrElse(lengthFilter('hello'), null)).toBe(5);
+      expect(getOrElse(length('hello'), null)).toBe(5);
     });
 
     test('returns the number of own keys on a plain object', () => {
-      expect(getOrElse(lengthFilter({ a: 1, b: 2, c: 3 }), null)).toBe(3);
-      expect(getOrElse(lengthFilter({}), null)).toBe(0);
+      expect(getOrElse(length({ a: 1, b: 2, c: 3 }), null)).toBe(3);
+      expect(getOrElse(length({}), null)).toBe(0);
     });
 
     test('returns the size of a Map or Set', () => {
       expect(
         getOrElse(
-          lengthFilter(
+          length(
             new Map([
               ['a', 1],
               ['b', 2],
@@ -83,22 +72,24 @@ describe('filters/array', () => {
           null
         )
       ).toBe(2);
-      expect(getOrElse(lengthFilter(new Set([1, 2, 3])), null)).toBe(3);
+      expect(getOrElse(length(new Set([1, 2, 3])), null)).toBe(3);
     });
 
-    test('treats null, undefined, and false as an empty value', () => {
-      expect(getOrElse(lengthFilter(null), null)).toBe(0);
-      expect(getOrElse(lengthFilter(undefined), null)).toBe(0);
-      expect(getOrElse(lengthFilter(false), null)).toBe(0);
+    test('undefined reports 0 (missing values count as empty)', () => {
+      expect(getOrElse(length(undefined), null)).toBe(0);
     });
 
-    test('reports 0 for values without a numeric length', () => {
-      expect(getOrElse(lengthFilter(3), null)).toBe(0);
-      expect(getOrElse(lengthFilter(true), null)).toBe(0);
+    // WHY: old pin (0 for number/boolean/null) captured the audit-flagged silent-flip
+    // with a false "nunjucks parity" comment — the port's strictness precedent (first/last)
+    // errors on non-countable inputs instead of coercing to 0.
+    test('number, boolean, and null inputs fail the countable contract', () => {
+      expect(isErr(length(3))).toBe(true);
+      expect(isErr(length(true))).toBe(true);
+      expect(isErr(length(null))).toBe(true);
     });
 
     test('returns an ok result', () => {
-      expect(isOk(lengthFilter([1, 2]))).toBe(true);
+      expect(isOk(length([1, 2]))).toBe(true);
     });
   });
 

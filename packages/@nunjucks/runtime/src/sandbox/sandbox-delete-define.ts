@@ -1,5 +1,7 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { hasOwn } from '@nunjucks/lib';
+import { sandboxError } from './sandbox-errors.ts';
+import type { ResolvedSandboxOptions } from './sandbox-options.ts';
 import {
   DANGEROUS_OBJECT_INTRINSICS,
   isAllowedKey,
@@ -7,8 +9,6 @@ import {
   isBlockedSymbol,
   isInternalKey,
 } from './sandbox-predicates.ts';
-import type { ResolvedSandboxOptions } from './sandbox-options.ts';
-import { sandboxError } from './sandbox-errors.ts';
 
 interface ValidateSetOptions {
   sandboxOptions: ResolvedSandboxOptions;
@@ -109,5 +109,5 @@ const createValidateDefineProperty = ({ sandboxOptions, topLevel }: ValidateSetO
   };
 };
 
-export { createValidateDeleteProperty, createValidateDefineProperty };
 export type { StringKeyWriteScope, ValidateSetOptions };
+export { createValidateDefineProperty, createValidateDeleteProperty };

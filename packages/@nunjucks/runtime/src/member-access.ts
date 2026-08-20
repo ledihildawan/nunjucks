@@ -67,9 +67,12 @@ export const createPropertyNotFoundCallable = (
  * prototype-escape keys (`constructor`, `__proto__`, `prototype`) as own
  * properties only so `x.constructor.constructor` cannot reach `Function`.
  */
+// WHY: `string | symbol` — the sandboxed runtime (executor-runtime.ts) routes symbol-keyed
+// reads through this same funnel; the sentinel factory already coerces symbols for the
+// human-readable access path.
 export const memberLookup = (
   target: unknown,
-  value: string,
+  value: string | symbol,
   parentName: string | null = null
 ): unknown => {
   if (target === null || target === undefined) {
@@ -78,12 +81,13 @@ export const memberLookup = (
 
   // WHY: null/undefined is handled above; every remaining value supports keyed reads
   // (primitives box transparently), so the index signature is a dynamic-read model, not a shape claim.
-  const record = target as Record<string, unknown>;
+  const record = target as Record<string | symbol, unknown>;
   // WHY: RCE guard — `x.constructor.constructor("...")()` reaches the Function constructor
   // through INHERITED properties. Prototype-escape keys are therefore treated as absent
   // unless the host explicitly placed them as own properties (sandbox still polices that
   // case). Unconditional: code execution must not depend on the host enabling the sandbox.
-  if (isPrototypeEscapeKey(value) && !hasOwn(record, value)) {
+  // Symbols are never escape keys — the guard is string-only.
+  if (typeof value === 'string' && isPrototypeEscapeKey(value) && !hasOwn(record, value)) {
     return createPropertyNotFoundCallable(value, parentName);
   }
   const hasProperty =

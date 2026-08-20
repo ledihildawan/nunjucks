@@ -39,15 +39,18 @@ describe('filters/string', () => {
   });
 
   describe('fallback', () => {
-    test('returns the value when it is not null/undefined and bool is false', () => {
+    test('returns the value when it is defined and bool is false', () => {
       expect(getOrElse(fallback('value', 'default', false), null)).toBe('value');
       expect(getOrElse(fallback(0, 'default', false), null)).toBe(0);
       expect(getOrElse(fallback('', 'default', false), null)).toBe('');
     });
 
-    test('returns the default for null and undefined', () => {
-      expect(getOrElse(fallback(null, 'default'), null)).toBe('default');
+    // WHY: upstream parity — default/d/fallback substitutes for undefined only; null is an
+    // explicit value and passes through. The old pin (null → default) was an audit-flagged
+    // silent flip of ported templates.
+    test('returns the default for undefined only; null passes through', () => {
       expect(getOrElse(fallback(undefined, 'default'), null)).toBe('default');
+      expect(getOrElse(fallback(null, 'default'), null)).toBe(null);
     });
 
     test('uses truthy check when bool is true', () => {

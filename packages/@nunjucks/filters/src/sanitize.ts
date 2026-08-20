@@ -30,5 +30,12 @@ const sanitizeImpl = ({ str, config }: SanitizeOptions): Result<SafeString, Temp
  * import { sanitize } from '@nunjucks/filters/sanitize';
  * nunjucks({ filters: { sanitize } });
  * ```
+ *
+ * WHY optional peer: `isomorphic-dompurify` is declared as BOTH a peer and an
+ * optional dependency (the standard optional-peer pattern) — hosts that never
+ * import this subpath are not forced to install jsdom, while workspaces that
+ * register the filter get the dependency satisfied automatically. Importing
+ * the subpath without the dependency installed fails at resolution time, not
+ * as a silent no-sanitize at render time.
  */
 export const sanitize = createFilter(['str', 'config'], sanitizeImpl);

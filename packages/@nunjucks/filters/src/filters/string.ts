@@ -29,6 +29,9 @@ const capitalize = createStringFilter(capitalizeString);
 
 // WHY: `bool` is `unknown`, not boolean — the macro-filter wrapper invokes implementations
 // with unknown args; the parameter is only truthiness-checked.
+// WHY: upstream `default` substitutes for undefined ONLY — `null` is an explicit value and
+// passes through (the old nullish substitution silently flipped ported templates that rely
+// on null rendering as ''); `bool` keeps upstream's falsy (`||`) mode.
 const fallbackImpl = (
   value: unknown,
   def: unknown,
@@ -37,13 +40,10 @@ const fallbackImpl = (
   if (bool) {
     return ok(value || def);
   }
-  if (value === null || value === undefined) {
-    return ok(def);
-  }
-  return ok(value);
+  return ok(value === undefined ? def : value);
 };
 
-/** Substitutes `def` when the value is nullish — or falsy when `bool` is set. */
+/** Substitutes `def` when the value is undefined — or falsy when `bool` is set. */
 const fallback = createMacroFilter(['val', 'def', 'bool'], fallbackImpl);
 
 /**
@@ -423,8 +423,8 @@ const urlizeImpl = ({ str, length, nofollow }: UrlizeOptions): Result<string, Te
 const urlize = createFilter(['str', 'length', 'nofollow'], urlizeImpl);
 
 /**
- * Counts whitespace-delimited words; an empty input is 0, not upstream's
- * null (the port reports 0 for length-like metrics — see `lengthFilter`).
+ * Counts whitespace-delimited words; a nullish/empty input is 0 rather than
+ * upstream's null (strict-Result filters never leak nullish into `number`).
  */
 const wordcount = (str: unknown): Result<number, TemplateError> =>
   ok(normalize(str, '').match(/\w+/g)?.length ?? 0);

@@ -145,14 +145,19 @@ const BUILTIN_TESTS: ReadonlyMap<string, TestFn> = new Map([
   ['URL', (target) => typeof URL !== 'undefined' && target instanceof URL],
   ['Promise', (target) => target instanceof Promise],
   ['sameas', (target, other) => target === other],
-  ['equalto', (target, other) => JSON.stringify(target) === JSON.stringify(other)],
+  // WHY: upstream `eq`/`equalto` is strict `===` like `sameas` — the deep JSON.stringify
+  // compare silently flipped ported templates (`{a:1} is equalto {a:1}` became true);
+  // deep comparison, if wanted, belongs to a host-registered custom test.
+  ['equalto', (target, other) => target === other],
   // WHY: `has` deliberately walks the prototype chain (Jinja `in`-style containment);
   // the boolean-only oracle is inert because value reads stay behind member-access's
   // prototype-escape guard — `hasown` covers the own-property variant.
   ['has', (target, key) => isKeyedObject(target) && String(key) in target],
   ['hasown', (target, key) => isKeyedObject(target) && Object.hasOwn(target, String(key))],
   ['safe', (target) => isSafeString(target)],
-  ['escaped', (target) => !isSafeString(target)],
+  // WHY: upstream `escaped` is `value instanceof SafeString` — truthy when the value IS
+  // already safe. The previous inversion (`!isSafeString`) flipped ported templates.
+  ['escaped', (target) => isSafeString(target)],
 ]);
 
 /**
@@ -184,4 +189,4 @@ const runTest = (env: unknown, name: string, target: unknown, ...args: unknown[]
  */
 const collectBuiltinTestNames = (): readonly string[] => [...BUILTIN_TESTS.keys()].toSorted();
 
-export { runTest, collectBuiltinTestNames };
+export { collectBuiltinTestNames, runTest };

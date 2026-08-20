@@ -44,16 +44,6 @@ const getCollectionSize = (value: unknown): number =>
 
 const getObjectLength = (value: unknown): number => keys(value as Record<string, unknown>).length;
 
-// WHY: nunjucks parity — values without a numeric `length` (numbers, booleans) report 0
-// instead of leaking `undefined` through a `number`-typed result.
-const getValueLength = (value: unknown): number => {
-  if (value === null || value === undefined) {
-    return 0;
-  }
-  const length = (value as { length?: unknown }).length;
-  return typeof length === 'number' ? length : 0;
-};
-
 const getLengthFromValue = (value: unknown): number => {
   if (isMapOrSet(value)) {
     return getCollectionSize(value);
@@ -61,17 +51,29 @@ const getLengthFromValue = (value: unknown): number => {
   if (isPlainObject(value) && !isSafeString(value)) {
     return getObjectLength(value);
   }
-  return getValueLength(value);
+  const length = (value as { length?: unknown }).length;
+  return typeof length === 'number' ? length : 0;
 };
 
+// WHY: deliberate divergence from upstream (which leaks `undefined` → renders '' for
+// non-countable values): this port's filter contract is strict typing over silent coercion
+// (see first/last, which error on non-arrays) — number/boolean/null are explicit values and
+// fail loudly through the LIST_FILTER funnel (the closest catalogued invalid-collection
+// code; a dedicated LENGTH code would require touching the out-of-scope error-catalog).
+// undefined stays 0 because missing lookups normalize to undefined before filters run.
 /**
  * Measures a value: `Map`/`Set` by size, plain objects by key count, anything
- * else by numeric `length`; nullish/false coerce to the empty string and
- * length-less values (numbers, booleans) report 0.
+ * with a numeric `length` (strings, arrays) by that length; undefined reports 0
+ * (missing values), while number/boolean/null inputs fail the countable contract.
  */
-export const lengthFilter = (input: unknown): Result<number, TemplateError> => {
-  const value = input === null || input === undefined || input === false ? '' : input;
-  return ok(getLengthFromValue(value));
+export const length = (input: unknown): Result<number, TemplateError> => {
+  if (input === undefined) {
+    return ok(0);
+  }
+  if (input === null || typeof input === 'number' || typeof input === 'boolean') {
+    return err(requireArrayError(input, ERROR_DEFINITIONS.LIST_FILTER));
+  }
+  return ok(getLengthFromValue(input));
 };
 
 /** Reverses arrays and strings (by code points); other types fail the contract. */
@@ -246,7 +248,8 @@ export const list = (val: unknown): Result<unknown[], TemplateError> => {
 
 /** Returns a uniformly random element (or character, for strings). */
 export const random = (values: unknown): Result<unknown, TemplateError> => {
-  const pickAt = (length: number): number => Math.floor(Math.random() * length);
+  // WHY: renamed from `length` — the module's `length` filter export made the param a shadow.
+  const pickAt = (size: number): number => Math.floor(Math.random() * size);
   if (isArray(values)) {
     return ok(values[pickAt(values.length)]);
   }

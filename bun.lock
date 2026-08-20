@@ -29,7 +29,7 @@
     },
     "packages/@nunjucks/core": {
       "name": "@nunjucks/core",
-      "version": "4.0.0",
+      "version": "1.0.0",
       "dependencies": {
         "@nunjucks/compiler": "workspace:*",
         "@nunjucks/error-catalog": "workspace:*",
@@ -90,8 +90,13 @@
         "@nunjucks/lib": "workspace:*",
         "@nunjucks/runtime": "workspace:*",
         "@nunjucks/shared": "workspace:*",
-        "isomorphic-dompurify": "^2.14.0",
         "remeda": "^2.39.0",
+      },
+      "optionalDependencies": {
+        "isomorphic-dompurify": "^2.14.0",
+      },
+      "peerDependencies": {
+        "isomorphic-dompurify": "^2.14.0",
       },
     },
     "packages/@nunjucks/integrations": {
@@ -145,6 +150,7 @@
         "@nunjucks/lexer": "workspace:*",
         "@nunjucks/lib": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
+        "@nunjucks/security": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "@nunjucks/validators": "workspace:*",
         "remeda": "^2.39.0",

@@ -13,8 +13,13 @@
     "@nunjucks/lib": "workspace:*",
     "@nunjucks/runtime": "workspace:*",
     "@nunjucks/shared": "workspace:*",
-    "isomorphic-dompurify": "^2.14.0",
     "remeda": "^2.39.0"
+  },
+  "peerDependencies": {
+    "isomorphic-dompurify": "^2.14.0"
+  },
+  "optionalDependencies": {
+    "isomorphic-dompurify": "^2.14.0"
   },
   "description": "Built-in filters for Nunjucks template engine",
   "private": true,

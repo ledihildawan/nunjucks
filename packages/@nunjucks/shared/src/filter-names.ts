@@ -8,7 +8,7 @@
 const BUILTIN_FILTER_NAMES: readonly string[] = Object.freeze([
   'first',
   'last',
-  'lengthFilter',
+  'length',
   'reverse',
   'slice',
   'sort',
@@ -51,7 +51,6 @@ const BUILTIN_FILTER_NAMES: readonly string[] = Object.freeze([
   'default',
   'd',
   'e',
-  'length',
 ]);
 
 export { BUILTIN_FILTER_NAMES };

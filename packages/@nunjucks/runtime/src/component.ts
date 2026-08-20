@@ -1,6 +1,6 @@
-import { hasOwn } from '@nunjucks/lib';
 import { getError } from '@nunjucks/error-catalog';
 import { createLog } from '@nunjucks/error-formatter';
+import { hasOwn } from '@nunjucks/lib';
 import type { SlotContext } from './slots.ts';
 
 type KeywordArgs = Record<string, unknown> & { keywords: boolean };
