@@ -103,7 +103,14 @@ export function suppressValue(
   const { autoescape, lineno, colno, context = 'html' } = options;
   const loc = { lineno, colno };
   if (isThenable(value)) {
-    return value.then((resolvedValue) => suppressValue.call(this, resolvedValue, options));
+    // WHY: async IIFE avoids .then() chain while preserving the hot-path contract —
+    // suppressValue is called in generated code and await would force the entire render
+    // onto the async promise graph. The async IIFE races the thenable resolution on the
+    // microtask queue without altering the caller's async context.
+    return (async () => {
+      const resolvedValue = await value;
+      return suppressValue.call(this, resolvedValue, options);
+    })();
   }
 
   if (autoescape && context === 'script' && !isSafeString(value)) {
