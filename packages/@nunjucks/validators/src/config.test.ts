@@ -187,6 +187,55 @@ describe('validateConfig - null-as-unset semantics', () => {
   });
 });
 
+describe('validateConfig - extensions shape gate', () => {
+  const wellFormed = { tags: ['hello'], parse: () => null };
+
+  test('accepts well-formed extension entries, including class instances', () => {
+    class ClassicExtension {
+      tags = ['classic'];
+      parse = () => null;
+    }
+    const result = validateConfig({
+      extensions: { hello: wellFormed, classic: new ClassicExtension() },
+    });
+    expect(isOk(result)).toBe(true);
+  });
+
+  test('treats null and undefined extensions as unset', () => {
+    expect(isOk(validateConfig({ extensions: null }))).toBe(true);
+    expect(isOk(validateConfig({}))).toBe(true);
+  });
+
+  test('rejects a non-map extensions value', () => {
+    const result = validateConfig({ extensions: 'not-a-map' });
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error[0].subject).toBe('extensions');
+    }
+  });
+
+  test('rejects a malformed entry with the offending name as subject', () => {
+    const result = validateConfig({
+      extensions: { good: wellFormed, bad: { tags: 'hello', parse: 42 } },
+    });
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error).toHaveLength(1);
+      expect(result.error[0].subject).toBe('extensions.bad');
+    }
+  });
+
+  test('collects one violation per malformed entry', () => {
+    const result = validateConfig({
+      extensions: { first: {}, second: { tags: ['ok'] } },
+    });
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error).toHaveLength(2);
+    }
+  });
+});
+
 describe('RESERVED_KEYWORDS', () => {
   test('includes nunjucks template keywords', () => {
     expect(RESERVED_KEYWORDS.has('if')).toBe(true);

@@ -16,6 +16,7 @@ import type {
   NunjucksEngine,
   PerRenderOverrides,
 } from './config/nunjucks-config.ts';
+import { readRuntimeEnvironment } from './config/shell/read-runtime-environment.ts';
 import { foldPlugins } from './plugin/index.ts';
 import type { PipeRenderStreamOptions, PipeSink } from './render/pipe-stream.ts';
 import { pipeRenderStream as pipeRenderStreamInternal } from './render/pipe-stream.ts';
@@ -25,11 +26,6 @@ import {
 } from './render/render.ts';
 import type { RenderOptions, RenderStreamResult } from './render/render-types.ts';
 import { createTemplateCache } from './template/template-cache.ts';
-
-// WHY: NODE_ENV is read opportunistically — the engine must stay runnable in non-Node runtimes
-// (browsers/edge) where the global does not exist, mirroring diagnostics.ts's runtime-agnostic stance.
-const readRuntimeEnvironment = (): string =>
-  typeof process === 'undefined' ? 'development' : (process.env.NODE_ENV ?? 'development');
 
 // WHY: strip keys whose value is undefined so they do NOT override the engine's built-in defaults when the
 // base bag is spread into the internal render options ({ ...defaults, ...options }). A present-undefined key
@@ -42,6 +38,7 @@ interface FactoryValidationInput {
   filters: Record<string, unknown>;
   globals: Record<string, unknown>;
   tests: Record<string, unknown>;
+  extensions: Record<string, unknown>;
 }
 
 // WHY: factory is the shell boundary — creating an engine from invalid config is a programmer error, so it
@@ -66,6 +63,7 @@ const assertValidConfig = (config: NunjucksConfig, merged: FactoryValidationInpu
     customFilters: merged.filters,
     customTests: merged.tests,
     customGlobals: merged.globals,
+    extensions: merged.extensions,
   });
   if (isErr(validation)) {
     const [primary, ...rest] = validation.error;
@@ -92,7 +90,13 @@ const buildBaseOptions = (config: NunjucksConfig): RenderOptions => {
   const mergedFilters = { ...folded.filters, ...config.filters };
   const mergedGlobals = { ...folded.globals, ...config.globals };
   const mergedTests = { ...folded.tests, ...config.tests };
-  assertValidConfig(config, { filters: mergedFilters, globals: mergedGlobals, tests: mergedTests });
+  const mergedExtensions = { ...folded.extensions, ...config.extensions };
+  assertValidConfig(config, {
+    filters: mergedFilters,
+    globals: mergedGlobals,
+    tests: mergedTests,
+    extensions: mergedExtensions,
+  });
   return compact({
     dev: config.dev,
     autoescape: config.autoescape,
@@ -132,7 +136,7 @@ const buildBaseOptions = (config: NunjucksConfig): RenderOptions => {
     customFilters: mergedFilters,
     customGlobals: mergedGlobals,
     tests: mergedTests,
-    extensions: { ...folded.extensions, ...config.extensions },
+    extensions: mergedExtensions,
     dompurify: config.dompurify ?? folded.dompurify,
   });
 };

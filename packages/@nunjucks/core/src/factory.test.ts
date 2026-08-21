@@ -263,6 +263,22 @@ describe('createNunjucks', () => {
     expect(() => createNunjucks({ filters: { notAFn: 42 } })).toThrow('notAFn');
   });
 
+  test('invalid config: malformed extension entry is rejected at factory creation', () => {
+    // WHY: extensions previously degraded silently — a malformed entry surfaced only
+    // later as a parse-time "unknown block tag"; the factory now fails fast.
+    expect(() =>
+      createNunjucks({
+        extensions: { broken: { tags: 'not-an-array', parse: () => null } },
+      })
+    ).toThrow('extensions.broken');
+  });
+
+  test('invalid config: malformed plugin extension is rejected at factory creation', () => {
+    expect(() =>
+      createNunjucks({ plugins: [{ name: 'bad-plugin', extensions: { inert: {} } }] })
+    ).toThrow('extensions.inert');
+  });
+
   test('invalid config: NaN executionTimeout is rejected', () => {
     expect(() => createNunjucks({ limits: { executionTimeout: Number.NaN } })).toThrow(
       'executionTimeout'

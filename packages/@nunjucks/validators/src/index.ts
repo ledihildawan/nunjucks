@@ -4,6 +4,7 @@
 export { validateConfig } from './config.ts';
 export { findContextDangerousValues, validateRenderContext } from './context.ts';
 export { validateExpression } from './expression.ts';
+export { isParserExtensionShape } from './parser-extension.ts';
 export { getReservedKeywords, RESERVED_KEYWORDS } from './reserved.ts';
 export type { DangerousCodeViolation } from './security/index.ts';
 export {
