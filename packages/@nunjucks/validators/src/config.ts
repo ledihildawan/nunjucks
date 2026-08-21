@@ -10,6 +10,7 @@ import {
 } from '@nunjucks/shared';
 import { flatMap, keys, pipe } from 'remeda';
 import { isNonEmpty } from './is-non-empty.ts';
+import { isParserExtensionShape } from './parser-extension.ts';
 import { type ReservedNameError, validateFilterName, validateGlobalName } from './reserved.ts';
 
 interface ConfigValidationError extends BaseValidationError {
@@ -175,6 +176,41 @@ const validateCallableValues = (values: unknown, subject: string): ConfigValidat
   );
 };
 
+// WHY: extensions previously degraded silently — a malformed entry was dropped at
+// compile time and surfaced only later as a parse-time "unknown block tag" error.
+// The boundary now fails closed: each map entry must satisfy the SSOT shape guard
+// (isParserExtensionShape) so misconfigured extensions are rejected where they enter.
+const validateExtensions = (extensions: unknown): ConfigValidationError[] => {
+  if (extensions === undefined || extensions === null) {
+    return [];
+  }
+  if (!isObject(extensions)) {
+    return [
+      {
+        code: ERROR_CODES.INVALID_CONFIG,
+        message: 'Invalid configuration: extensions must be a map of name → extension object',
+        subject: 'extensions',
+        type: 'extensions',
+      },
+    ];
+  }
+  return pipe(
+    keys(extensions),
+    flatMap((name) =>
+      isParserExtensionShape(extensions[name])
+        ? []
+        : [
+            {
+              code: ERROR_CODES.INVALID_CONFIG,
+              message: `Invalid configuration: extensions.${name} must provide tags (string[]) and a parse function`,
+              subject: `extensions.${name}`,
+              type: 'extensions',
+            },
+          ]
+    )
+  );
+};
+
 // WHY: custom filters and globals run the exact same name-validation pipeline —
 // only the reserved-word flavor differs, so one parameterized helper serves both
 // and the error codes/messages stay identical by construction.
@@ -216,30 +252,31 @@ export const validateConfig = (config: unknown): ConfigValidationResult => {
   // the user's names get checked without checking the trusted built-ins. Tests are
   // user/plugin-supplied — same separate-channel rationale; function-value validation
   // runs here because tests (like filters) are invoked by name at render time.
-  const cfg: Record<string, unknown> = isObject(config) ? config : {};
+  const configRecord: Record<string, unknown> = isObject(config) ? config : {};
   const errors = [
-    ...validateNumericConfig(cfg),
-    ...validateEnumConfig(cfg),
+    ...validateNumericConfig(configRecord),
+    ...validateEnumConfig(configRecord),
     ...validateStringArray({
-      value: cfg.blockedContextKeys,
+      value: configRecord.blockedContextKeys,
       subject: 'blockedContextKeys',
       type: 'security',
     }),
     ...validateStringArray({
-      value: cfg.sandboxAllowlist,
+      value: configRecord.sandboxAllowlist,
       subject: 'sandboxAllowlist',
       type: 'security',
     }),
     ...validateStringArray({
-      value: cfg.allowedGlobals,
+      value: configRecord.allowedGlobals,
       subject: 'allowedGlobals',
       type: 'security',
     }),
-    ...validateViews(cfg.views),
-    ...validateCallableValues(cfg.customFilters, 'filters'),
-    ...validateCallableValues(cfg.customTests, 'tests'),
-    ...validateCustomNames(cfg.customFilters, validateFilterName),
-    ...validateCustomNames(cfg.customGlobals, validateGlobalName),
+    ...validateViews(configRecord.views),
+    ...validateCallableValues(configRecord.customFilters, 'filters'),
+    ...validateCallableValues(configRecord.customTests, 'tests'),
+    ...validateCustomNames(configRecord.customFilters, validateFilterName),
+    ...validateCustomNames(configRecord.customGlobals, validateGlobalName),
+    ...validateExtensions(configRecord.extensions),
   ];
 
   if (!isNonEmpty(errors)) {

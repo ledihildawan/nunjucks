@@ -1,21 +1,14 @@
 import type { UnaryOpNode } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import { emitLocationGuard } from '../codegen.ts';
 import type { Compiler } from '../create-compiler.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
-interface UnaryOperatorOptions {
+interface CompileUnaryInput extends CompileNodeInput<UnaryOpNode> {
   operator: string;
 }
 
-// WHY: private helper consumed by compileNeg/compilePos — not a dispatch target,
-// so the 3-positional-plus-options shape is contained and acceptable here.
-const compileUnary = (
-  compiler: Compiler,
-  node: UnaryOpNode,
-  frame: Frame,
-  { operator }: UnaryOperatorOptions
-): void => {
+/** Location-guarded prefix emitter shared by `compileNeg`/`compilePos`. */
+const compileUnary = (compiler: Compiler, { node, frame, operator }: CompileUnaryInput): void => {
   emitLocationGuard(compiler, node.lineno, node.colno);
   compiler.emit(operator);
   compiler.compile(node.target, frame);
@@ -42,10 +35,10 @@ export const compileNot = (
 export const compileNeg = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<UnaryOpNode>
-): void => compileUnary(compiler, node, frame, { operator: '-' });
+): void => compileUnary(compiler, { node, frame, operator: '-' });
 
 /** Compiles unary `+` as a location-guarded prefix on the operand. */
 export const compilePos = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<UnaryOpNode>
-): void => compileUnary(compiler, node, frame, { operator: '+' });
+): void => compileUnary(compiler, { node, frame, operator: '+' });

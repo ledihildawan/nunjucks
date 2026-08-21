@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { replace, slice } from './pipe-helpers.ts';
+import { replace, slice } from './pipe-utils.ts';
 
 describe('replace', () => {
   test('returns a curried transformer using a regex', () => {

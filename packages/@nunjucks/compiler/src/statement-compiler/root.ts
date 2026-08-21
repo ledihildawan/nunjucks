@@ -77,9 +77,9 @@ const emitBlockFunctions = (compiler: Compiler, blocks: BlockNode[]): void => {
     }
     assertSafeIdentifier(name, { compiler, lineno: block.lineno, colno: block.colno });
     compiler.emitFuncBegin(block, `b_${name}`);
-    const tmpFrame = createFrame();
+    const blockFrame = createFrame();
     compiler.emitLine('frame = frame.push(true);');
-    compiler.compile(block.body, tmpFrame);
+    compiler.compile(block.body, blockFrame);
     compiler.emitFuncEnd();
   }
 };

@@ -96,6 +96,16 @@ const resolveFromSearchPath = (name: string) => (searchPath: string) => {
   return { basePath, fullPath };
 };
 
+/**
+ * Resolves `name` against `searchPaths` in precedence order, returning the
+ * first candidate that exists, is a file, and whose realpath stays within its
+ * search-path base (symlink containment).
+ *
+ * @returns `ok({ fullPath, realFull, stats })` for the first valid hit;
+ * `null` when every search path was exhausted without a match (a miss, not an
+ * error); `err` for filesystem hazards (EISDIR, realpath failure, base-path
+ * loss) — surfaced immediately, never skipped past.
+ */
 export const findFileInSearchPaths = async (
   searchPaths: readonly string[],
   name: string

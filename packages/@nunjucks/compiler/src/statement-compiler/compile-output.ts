@@ -11,7 +11,7 @@ import type { Frame } from '@nunjucks/runtime';
 import { type Loc, loc } from '@nunjucks/shared';
 import { appendTarget } from '../codegen.ts';
 import type { Compiler } from '../create-compiler.ts';
-import { extractPropertyLocation } from '../location-utils.ts';
+import { extractPropertyLocation } from '../location-helpers.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { extractVarName } from './extract-var-name.ts';
 

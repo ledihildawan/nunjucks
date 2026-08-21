@@ -2,7 +2,7 @@ import type { CallNode, LookupNode, Node, SymbolNode } from '@nunjucks/nodes';
 import { BracketNotation, isLiteral, isSymbol, T } from '@nunjucks/nodes';
 import { emitLocationGuard } from '../codegen.ts';
 import type { Compiler } from '../create-compiler.ts';
-import { extractPropertyLocation } from '../location-utils.ts';
+import { extractPropertyLocation } from '../location-helpers.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileAggregate } from './container.ts';
 

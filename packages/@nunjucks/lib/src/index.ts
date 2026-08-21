@@ -20,7 +20,7 @@ export { isDigit } from './is-digit.ts';
 export { MATCH_ANY_RE } from './match-any-regex.ts';
 export { normalize } from './normalize.ts';
 export { basename } from './path-basename.ts';
-export { replace, slice } from './pipe-helpers.ts';
+export { replace, slice } from './pipe-utils.ts';
 export { readErrorCode } from './read-error-code.ts';
 export type { Err, Ok, Result } from './result.ts';
 export { err, getOrElse, isErr, isOk, ok } from './result.ts';
