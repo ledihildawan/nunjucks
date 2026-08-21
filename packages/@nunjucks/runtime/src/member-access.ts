@@ -90,6 +90,9 @@ export const memberLookup = (
   if (typeof value === 'string' && isPrototypeEscapeKey(value) && !hasOwn(record, value)) {
     return createPropertyNotFoundCallable(value, parentName);
   }
+  // WHY: outside sandbox mode, INHERITED non-escape members (`{{ user.toString }}`,
+  // class getters) stay readable to mirror JS member semantics; the sandbox's own-only
+  // traps and contextStrict's intrinsic flags are the opt-ins that tighten this.
   const hasProperty =
     hasOwn(record, value) ||
     (typeof target === 'object' || typeof target === 'function'

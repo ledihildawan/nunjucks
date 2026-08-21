@@ -86,6 +86,10 @@ const emitComponentArgBindings = (
       compiler.emit(`Object.hasOwn(kwargs, ${JSON.stringify(name)})`);
       compiler.emit(` ? kwargs[${JSON.stringify(name)}] : `);
       if (isPositional) {
+        // WHY: `l_${name}` below embeds this key in identifier position — safety rests
+        // on the signature-side assert of positional names; assert again here so a
+        // refactor of that gate cannot silently reopen the injection seam.
+        assertSafeIdentifier(name, { compiler });
         compiler.emit(`(l_${name} !== undefined ? l_${name} : `);
       }
       compiler.compileExpression(pair.value, frame);
