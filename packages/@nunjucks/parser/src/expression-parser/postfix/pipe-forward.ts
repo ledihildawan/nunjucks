@@ -12,7 +12,7 @@ import { isFunCall, nodeList, pipe, symbol } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../../cursor.ts';
 import { expect, peekToken, skip, skipValue } from '../../cursor.ts';
-import { parsePostfix } from './index.ts';
+import { parseFunCall } from './fun-call.ts';
 
 /** Parses a dotted filter name like `tojson` or `default.attr` into a symbol node. */
 export const parseFilterCallName = (parserContext: ParserContext): Result<Node, TemplateError> => {
@@ -46,8 +46,11 @@ export const parseFilterCallArgs = (
   if (isErr(peekR)) {
     return peekR;
   }
-  if (peekR.value.type === TOKEN_LEFT_PAREN) {
-    const callR = parsePostfix(parserContext, node);
+  const tok = peekR.value;
+  if (tok.type === TOKEN_LEFT_PAREN) {
+    // WHY: parseFunCall is invoked directly — routing through parsePostfix would import
+    // the ./index.ts barrel, which re-exports this module and closes a module cycle.
+    const callR = parseFunCall(parserContext, tok, node);
     if (isErr(callR)) {
       return callR;
     }

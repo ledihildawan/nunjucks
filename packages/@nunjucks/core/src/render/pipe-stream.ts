@@ -4,8 +4,8 @@ import { createLog } from '@nunjucks/error-formatter';
 import { formatError } from '@nunjucks/error-formatter/format';
 import { isErr } from '@nunjucks/lib';
 import type { ContentType } from '@nunjucks/shared';
-import { formatErrorMarker } from './render-stream.ts';
-import type { RenderMarkerError, RenderStreamResult } from './render-types.ts';
+import { formatErrorMarker, serializeErrorPayload } from './render-stream.ts';
+import type { RenderStreamResult } from './render-types.ts';
 import { writeErrorLog } from './shell/console-error-sink.ts';
 import { coalesceStream, withStreamTimeout } from './shell/render-stream-adapters.ts';
 
@@ -60,19 +60,6 @@ const CONTENT_TYPE_MAP: Record<string, string> = {
   json: 'application/json; charset=utf-8',
   text: 'text/plain; charset=utf-8',
 };
-
-/** Serializes a marker error to its JSON wire shape for `json` content-type responses. */
-const serializeErrorPayload = (error: RenderMarkerError): string =>
-  JSON.stringify({
-    error: true,
-    code: error.code,
-    message: error.message,
-    templatePath: error.templatePath,
-    lineno: error.lineno,
-    colno: error.colno,
-  });
-
-export { serializeErrorPayload };
 
 interface RenderErrorInput {
   err: TemplateError;

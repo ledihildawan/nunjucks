@@ -18,7 +18,6 @@ import {
 } from '@nunjucks/runtime';
 import type { ContentType } from '@nunjucks/shared';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
-import { serializeErrorPayload } from './pipe-stream.ts';
 import { buildExecutionEnv } from './render-env.ts';
 import type { PreparedTemplate, RenderMarkerError } from './render-types.ts';
 import type { DisplaySeverity } from './severity-levels.ts';
@@ -120,6 +119,17 @@ const formatSentinelChunk = async ({
     dev,
   });
 };
+
+/** Serializes a marker error to its JSON wire shape for `json` content-type responses. */
+const serializeErrorPayload = (error: RenderMarkerError): string =>
+  JSON.stringify({
+    error: true,
+    code: error.code,
+    message: error.message,
+    templatePath: error.templatePath,
+    lineno: error.lineno,
+    colno: error.colno,
+  });
 
 /** Formats a mid-stream error as an inline marker — JSON, text, or HTML by content type. */
 const formatErrorMarker = (
@@ -242,4 +252,4 @@ const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGe
   }
 };
 
-export { createRenderStream, formatErrorMarker };
+export { createRenderStream, formatErrorMarker, serializeErrorPayload };
