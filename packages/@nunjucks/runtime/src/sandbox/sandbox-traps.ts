@@ -265,9 +265,9 @@ const policyKeyFor = (options: ResolvedSandboxOptions): string => {
     return cached;
   }
   const key = JSON.stringify([
-    [...options.allowlist].sort(),
+    [...options.allowlist].toSorted(),
     options.blocklistMode,
-    [...options.blockedContextKeys].sort(),
+    [...options.blockedContextKeys].toSorted(),
     options.environment,
   ]);
   policyKeyMemo.set(options, key);

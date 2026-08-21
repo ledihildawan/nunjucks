@@ -201,6 +201,9 @@ const createNunjucks = (config: NunjucksConfig = {}): NunjucksEngine => {
     }
     const loader = createFileSystemLoader(views);
     loaderCache.set(cacheKey, loader);
+    // WHY: imperative LRU eviction loop (same exemption class as template-cache.ts) —
+    // Map insertion order yields the oldest key first; a declarative rebuild would
+    // allocate a fresh Map per evicted entry.
     while (loaderCache.size > LOADER_CACHE_MAX_ENTRIES) {
       const oldest = loaderCache.keys().next().value;
       if (oldest === undefined) {

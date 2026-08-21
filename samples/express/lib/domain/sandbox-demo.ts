@@ -81,18 +81,12 @@ const outcomeError = (row: SandboxTestResult): Error | null =>
 
 const outcomeOutput = (row: SandboxTestResult): string => (row.outcome.ok ? row.outcome.value : '');
 
-const prototypeEscapeKeys = new Set(['__proto__', 'constructor', 'prototype']);
+const prototypeEscapeKeys = ['__proto__', 'constructor', 'prototype'] as const;
 
 // WHY: the engine's prototype-escape guard is unconditional — inherited proto/constructor reads
 // render as not-found ("undefined") even in default mode; sandbox mode only upgrades that to a throw.
-const isPrototypeEscapeProbe = (row: SandboxTestResult): boolean => {
-  for (const key of prototypeEscapeKeys) {
-    if (row.name.includes(key)) {
-      return true;
-    }
-  }
-  return false;
-};
+const isPrototypeEscapeProbe = (row: SandboxTestResult): boolean =>
+  prototypeEscapeKeys.some((key) => row.name.includes(key));
 
 const classifyStatus = (
   row: SandboxTestResult,

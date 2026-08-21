@@ -67,7 +67,7 @@ const discoverRoutes = async (base: string): Promise<string[]> => {
         .map((match) => match[1])
         .filter((s): s is string => s !== undefined);
       if (found.length) {
-        return [...new Set(found)].sort((a, b) => a.localeCompare(b));
+        return [...new Set(found)].toSorted((a, b) => a.localeCompare(b));
       }
     }
   } catch (probeError: unknown) {
@@ -78,9 +78,9 @@ const discoverRoutes = async (base: string): Promise<string[]> => {
   // WHY: the offline fallback reuses the same errorGroups registry that renders the
   // live /errors index page — regex-scraping routes/errors.ts used to silently miss the
   // data-driven routes registered from error-route-data.ts.
-  return [...new Set(errorGroups.flatMap((group) => group.items.map((item) => item.path)))].sort(
-    (a, b) => a.localeCompare(b)
-  );
+  return [
+    ...new Set(errorGroups.flatMap((group) => group.items.map((item) => item.path))),
+  ].toSorted((a, b) => a.localeCompare(b));
 };
 
 const decode = (input: string): string =>
