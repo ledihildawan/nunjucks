@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import type { ChildrenNode } from '@nunjucks/nodes';
 import { block, root, symbol } from '@nunjucks/nodes';
 import { ZERO_LOC } from '@nunjucks/shared';
-import type { Compiler } from '../create-compiler.ts';
+import { asCompiler } from '../test-helpers.ts';
 import { compileRoot } from './root.ts';
 import { makeRootCompiler } from './test-helpers.ts';
 
@@ -10,7 +10,7 @@ describe('compileRoot', () => {
   test('emits root function begin', () => {
     const compiler = makeRootCompiler();
     const node = root(ZERO_LOC, []) as ChildrenNode;
-    compileRoot(compiler as unknown as Compiler, node);
+    compileRoot(asCompiler(compiler), node);
     const out = compiler.emitted.join('');
     expect(out).toContain('func:root');
   });
@@ -18,7 +18,7 @@ describe('compileRoot', () => {
   test('emits parentTemplate null initialization', () => {
     const compiler = makeRootCompiler();
     const node = root(ZERO_LOC, []) as ChildrenNode;
-    compileRoot(compiler as unknown as Compiler, node);
+    compileRoot(asCompiler(compiler), node);
     const out = compiler.emitted.join('');
     expect(out).toContain('parentTemplate = null');
   });
@@ -26,7 +26,7 @@ describe('compileRoot', () => {
   test('compiles non-block children', () => {
     const compiler = makeRootCompiler();
     const node = root(ZERO_LOC, [symbol(ZERO_LOC, 'child')]) as ChildrenNode;
-    compileRoot(compiler as unknown as Compiler, node);
+    compileRoot(asCompiler(compiler), node);
     const out = compiler.emitted.join('');
     expect(out).toContain('X');
   });
@@ -35,7 +35,7 @@ describe('compileRoot', () => {
     const compiler = makeRootCompiler();
     const blk = block(ZERO_LOC, { name: 'main', body: symbol(ZERO_LOC, 'body') });
     const node = root(ZERO_LOC, [blk]) as ChildrenNode;
-    compileRoot(compiler as unknown as Compiler, node);
+    compileRoot(asCompiler(compiler), node);
     const out = compiler.emitted.join('');
     expect(out).toContain('func:b_main');
   });
@@ -45,6 +45,6 @@ describe('compileRoot', () => {
     const firstBlock = block(ZERO_LOC, { name: 'main', body: symbol(ZERO_LOC, 'body1') });
     const duplicateBlock = block(ZERO_LOC, { name: 'main', body: symbol(ZERO_LOC, 'body2') });
     const node = root(ZERO_LOC, [firstBlock, duplicateBlock]) as ChildrenNode;
-    expect(() => compileRoot(compiler as unknown as Compiler, node)).toThrow();
+    expect(() => compileRoot(asCompiler(compiler), node)).toThrow();
   });
 });

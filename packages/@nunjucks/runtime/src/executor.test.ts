@@ -230,3 +230,65 @@ describe('diagnostics threading', () => {
     expect((warnings[0] as Record<string, unknown>).templateName).toBe('sandboxed.njk');
   });
 });
+
+describe('execution deadline', () => {
+  // WHY: step clock — the deadline is checked at every chunk boundary against the
+  // injected `now`, so timeout behavior is pinned deterministically (no real sleeps,
+  // no CI-scheduler flakiness).
+  const createStepClock = (stepMs: number, startMs = 0) => {
+    let currentMs = startMs;
+    return () => {
+      const snapshot = currentMs;
+      currentMs += stepMs;
+      return snapshot;
+    };
+  };
+
+  test('throws a TimeoutError once the injected clock passes the deadline', async () => {
+    const code = compileBody('yield "chunk1";\nyield "chunk2";\nyield "chunk3";');
+    // 100ms per read: deadline (50ms) is already exceeded at the first chunk boundary.
+    const stepClock = createStepClock(100);
+    const attempt = execute({
+      code,
+      context: {},
+      frame: emptyFrame(),
+      env: null,
+      config: { executionTimeoutMs: 50, now: stepClock },
+    });
+    await expect(attempt).rejects.toThrow('Template rendering timed out after 50ms');
+  });
+
+  test('completes when every chunk boundary lands inside the deadline', async () => {
+    const code = compileBody('yield "chunk1";\nyield "chunk2";');
+    // 10ms per read: 4 reads (deadline start + 2 chunks + margin) stay under 1000ms.
+    const stepClock = createStepClock(10);
+    const result = await execute({
+      code,
+      context: {},
+      frame: emptyFrame(),
+      env: null,
+      config: { executionTimeoutMs: 1000, now: stepClock },
+    });
+    expect(result).toBe('chunk1chunk2');
+  });
+
+  test('the thrown deadline error carries the catalog TIMEOUT code', async () => {
+    const code = compileBody('yield "chunk1";');
+    const stepClock = createStepClock(100);
+    const attempt = execute({
+      code,
+      context: {},
+      frame: emptyFrame(),
+      env: null,
+      config: { executionTimeoutMs: 1, now: stepClock },
+    });
+    try {
+      await attempt;
+      expect.unreachable('deadline must throw');
+    } catch (thrownError: unknown) {
+      const timeoutError = thrownError as { name?: string; code?: string };
+      expect(timeoutError.name).toBe('TimeoutError');
+      expect(timeoutError.code).toBe('TIMEOUT');
+    }
+  });
+});

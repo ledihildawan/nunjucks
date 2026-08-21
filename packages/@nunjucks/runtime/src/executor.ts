@@ -29,6 +29,10 @@ interface ExecuteConfig {
   templateName?: string;
   renderContext?: unknown;
   warningsCollector?: unknown[];
+  // WHY: injectable clock — the deadline is checked cooperatively at every chunk
+  // boundary; injecting a step clock keeps timeout paths deterministically testable
+  // without real sleeps. Undefined (the production default) reads the real Date.now.
+  now?: () => number;
 }
 
 /** Inputs to `execute`/`executeStream`: compiled code, context, frame, env, and config. */
@@ -47,6 +51,7 @@ interface ExecuteWithRuntimeOptions {
   env: Env;
   runtime: RenderRuntime;
   executionTimeoutMs: number | undefined;
+  now: (() => number) | undefined;
 }
 
 interface DeadlineTimeoutError extends Error {
@@ -68,12 +73,14 @@ const createDeadlineTimeoutError = (timeoutMs: number): DeadlineTimeoutError => 
 
 const collectStringWithDeadline = async (
   stream: AsyncIterable<string>,
-  timeoutMs: number
+  timeoutMs: number,
+  now?: () => number
 ): Promise<string> => {
-  const deadlineAt = Date.now() + timeoutMs;
+  const clock = now ?? Date.now;
+  const deadlineAt = clock() + timeoutMs;
   const chunks: string[] = [];
   for await (const chunk of stream) {
-    if (Date.now() > deadlineAt) {
+    if (clock() > deadlineAt) {
       throw createDeadlineTimeoutError(timeoutMs);
     }
     chunks.push(chunk);
@@ -133,9 +140,9 @@ const startRenderStream = ({
 
 const executeWithRuntime = async (options: ExecuteWithRuntimeOptions): Promise<string> => {
   const stream = startRenderStream(options);
-  const { executionTimeoutMs } = options;
+  const { executionTimeoutMs, now } = options;
   return executionTimeoutMs && executionTimeoutMs > 0
-    ? collectStringWithDeadline(stream, executionTimeoutMs)
+    ? collectStringWithDeadline(stream, executionTimeoutMs, now)
     : collectString(stream);
 };
 
@@ -161,6 +168,7 @@ const execute = async (options: ExecuteOptions): Promise<string> => {
     env,
     runtime,
     executionTimeoutMs: config.executionTimeoutMs,
+    now: config.now,
   });
 };
 

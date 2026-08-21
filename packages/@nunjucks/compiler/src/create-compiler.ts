@@ -2,7 +2,13 @@ import { createHtmlContextTracker, type HtmlContext } from '@nunjucks/lib';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { DEFAULT_UNDEFINED_MODE, type UndefinedMode } from '@nunjucks/shared';
-import { type FailFields, fail, getTemplateName, nextCompilerId, pushBuffer } from './codegen.ts';
+import {
+  type FailFields,
+  getTemplateName,
+  nextCompilerId,
+  pushBuffer,
+  throwCompileError,
+} from './codegen.ts';
 import {
   assertNodeType,
   compileNodeChildren,
@@ -114,7 +120,7 @@ export const createCompiler = ({
     compiledLine: 0,
 
     fail(options) {
-      fail({ ...options, compiler });
+      throwCompileError({ ...options, compiler });
     },
     pushBuffer() {
       return pushBuffer(compiler);

@@ -54,6 +54,12 @@ const escapeScriptString = (str: string): string => {
 // (`background:url(...)` payloads terminated by `;` or `}`). Order is load-bearing:
 // backslash first (later passes emit new backslashes), then `;`/`}` — both BEFORE the `&`
 // pass, whose entity output (`&amp;` etc.) contains semicolons that must not be re-encoded.
+// `(`/`)`/`:` are deliberately NOT escaped: escaped characters decode back to DATA inside a
+// token, so blanket-escaping them would block `url(`/`expression(` token formation only at
+// the cost of breaking every legitimate function-shaped value (`calc(100% - 20px)`,
+// `rgba(0,0,0,.5)`, `url(http://…)`), while `;`/`}` above already make new-declaration
+// and block-breakout structurally impossible. Residual `url(javascript:)` payloads are
+// inert in all maintained browsers (CSS url() never navigates); `expression()` is EOL IE.
 const escapeStyle = (str: string): string => {
   const cssEscaped = str
     .replaceAll('\\', '\\5C ')

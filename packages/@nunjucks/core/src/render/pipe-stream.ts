@@ -6,6 +6,7 @@ import { isErr } from '@nunjucks/lib';
 import type { ContentType } from '@nunjucks/shared';
 import { formatErrorMarker } from './render-stream.ts';
 import type { RenderMarkerError, RenderStreamResult } from './render-types.ts';
+import { writeErrorLog } from './shell/console-error-sink.ts';
 import { coalesceStream, withStreamTimeout } from './shell/render-stream-adapters.ts';
 
 // WHY: structural sink interface matching Express Response shape — res.status(), res.setHeader(), res.write(), res.end(), res.flushHeaders(). Express res satisfies this directly; Bun/Deno/Web can adapt (flushHeaders is optional — without it, chunks may buffer but still arrive). `off` mirrors EventEmitter.off/removeListener and is used by waitForDrain to detach its one-shot drain listener (anti-leak); Express res provides it natively.
@@ -45,13 +46,12 @@ interface EmitErrorLogInput {
   onError: PipeRenderStreamOptions['onError'];
 }
 
-// WHY: centralizes dev-gated error logging. When onError is provided, it is called (the caller owns logging). When onError is absent, console.log is used as fallback — preserving exact previous behavior when no hook is registered.
+// WHY: centralizes dev-gated error logging. When onError is provided, it is called (the caller owns logging). When onError is absent, the shell console sink is used as fallback — preserving exact previous behavior when no hook is registered.
 const emitErrorLog = ({ error, phase, logError, dev, onError }: EmitErrorLogInput): void => {
   if (onError) {
     onError(error, phase);
   } else if (logError) {
-    // biome-ignore lint/suspicious/noConsole: intentional server-side ANSI error logging for dev debugging
-    console.log(formatError(redactForLog(error as TemplateError), { format: 'ansi', dev }));
+    writeErrorLog({ error: redactForLog(error as TemplateError), dev });
   }
 };
 

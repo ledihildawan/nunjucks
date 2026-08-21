@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { callExtension, literal, nodeList, symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
-import type { Compiler } from '../create-compiler.ts';
+import { asCompiler } from '../test-helpers.ts';
 import { compileCallExtension, compileCallExtensionAsync } from './extension.ts';
 import { makeFullStatementCompiler } from './test-helpers.ts';
 
@@ -14,7 +14,7 @@ describe('compileCallExtension', () => {
       ext: { extensionName: 'myExt' },
       prop: 'myMethod',
     });
-    compileCallExtension(compiler as unknown as Compiler, { node, frame });
+    compileCallExtension(asCompiler(compiler), { node, frame });
     const out = compiler.emitted.join('');
     expect(out).toContain('env.getExtension');
     expect(out).toContain('myExt');
@@ -30,7 +30,7 @@ describe('compileCallExtension', () => {
       prop: 'myMethod',
       args: nodeList(ZERO_LOC, [literal(ZERO_LOC, 'arg1')]),
     });
-    compileCallExtension(compiler as unknown as Compiler, { node, frame });
+    compileCallExtension(asCompiler(compiler), { node, frame });
     const out = compiler.emitted.join('');
     expect(out).toContain('env.getExtension');
   });
@@ -43,7 +43,7 @@ describe('compileCallExtension', () => {
       prop: 'myMethod',
       contentArgs: [symbol(ZERO_LOC, 'content')],
     });
-    compileCallExtension(compiler as unknown as Compiler, { node, frame });
+    compileCallExtension(asCompiler(compiler), { node, frame });
     const out = compiler.emitted.join('');
     expect(out).toContain('async function');
   });
@@ -55,7 +55,7 @@ describe('compileCallExtension', () => {
       ext: {},
       prop: 'myMethod',
     });
-    compileCallExtension(compiler as unknown as Compiler, { node, frame });
+    compileCallExtension(asCompiler(compiler), { node, frame });
     const out = compiler.emitted.join('');
     expect(out).toContain('env.getExtension');
   });
@@ -69,7 +69,7 @@ describe('compileCallExtensionAsync', () => {
       ext: { extensionName: 'myExt' },
       prop: 'myMethod',
     });
-    compileCallExtensionAsync(compiler as unknown as Compiler, { node, frame });
+    compileCallExtensionAsync(asCompiler(compiler), { node, frame });
     const out = compiler.emitted.join('');
     expect(out).toContain('env.getExtension');
   });

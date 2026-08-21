@@ -51,4 +51,11 @@ describe('escapeStyle', () => {
   test('does not corrupt the semicolons inside emitted HTML entities', () => {
     expect(escapeStyle('a&b<c')).toBe('a&amp;b&lt;c');
   });
+
+  test('leaves function-call delimiters intact (documented trade-off)', () => {
+    // WHY: escaping `(`/`)` would break every legitimate function-shaped value
+    // (calc(), rgba(), url()); escaped characters decode back to data inside a
+    // token anyway, and `;`/`}` already block new-declaration injection.
+    expect(escapeStyle('calc(100% - 20px)')).toBe('calc(100% - 20px)');
+  });
 });

@@ -4,7 +4,7 @@ import { symbol } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
-import type { Compiler } from '../create-compiler.ts';
+import { asCompiler } from '../test-helpers.ts';
 import { compileSlotFunction } from './slot.ts';
 import { makeFullStatementCompiler } from './test-helpers.ts';
 
@@ -13,7 +13,7 @@ describe('compileSlotFunction', () => {
     const compiler = makeFullStatementCompiler();
     const parentFrame = createFrame();
     compileSlotFunction({
-      compiler: compiler as unknown as Compiler,
+      compiler: asCompiler(compiler),
       params: [],
       body: symbol(ZERO_LOC, 'body'),
       parentFrame,
@@ -28,7 +28,7 @@ describe('compileSlotFunction', () => {
     const compiler = makeFullStatementCompiler();
     const parentFrame = createFrame();
     compileSlotFunction({
-      compiler: compiler as unknown as Compiler,
+      compiler: asCompiler(compiler),
       params: [],
       body: symbol(ZERO_LOC, 'body'),
       parentFrame,
@@ -42,7 +42,7 @@ describe('compileSlotFunction', () => {
     const compiler = makeFullStatementCompiler();
     const parentFrame = createFrame();
     compileSlotFunction({
-      compiler: compiler as unknown as Compiler,
+      compiler: asCompiler(compiler),
       params: ['title', 'content'],
       body: symbol(ZERO_LOC, 'body'),
       parentFrame,
@@ -59,7 +59,7 @@ describe('compileSlotFunction', () => {
     const compiler = makeFullStatementCompiler();
     const parentFrame = createFrame();
     compileSlotFunction({
-      compiler: compiler as unknown as Compiler,
+      compiler: asCompiler(compiler),
       params: [],
       body: symbol(ZERO_LOC, 'slot_body_content'),
       parentFrame,
@@ -84,7 +84,7 @@ describe('compileSlotFunction', () => {
       withScopedSyntax: (fn: () => void) => fn(),
     };
     compileSlotFunction({
-      compiler: compiler as unknown as Compiler,
+      compiler: asCompiler(compiler),
       params: ['title'],
       body: symbol(ZERO_LOC, 'body'),
       parentFrame: createFrame(),

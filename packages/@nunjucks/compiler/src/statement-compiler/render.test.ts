@@ -3,7 +3,7 @@ import type { SlotBlock } from '@nunjucks/nodes';
 import { funCall, renderNode, symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
-import type { Compiler } from '../create-compiler.ts';
+import { asCompiler } from '../test-helpers.ts';
 import { compileRenderBlock } from './render.ts';
 import { makeFullStatementCompiler } from './test-helpers.ts';
 
@@ -15,7 +15,7 @@ describe('compileRenderBlock', () => {
       callExpr: funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'render'), args: [] }),
       body: symbol(ZERO_LOC, 'body'),
     });
-    compileRenderBlock(compiler as unknown as Compiler, { node, frame });
+    compileRenderBlock(asCompiler(compiler), { node, frame });
     const out = compiler.emitted.join('');
     expect(out).toContain('frame = frame.push(true)');
     expect(out).toContain('frame = frame.pop()');
@@ -28,7 +28,7 @@ describe('compileRenderBlock', () => {
       callExpr: funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'render'), args: [] }),
       body: symbol(ZERO_LOC, 'body'),
     });
-    compileRenderBlock(compiler as unknown as Compiler, { node, frame });
+    compileRenderBlock(asCompiler(compiler), { node, frame });
     const out = compiler.emitted.join('');
     expect(out).toContain('runtime.suppressValue');
     expect(out).toContain('runtime.awaitValue');
@@ -44,7 +44,7 @@ describe('compileRenderBlock', () => {
       callExpr: funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'render'), args: [] }),
       body: symbol(ZERO_LOC, 'body'),
     });
-    compileRenderBlock(compiler as unknown as Compiler, { node, frame });
+    compileRenderBlock(asCompiler(compiler), { node, frame });
     const out = compiler.emitted.join('');
     expect(out).toContain('context: "ctx:0:0"');
   });
@@ -58,7 +58,7 @@ describe('compileRenderBlock', () => {
       body: symbol(ZERO_LOC, 'body'),
       providedSlots: [slot],
     });
-    compileRenderBlock(compiler as unknown as Compiler, { node, frame });
+    compileRenderBlock(asCompiler(compiler), { node, frame });
     const out = compiler.emitted.join('');
     expect(out).toContain('__slot_header');
     expect(out).toContain('slots:');

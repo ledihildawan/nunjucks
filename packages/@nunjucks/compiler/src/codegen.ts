@@ -5,7 +5,7 @@ import { last, pipe, split } from 'remeda';
 import type { Emitter } from './create-compiler.ts';
 
 /**
- * Fields shared by every compiler `fail` call — the human message plus optional
+ * Fields shared by every `throwCompileError` call — the human message plus optional
  * zero-based location and a catalog `errorName`.
  */
 export interface FailFields {
@@ -23,8 +23,12 @@ interface FailOptions extends FailFields {
  * Throws the catalogued compile-phase error for `errorName` (defaulting to
  * `WALK_UNKNOWN_TYPE`), deriving the error subject from the last `:`-separated
  * part of `message`.
+ *
+ * WHY: named for its channel — unlike the parser's `fail` (which returns an
+ * `Err`), this helper always THROWS; the identical names made grepping the two
+ * contracts ambiguous.
  */
-export const fail = ({
+export const throwCompileError = ({
   compiler,
   message,
   lineno,

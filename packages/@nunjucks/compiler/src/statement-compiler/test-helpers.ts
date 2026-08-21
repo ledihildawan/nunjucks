@@ -7,9 +7,9 @@ import type { Frame } from '@nunjucks/runtime';
 import type { FailFields } from '../codegen.ts';
 import { makeRecordingCore } from '../test-helpers.ts';
 
-// WHY: mirrors codegen's fail() contract — the double throws a catalogued TemplateError,
-// never a raw Error. `lineno: null` routes the payload down createLog's raw-data path so
-// the original message passes through unchanged for toThrow assertions.
+// WHY: mirrors codegen's throwCompileError() contract — the double throws a catalogued
+// TemplateError, never a raw Error. `lineno: null` routes the payload down createLog's
+// raw-data path so the original message passes through unchanged for toThrow assertions.
 const throwCataloguedFail = ({ message }: FailFields): never => {
   throw createLog('error', { def: { message, lineno: null } });
 };

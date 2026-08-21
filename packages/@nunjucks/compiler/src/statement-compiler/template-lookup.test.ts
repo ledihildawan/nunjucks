@@ -10,7 +10,7 @@ import {
 } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
-import type { Compiler } from '../create-compiler.ts';
+import { asCompiler } from '../test-helpers.ts';
 import { compileGetTemplate, getTemplateLocation } from './template-lookup.ts';
 import { makeExtendsCompiler } from './test-helpers.ts';
 
@@ -64,7 +64,7 @@ describe('compileGetTemplate', () => {
     const frame = createFrame();
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
     compileGetTemplate({
-      compiler: compiler as unknown as Compiler,
+      compiler: asCompiler(compiler),
       node,
       frame,
       options: { eagerCompile: true, ignoreMissing: false },
@@ -78,7 +78,7 @@ describe('compileGetTemplate', () => {
     const frame = createFrame();
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
     const result = compileGetTemplate({
-      compiler: compiler as unknown as Compiler,
+      compiler: asCompiler(compiler),
       node,
       frame,
       options: { eagerCompile: true, ignoreMissing: false },
@@ -91,7 +91,7 @@ describe('compileGetTemplate', () => {
     const frame = createFrame();
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
     compileGetTemplate({
-      compiler: compiler as unknown as Compiler,
+      compiler: asCompiler(compiler),
       node,
       frame,
       options: { eagerCompile: true, ignoreMissing: false },

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { extendsNode, include, literal, symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
-import type { Compiler } from '../create-compiler.ts';
+import { asCompiler } from '../test-helpers.ts';
 import { compileExtends, compileInclude } from './extends.ts';
 import { makeExtendsCompiler } from './test-helpers.ts';
 
@@ -11,7 +11,7 @@ describe('compileExtends', () => {
     const compiler = makeExtendsCompiler();
     const frame = createFrame();
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
-    compileExtends(compiler as unknown as Compiler, { node, frame });
+    compileExtends(asCompiler(compiler), { node, frame });
     const out = compiler.emitted.join('');
     expect(out).toContain('parentTemplate =');
     expect(out).toContain('parentTemplate.blocks');
@@ -28,7 +28,7 @@ describe('compileInclude', () => {
       template: literal(ZERO_LOC, 'partial.html'),
       ignoreMissing: false,
     });
-    compileInclude(compiler as unknown as Compiler, { node, frame });
+    compileInclude(asCompiler(compiler), { node, frame });
     const out = compiler.emitted.join('');
     expect(out).toContain('env.getTemplate');
     expect(out).toContain('template.render');
@@ -42,7 +42,7 @@ describe('compileInclude', () => {
       ignoreMissing: false,
     });
     (node as unknown as { only: boolean }).only = true;
-    compileInclude(compiler as unknown as Compiler, { node, frame });
+    compileInclude(asCompiler(compiler), { node, frame });
     const out = compiler.emitted.join('');
     expect(out).toContain('template.render({}, frame, runtime["__warnings__"])');
   });
@@ -55,7 +55,7 @@ describe('compileInclude', () => {
       ignoreMissing: false,
     });
     (node as unknown as { with: ReturnType<typeof symbol> }).with = symbol(ZERO_LOC, 'data');
-    compileInclude(compiler as unknown as Compiler, { node, frame });
+    compileInclude(asCompiler(compiler), { node, frame });
     const out = compiler.emitted.join('');
     // WHY: fork(__withData) — the with-expression flows through fork's spread merge
     // (own-key define semantics) instead of a prototype-unsafe Object.assign.

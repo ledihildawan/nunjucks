@@ -1,5 +1,6 @@
 node_modules
 coverage
+coverage.txt
 .#*
 docs/_site
 docs/files

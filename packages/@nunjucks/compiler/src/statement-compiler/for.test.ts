@@ -3,14 +3,14 @@ import type { ForNode } from '@nunjucks/nodes';
 import { arrayPattern, forNode, literal, objectPattern, pair, symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
-import type { Compiler } from '../create-compiler.ts';
+import { asCompiler } from '../test-helpers.ts';
 import { compileFor } from './for.ts';
 import { makeFullStatementCompiler } from './test-helpers.ts';
 
 const compile = (node: ForNode) => {
   const compiler = makeFullStatementCompiler();
   const frame = createFrame();
-  compileFor(compiler as unknown as Compiler, { node, frame });
+  compileFor(asCompiler(compiler), { node, frame });
   return compiler.emitted.join('');
 };
 
